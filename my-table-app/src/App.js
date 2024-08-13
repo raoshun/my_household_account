@@ -1,37 +1,51 @@
-// src/App.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import ReactFileReader from 'react-file-reader';
 import DataTable from './components/DataTable';
 import Papa from 'papaparse';
 
 const App = () => {
   const [data, setData] = useState([]);
 
-  useEffect(() => {
-    const csvFilePath = '/home/shun-h/my_household_account_book/my-table-app/input.csv';
-  
-    Papa.parse(csvFilePath, {
-      download: true,
-      header: true,
-      delimiter: ',', // 必要に応じてデリミタを指定
-      complete: (result) => {
-        if (result.errors.length > 0) {
-          console.error('Errors:', result.errors);
-        }
-        const formattedData = result.data.map(item => ({
-          ...item,
-          '金額（円）': parseFloat(item['金額（円）']),
-          '日付': new Date(item['日付']),
-        }));
-        console.log(formattedData); // 整形後のデータをコンソールに出力
-        setData(formattedData);
-      },
-    });
-  }, []);
-  
+  const handleFiles = files => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const csv = e.target.result;
+      console.log(csv);
+      Papa.parse(csv, {
+        header: true,
+        delimiter: ',', // 必要に応じてデリミタを指定
+        skipEmptyLines: true, // 空行をスキップ
+        dynamicTyping: true, // 自動的に型を推測
+        complete: (result) => {
+          if (result.errors.length > 0) {
+            console.error('Errors:', result.errors);
+            console.log('Data:', result.data);
+          }
+          const formattedData = result.data.map(item => ({
+            '計算対象': item['計算対象'],
+            '日付': new Date(item['日付'].replace(/-/g, '/')), // 日付をDateオブジェクトに変換
+            '内容': item['内容'],
+            '金額（円）': parseInt(item['金額（円）'], 10), // 基数を指定
+            '保有金融機関': item['保有金融機関'],
+            '大項目': item['大項目'],
+            '中項目': item['中項目'],
+            'メモ': item['メモ'],
+            '振替': item['振替'],
+            'ID': item['ID'],
+          }));
+          console.log(formattedData); // 整形後のデータをコンソールに出力
+          setData(formattedData);
+        },
+      });
+    };
+    reader.readAsText(files[0]);
+  };
 
   return (
     <div className="App">
-      <h1>家計簿管理アプリ</h1>
+      <ReactFileReader handleFiles={handleFiles} fileTypes={'.csv'}>
+        <button className='btn'>Upload CSV</button>
+      </ReactFileReader>
       <DataTable data={data} />
     </div>
   );
