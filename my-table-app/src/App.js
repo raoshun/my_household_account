@@ -6,13 +6,21 @@ import iconv from 'iconv-lite';
 import { Buffer } from 'buffer';
 import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import { aggregateDataByCategory } from './utils'; // 関数をインポート
+import { splitDataBySign } from './utils'; // 関数をインポート
 
 Chart.register(ArcElement, Tooltip, Legend);
 
 const App = () => {
   const [data, setData] = useState([]);
-  const [chartData, setChartData] = useState({
+  const [positiveChartData, setPositiveChartData] = useState({
+    labels: [],
+    datasets: [{
+      data: [],
+      backgroundColor: [],
+      hoverBackgroundColor: []
+    }]
+  });
+  const [negativeChartData, setNegativeChartData] = useState({
     labels: [],
     datasets: [{
       data: [],
@@ -53,9 +61,10 @@ const App = () => {
           console.log(formattedData); // 整形後のデータをコンソールに出力
           setData(formattedData);
 
-          // 大項目別にデータを集計
-          const chartData = aggregateDataByCategory(formattedData);
-          setChartData(chartData);
+          // データをプラスとマイナスに分割
+          const { positiveData, negativeData } = splitDataBySign(formattedData);
+          setPositiveChartData(positiveData);
+          setNegativeChartData(negativeData);
         },
       });
     };
@@ -86,7 +95,14 @@ const App = () => {
         </ReactFileReader>
       </div>
       <div className="content" style={{ flex: 1, padding: '10px' }}>
-        {view === 'chart' && <Pie data={chartData} options={options} />}
+        {view === 'chart' && (
+          <div>
+            <h2>収入</h2>
+            <Pie data={positiveChartData} options={options} />
+            <h2>支出</h2>
+            <Pie data={negativeChartData} options={options} />
+          </div>
+        )}
         {view === 'table' && <DataTable data={data} />}
       </div>
     </div>
