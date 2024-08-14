@@ -28,6 +28,8 @@ const App = () => {
       hoverBackgroundColor: []
     }]
   });
+  const [positiveTotal, setPositiveTotal] = useState(0);
+  const [negativeTotal, setNegativeTotal] = useState(0);
   const [view, setView] = useState('chart'); // 表示を切り替えるための状態
 
   const handleFiles = files => {
@@ -62,9 +64,11 @@ const App = () => {
           setData(formattedData);
 
           // データをプラスとマイナスに分割
-          const { positiveData, negativeData } = splitDataBySign(formattedData);
+          const { positiveData, negativeData, positiveTotal, negativeTotal } = splitDataBySign(formattedData);
           setPositiveChartData(positiveData);
           setNegativeChartData(negativeData);
+          setPositiveTotal(positiveTotal);
+          setNegativeTotal(negativeTotal);
         },
       });
     };
@@ -96,11 +100,15 @@ const App = () => {
       </div>
       <div className="content" style={{ flex: 1, padding: '10px' }}>
         {view === 'chart' && (
-          <div>
-            <h2>収入</h2>
-            <Pie data={positiveChartData} options={options} />
-            <h2>支出</h2>
-            <Pie data={negativeChartData} options={options} />
+          <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap' }}>
+            <div style={{ flex: '1 1 45%', maxWidth: '45%', margin: '10px' }}>
+              <h2>収入</h2>
+              <Pie data={positiveChartData} options={options} />
+            </div>
+            <div style={{ flex: '1 1 45%', maxWidth: '45%', margin: '10px' }}>
+              <h2>支出</h2>
+              <Pie data={negativeChartData} options={options} />
+            </div>
           </div>
         )}
         {view === 'table' && <DataTable data={data} />}

@@ -13,34 +13,39 @@ export const aggregateDataByCategory = (data) => {
     return {
         labels: Object.keys(categoryTotals),
         datasets: [{
-        data: Object.values(categoryTotals),
-        backgroundColor: [
-            '#FF6384',
-            '#36A2EB',
-            '#FFCE56',
-            '#FF6384',
-            '#36A2EB',
-            '#FFCE56'
-        ],
-        hoverBackgroundColor: [
-            '#FF6384',
-            '#36A2EB',
-            '#FFCE56',
-            '#FF6384',
-            '#36A2EB',
-            '#FFCE56'
-        ]
+            data: Object.values(categoryTotals),
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56'
+            ],
+            hoverBackgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56'
+            ]
         }]
     };
-    };
+};
 
-    export const splitDataBySign = (data) => {
+export const splitDataBySign = (data) => {
     const positiveData = data.filter(item => item['金額（円）'] > 0);
     const negativeData = data.filter(item => item['金額（円）'] < 0);
 
+    const positiveTotal = positiveData.reduce((acc, item) => acc + item['金額（円）'], 0);
+    const negativeTotal = negativeData.reduce((acc, item) => acc + item['金額（円）'], 0);
+
     return {
         positiveData: aggregateDataByCategory(positiveData),
-        negativeData: aggregateDataByCategory(negativeData)
+        negativeData: aggregateDataByCategory(negativeData),
+        positiveTotal,
+        negativeTotal
     };
 };
 
