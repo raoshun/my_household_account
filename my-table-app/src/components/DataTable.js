@@ -13,7 +13,7 @@ const DataTable = ({ data }) => {
       { Header: '中項目', accessor: '中項目' },
       { Header: 'メモ', accessor: 'メモ' },
       { Header: '振替', accessor: '振替' },
-      { Header: 'ID', accessor: 'ID' },
+      // { Header: 'ID', accessor: 'ID' },
     ],
     []
   );
