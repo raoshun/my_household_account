@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Charts from './components/Charts';
 import DataTable from './components/DataTable';
 import Sidebar from './components/Sidebar'; // Sidebarコンポーネントをインポート
 import Papa from 'papaparse';
@@ -94,16 +95,11 @@ const App = () => {
       <Sidebar setView={setView} handleFiles={handleFiles} /> {/* Sidebarコンポーネントをレンダリング */}
       <div className="content" style={{ flex: 1, padding: '10px' }}>
         {view === 'chart' && (
-          <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 45%', maxWidth: '45%', margin: '10px' }}>
-              <h2>収入</h2>
-              <Pie data={positiveChartData} options={options} />
-            </div>
-            <div style={{ flex: '1 1 45%', maxWidth: '45%', margin: '10px' }}>
-              <h2>支出</h2>
-              <Pie data={negativeChartData} options={options} />
-            </div>
-          </div>
+          <Charts
+            positiveChartData={positiveChartData}
+            negativeChartData={negativeChartData}
+            options={options}
+          />
         )}
         {view === 'table' && <DataTable data={data} />}
       </div>
