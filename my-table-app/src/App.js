@@ -4,9 +4,21 @@ import DataTable from './components/DataTable';
 import Papa from 'papaparse';
 import iconv from 'iconv-lite';
 import { Buffer } from 'buffer';
+import { Chart, ArcElement } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
+
+Chart.register(ArcElement);
 
 const App = () => {
   const [data, setData] = useState([]);
+  const [chartData, setChartData] = useState({
+    labels: [],
+    datasets: [{
+      data: [],
+      backgroundColor: [],
+      hoverBackgroundColor: []
+    }]
+  });
 
   const handleFiles = files => {
     const reader = new FileReader();
@@ -38,6 +50,31 @@ const App = () => {
           }));
           console.log(formattedData); // 整形後のデータをコンソールに出力
           setData(formattedData);
+
+          // Chart.js用のデータを設定
+          const chartData = {
+            labels: formattedData.map(item => item['大項目']),
+            datasets: [{
+              data: formattedData.map(item => item['金額（円）']),
+              backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56'
+              ],
+              hoverBackgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56'
+              ]
+            }]
+          };
+          setChartData(chartData);
         },
       });
     };
@@ -49,6 +86,7 @@ const App = () => {
       <ReactFileReader handleFiles={handleFiles} fileTypes={'.csv'}>
         <button className='btn'>Upload CSV</button>
       </ReactFileReader>
+      <Pie data={chartData} />
       <DataTable data={data} />
     </div>
   );
