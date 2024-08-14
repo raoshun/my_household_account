@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import ReactFileReader from 'react-file-reader';
 import DataTable from './components/DataTable';
+import Sidebar from './components/Sidebar'; // Sidebarコンポーネントをインポート
 import Papa from 'papaparse';
 import iconv from 'iconv-lite';
 import { Buffer } from 'buffer';
@@ -91,13 +91,7 @@ const App = () => {
 
   return (
     <div className="App" style={{ display: 'flex' }}>
-      <div className="sidebar" style={{ width: '200px', padding: '10px', background: '#f4f4f4' }}>
-        <button onClick={() => setView('chart')}>円グラフ</button>
-        <button onClick={() => setView('table')}>表</button>
-        <ReactFileReader handleFiles={handleFiles} fileTypes={'.csv'}>
-          <button className='btn'>Upload CSV</button>
-        </ReactFileReader>
-      </div>
+      <Sidebar setView={setView} handleFiles={handleFiles} /> {/* Sidebarコンポーネントをレンダリング */}
       <div className="content" style={{ flex: 1, padding: '10px' }}>
         {view === 'chart' && (
           <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap' }}>
