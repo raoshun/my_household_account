@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactFileReader from 'react-file-reader';
 import DataTable from './components/DataTable';
 import Papa from 'papaparse';
@@ -6,7 +6,7 @@ import iconv from 'iconv-lite';
 import { Buffer } from 'buffer';
 import { Chart, ArcElement } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import { aggregateDataByCategory } from './utils'; // 関数をインポート
+import { aggregateDataByCategory, testAggregateDataByCategory } from './utils'; // 関数をインポート
 
 Chart.register(ArcElement);
 
@@ -20,6 +20,10 @@ const App = () => {
       hoverBackgroundColor: []
     }]
   });
+
+  useEffect(() => {
+    testAggregateDataByCategory(); // テスト関数を呼び出す
+  }, []);
 
   const handleFiles = files => {
     const reader = new FileReader();
@@ -66,8 +70,8 @@ const App = () => {
       <ReactFileReader handleFiles={handleFiles} fileTypes={'.csv'}>
         <button className='btn'>Upload CSV</button>
       </ReactFileReader>
-      <Pie data={chartData} />
       <DataTable data={data} />
+      <Pie data={chartData} />
     </div>
   );
 };
