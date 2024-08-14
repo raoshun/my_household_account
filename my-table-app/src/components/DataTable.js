@@ -1,4 +1,3 @@
-// src/components/DataTable.js
 import React from 'react';
 import { useTable } from 'react-table';
 
@@ -6,7 +5,7 @@ const DataTable = ({ data }) => {
   const columns = React.useMemo(
     () => [
       { Header: '計算対象', accessor: '計算対象' },
-      { Header: '日付', accessor: '日付', Cell: ({ value }) => new Date(value).toLocaleDateString() },
+      { Header: '日付', accessor: '日付', Cell: ({ value }) => new Date(value).toLocaleDateString('ja-JP') },
       { Header: '内容', accessor: '内容' },
       { Header: '金額（円）', accessor: '金額（円）' },
       { Header: '保有金融機関', accessor: '保有金融機関' },
@@ -30,25 +29,21 @@ const DataTable = ({ data }) => {
   return (
     <table {...getTableProps()}>
       <thead>
-        {headerGroups.map((headerGroup, index) => {
-          const headerGroupProps = headerGroup.getHeaderGroupProps();
-          return (
-            <tr key={index} {...headerGroupProps}>
-              {headerGroup.headers.map((column, colIndex) => {
-                const columnProps = column.getHeaderProps();
-                return <th key={colIndex} {...columnProps}>{column.render('Header')}</th>;
-              })}
-            </tr>
-          );
-        })}
+        {headerGroups.map((headerGroup, index) => (
+          <tr key={index} {...headerGroup.getHeaderGroupProps()}>
+            {headerGroup.headers.map((column, colIndex) => (
+              <th key={colIndex} {...column.getHeaderProps()}>{column.render('Header')}</th>
+            ))}
+          </tr>
+        ))}
       </thead>
       <tbody {...getTableBodyProps()}>
-        {rows.map(row => {
+        {rows.map((row, rowIndex) => {
           prepareRow(row);
           return (
-            <tr {...row.getRowProps()}>
-              {row.cells.map(cell => (
-                <td {...cell.getCellProps()}>{cell.render('Cell')}</td>
+            <tr key={rowIndex} {...row.getRowProps()}>
+              {row.cells.map((cell, cellIndex) => (
+                <td key={cellIndex} {...cell.getCellProps()}>{cell.render('Cell')}</td>
               ))}
             </tr>
           );

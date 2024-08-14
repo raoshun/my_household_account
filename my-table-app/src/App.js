@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import ReactFileReader from 'react-file-reader';
 import DataTable from './components/DataTable';
 import Papa from 'papaparse';
+import iconv from 'iconv-lite';
+import { Buffer } from 'buffer';
 
 const App = () => {
   const [data, setData] = useState([]);
@@ -9,9 +11,10 @@ const App = () => {
   const handleFiles = files => {
     const reader = new FileReader();
     reader.onload = function(e) {
-      const csv = e.target.result;
-      console.log(csv);
-      Papa.parse(csv, {
+      const csvBuffer = e.target.result;
+      const csvText = iconv.decode(Buffer.from(csvBuffer), 'Shift_JIS');
+      console.log(csvText);
+      Papa.parse(csvText, {
         header: true,
         delimiter: ',', // 必要に応じてデリミタを指定
         skipEmptyLines: true, // 空行をスキップ
@@ -23,7 +26,7 @@ const App = () => {
           }
           const formattedData = result.data.map(item => ({
             '計算対象': item['計算対象'],
-            '日付': new Date(item['日付'].replace(/-/g, '/')), // 日付をDateオブジェクトに変換
+            '日付': item['日付'] ? new Date(item['日付'].replace(/-/g, '/')) : null, // 日付をDateオブジェクトに変換
             '内容': item['内容'],
             '金額（円）': parseInt(item['金額（円）'], 10), // 基数を指定
             '保有金融機関': item['保有金融機関'],
@@ -38,7 +41,7 @@ const App = () => {
         },
       });
     };
-    reader.readAsText(files[0]);
+    reader.readAsArrayBuffer(files[0]);
   };
 
   return (
