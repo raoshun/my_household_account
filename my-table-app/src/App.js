@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactFileReader from 'react-file-reader';
 import DataTable from './components/DataTable';
 import Papa from 'papaparse';
 import iconv from 'iconv-lite';
 import { Buffer } from 'buffer';
-import { Chart, ArcElement } from 'chart.js';
+import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
-import { aggregateDataByCategory, testAggregateDataByCategory } from './utils'; // 関数をインポート
+import { aggregateDataByCategory } from './utils'; // 関数をインポート
 
-Chart.register(ArcElement);
+Chart.register(ArcElement, Tooltip, Legend);
 
 const App = () => {
   const [data, setData] = useState([]);
@@ -20,10 +20,7 @@ const App = () => {
       hoverBackgroundColor: []
     }]
   });
-
-  useEffect(() => {
-    testAggregateDataByCategory(); // テスト関数を呼び出す
-  }, []);
+  const [view, setView] = useState('chart'); // 表示を切り替えるための状態
 
   const handleFiles = files => {
     const reader = new FileReader();
@@ -65,13 +62,33 @@ const App = () => {
     reader.readAsArrayBuffer(files[0]);
   };
 
+  const options = {
+    plugins: {
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            return `${label}: ¥${value.toLocaleString()}`;
+          }
+        }
+      }
+    }
+  };
+
   return (
-    <div className="App">
-      <ReactFileReader handleFiles={handleFiles} fileTypes={'.csv'}>
-        <button className='btn'>Upload CSV</button>
-      </ReactFileReader>
-      <DataTable data={data} />
-      <Pie data={chartData} />
+    <div className="App" style={{ display: 'flex' }}>
+      <div className="sidebar" style={{ width: '200px', padding: '10px', background: '#f4f4f4' }}>
+        <button onClick={() => setView('chart')}>円グラフ</button>
+        <button onClick={() => setView('table')}>表</button>
+        <ReactFileReader handleFiles={handleFiles} fileTypes={'.csv'}>
+          <button className='btn'>Upload CSV</button>
+        </ReactFileReader>
+      </div>
+      <div className="content" style={{ flex: 1, padding: '10px' }}>
+        {view === 'chart' && <Pie data={chartData} options={options} />}
+        {view === 'table' && <DataTable data={data} />}
+      </div>
     </div>
   );
 };
