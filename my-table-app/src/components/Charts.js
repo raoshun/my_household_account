@@ -21,7 +21,7 @@ const Charts = ({ positiveChartData, negativeChartData, positiveTotal, negativeT
       positiveChart = new Chart(positiveCtx, {
         type: 'pie',
         data: positiveChartData,
-        options: { ...options, onHover: handleHover },
+        options: { ...options, onClick: handleHover },
       });
     }
 
@@ -29,7 +29,7 @@ const Charts = ({ positiveChartData, negativeChartData, positiveTotal, negativeT
       negativeChart = new Chart(negativeCtx, {
         type: 'pie',
         data: negativeChartData,
-        options: { ...options, onHover: handleHover },
+        options: { ...options, onClick: handleHover },
       });
     }
 
