@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { Pie } from 'react-chartjs-2';
 import PropTypes from 'prop-types';
 import { Chart, ArcElement } from 'chart.js';
 
