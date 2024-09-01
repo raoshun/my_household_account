@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useTable } from 'react-table';
 
 const DataTable = ({ data }) => {
@@ -51,6 +52,10 @@ const DataTable = ({ data }) => {
       </tbody>
     </table>
   );
+};
+
+DataTable.propTypes = {
+  data: PropTypes.array.isRequired,
 };
 
 export default DataTable;

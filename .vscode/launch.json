@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "msedge",
+            "name": "http://this",
+            "request": "launch",
+            "url": "http://this"
+        }
+    ]
+}

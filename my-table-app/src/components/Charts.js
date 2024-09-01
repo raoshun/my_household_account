@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Chart, ArcElement } from 'chart.js';
+import { Chart, ArcElement, PieController } from 'chart.js';
 
-// Chart.jsの要素を登録
-Chart.register(ArcElement);
+// Chart.jsの要素とコントローラーを登録
+Chart.register(ArcElement, PieController);
 
-const Charts = ({ positiveChartData, negativeChartData, positiveTotal, negativeTotal, options, onHover }) => {
+const Charts = ({ positiveChartData, negativeChartData, positiveTotal, negativeTotal, options, onHover, onClick }) => {
   const positiveChartRef = useRef(null);
   const negativeChartRef = useRef(null);
 
@@ -20,7 +20,7 @@ const Charts = ({ positiveChartData, negativeChartData, positiveTotal, negativeT
       positiveChart = new Chart(positiveCtx, {
         type: 'pie',
         data: positiveChartData,
-        options: { ...options, onClick: handleHover },
+        options: { ...options, onClick: handleClick, onHover: handleHover },
       });
     }
 
@@ -28,7 +28,7 @@ const Charts = ({ positiveChartData, negativeChartData, positiveTotal, negativeT
       negativeChart = new Chart(negativeCtx, {
         type: 'pie',
         data: negativeChartData,
-        options: { ...options, onClick: handleHover },
+        options: { ...options, onClick: handleClick, onHover: handleHover },
       });
     }
 
@@ -46,9 +46,20 @@ const Charts = ({ positiveChartData, negativeChartData, positiveTotal, negativeT
     if (elements.length > 0) {
       const index = elements[0].index;
       const label = positiveChartData.labels[index];
-      onHover(label);
+      const subtotal = positiveChartData.datasets[0].data[index];
+      onHover({ label, subtotal });
     } else {
       onHover(null);
+    }
+  };
+
+  const handleClick = (event, elements) => {
+    if (elements.length > 0) {
+      const index = elements[0].index;
+      const label = positiveChartData.labels[index];
+      onClick(label);
+    } else {
+      onClick(null);
     }
   };
 
@@ -73,6 +84,7 @@ Charts.propTypes = {
   negativeTotal: PropTypes.number.isRequired,
   options: PropTypes.object.isRequired,
   onHover: PropTypes.func.isRequired,
+  onClick: PropTypes.func.isRequired,
 };
 
 export default Charts;

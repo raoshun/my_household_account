@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import ReactFileReader from 'react-file-reader';
 
 const Sidebar = ({ setView, handleFiles }) => {
@@ -11,6 +12,11 @@ const Sidebar = ({ setView, handleFiles }) => {
             </ReactFileReader>
         </div>
     );
+};
+
+Sidebar.propTypes = {
+  setView: PropTypes.func.isRequired,
+  handleFiles: PropTypes.func.isRequired,
 };
 
 export default Sidebar;
