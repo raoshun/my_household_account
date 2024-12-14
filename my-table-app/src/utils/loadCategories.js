@@ -1,6 +1,6 @@
 import categories from '../config/categories.yml';
 
-export default function loadCategories () {
+export default function loadCategories (categories) {
   try {
     return categories.categories;
   } catch (e) {

@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
+import { sortAndAggregateData } from './utils/sortData';
+import AggregatedTable from './components/AggregatedTable';
 import Sidebar from './components/Sidebar';
+import calculateCategoryTotals from './utils/calculateCategoryTotals';
+import CategoryPieChart from './components/CategoryPieChart';
 import Charts from './components/Charts';
 import DataTable from './components/DataTable';
 import { handleFiles as importHandleFiles } from './components/fileHandlers';
@@ -28,6 +32,8 @@ const App = () => {
   const [view, setView] = useState('chart'); // 表示を切り替えるための状態
   const [filteredData, setFilteredData] = useState([]);
   const [hoverInfo, setHoverInfo] = useState(null); // ホバー情報を保持する状態
+  const [aggregatedData, setAggregatedData] = useState({});
+  const [categoryTotals, setCategoryTotals] = useState({});
 
   const handleHover = (info) => {
     setHoverInfo(info);
@@ -37,7 +43,6 @@ const App = () => {
     if (category) {
       const filtered = data.filter(item => item['大項目'] === category);
       setFilteredData(filtered);
-      setView('table');
     } else {
       setFilteredData([]);
       setView('chart');
@@ -46,6 +51,20 @@ const App = () => {
 
   const handleFiles = (files) => {
     importHandleFiles(files, setData, setPositiveChartData, setNegativeChartData, setPositiveTotal, setNegativeTotal);
+    // CSVファイルを読み込んでデータをセットする処理
+    // ここでは仮のデータを使用
+    const parsedData = [
+      { '大項目': '食費', '金額（円）': 1000 },
+      { '大項目': '外食', '金額（円）': 2000 },
+      // 他のデータ
+    ];
+    setData(parsedData);
+  
+    const aggregated = sortAndAggregateData(parsedData);
+    setAggregatedData(aggregated);
+  
+    const totals = calculateCategoryTotals(parsedData);
+    setCategoryTotals(totals);
   };
 
   return (
@@ -63,7 +82,8 @@ const App = () => {
             )}
           </>
         )}
-        {view === 'table' && <DataTable data={filteredData.length > 0 ? filteredData : data} />}
+        {/* {view === 'table' && <DataTable data={filteredData.length > 0 ? filteredData : data} />} */}
+        {view === 'table' && <AggregatedTable aggregatedData={aggregatedData} />}  
       </div>
     </div>
   );
