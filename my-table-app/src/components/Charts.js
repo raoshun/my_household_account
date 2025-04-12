@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Chart, ArcElement, PieController } from 'chart.js';
+import { Chart, ArcElement, PieController, Tooltip, Legend } from 'chart.js';
 
 // ブラウザ環境かどうかの判定
 const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
@@ -9,7 +9,7 @@ const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefine
 if (isBrowser) {
   // ブラウザ環境でのみ実行
   try {
-    Chart.register(ArcElement, PieController);
+    Chart.register(ArcElement, PieController, Tooltip, Legend);
   } catch (e) {
     console.error('Failed to register Chart.js components:', e);
   }
@@ -45,7 +45,11 @@ const Charts = ({ positiveChartData, negativeChartData, positiveTotal, negativeT
         negativeChartInstance.current = new Chart(negativeCtx, {
           type: 'pie',
           data: negativeChartData,
-          options: { ...options, onClick: handleClick, onHover: handleHover },
+          options: { 
+            ...options, 
+            onClick: (event, elements) => handleClick(event, elements, negativeChartData), 
+            onHover: (event, elements) => handleHover(event, elements, negativeChartData) 
+          },
         });
       }
     } catch (error) {

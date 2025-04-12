@@ -3,6 +3,7 @@ import { sortAndAggregateData } from '../utils/sortData';
 import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 import iconv from 'iconv-lite';
 import { calculatePositiveSum, calculateNegativeSum } from '../utils/calculateSums';
+import { splitDataBySign } from '../utils';
 
 /**
  * ファイル名を処理する単純なユーティリティ関数
@@ -129,32 +130,25 @@ export const handleFiles = (files, setters = {}) => {
               setAggregatedData(aggregated);
             }
             
-            // 簡易的なデータセットのサンプルを設定
+            // Chart.js用のデータを生成
+            const chartData = splitDataBySign(allData);
+            
+            // 円グラフデータをセット
             if (setPositiveChartData) {
-              setPositiveChartData({
-                labels: [],
-                datasets: [{ data: [], backgroundColor: [], hoverBackgroundColor: [] }]
-              });
+              setPositiveChartData(chartData.positiveData);
             }
             
             if (setNegativeChartData) {
-              setNegativeChartData({
-                labels: [],
-                datasets: [{ data: [], backgroundColor: [], hoverBackgroundColor: [] }]
-              });
+              setNegativeChartData(chartData.negativeData);
             }
-            
-            // 集計データから正と負の合計を計算
-            const positiveSum = calculatePositiveSum(allData);
-            const negativeSum = calculateNegativeSum(allData);
             
             // 合計値をセット
             if (setPositiveTotal) {
-              setPositiveTotal(positiveSum);
+              setPositiveTotal(chartData.positiveTotal);
             }
             
             if (setNegativeTotal) {
-              setNegativeTotal(negativeSum);
+              setNegativeTotal(chartData.negativeTotal);
             }
             
             // calculateCategoryTotals 関数を呼び出す
