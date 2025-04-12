@@ -1,10 +1,40 @@
 {
     "configurations": [
         {
-            "type": "msedge",
-            "name": "http://this",
+            "type": "node",
+            "name": "Debug Tests",
             "request": "launch",
-            "url": "http://this"
+            "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
+            "args": [
+                "test",
+                "--runInBand",
+                "--no-cache",
+                "--watchAll=false"
+            ],
+            "cwd": "${workspaceFolder}/my-table-app",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "Launch React App (Edge)",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/${input:reactAppFolder}",
+            "preLaunchTask": "react-table-app",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "type": "pickString",
+            "id": "reactAppFolder",
+            "description": "Select the React application folder",
+            "options": [
+                "my-table-app"
+            ]
         }
     ]
 }

@@ -1,0 +1,73 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "start-react-app",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/${input:reactAppFolder} && npm start",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "."
+        },
+        "background": {
+          "beginsPattern": "Starting the development server",
+          "endsPattern": "Compiled successfully|Failed to compile"
+        }
+      }
+    },
+    {
+      "type": "npm",
+      "script": "start",
+      "path": "my-table-app",
+      "problemMatcher": [],
+      "label": "npm: start - my-table-app",
+      "detail": "react-scripts start"
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "path": "my-table-app",
+      "group": "build",
+      "problemMatcher": [],
+      "label": "npm: build - my-table-app",
+      "detail": "react-scripts build"
+    },
+    {
+      "label": "react-table-app",
+      "type": "npm",
+      "script": "start",
+      "path": "my-table-app/",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting the development server",
+          "endsPattern": "Compiled successfully|Failed to compile"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "type": "pickString",
+      "id": "reactAppFolder",
+      "description": "Select the React application folder",
+      "options": [
+        "my-table-app"
+      ]
+    }
+  ]
+}

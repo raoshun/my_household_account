@@ -30,22 +30,36 @@ const DataTable = ({ data }) => {
   return (
     <table {...getTableProps()}>
       <thead>
-        {headerGroups.map((headerGroup, index) => (
-          <tr key={index} {...headerGroup.getHeaderGroupProps()}>
-            {headerGroup.headers.map((column, colIndex) => (
-              <th key={colIndex} {...column.getHeaderProps()}>{column.render('Header')}</th>
-            ))}
-          </tr>
-        ))}
+        {headerGroups.map((headerGroup, index) => {
+          const { key, ...restHeaderGroupProps } = headerGroup.getHeaderGroupProps();
+          return (
+            <tr key={key || index} {...restHeaderGroupProps}>
+              {headerGroup.headers.map((column, colIndex) => {
+                const { key: colKey, ...restColumnProps } = column.getHeaderProps();
+                return (
+                  <th key={colKey || `col-${colIndex}`} {...restColumnProps}>
+                    {column.render('Header')}
+                  </th>
+                );
+              })}
+            </tr>
+          );
+        })}
       </thead>
       <tbody {...getTableBodyProps()}>
         {rows.map((row, rowIndex) => {
           prepareRow(row);
+          const { key: rowKey, ...restRowProps } = row.getRowProps();
           return (
-            <tr key={rowIndex} {...row.getRowProps()}>
-              {row.cells.map((cell, cellIndex) => (
-                <td key={cellIndex} {...cell.getCellProps()}>{cell.render('Cell')}</td>
-              ))}
+            <tr key={rowKey || `row-${rowIndex}`} {...restRowProps}>
+              {row.cells.map((cell, cellIndex) => {
+                const { key: cellKey, ...restCellProps } = cell.getCellProps();
+                return (
+                  <td key={cellKey || `cell-${rowIndex}-${cellIndex}`} {...restCellProps}>
+                    {cell.render('Cell')}
+                  </td>
+                );
+              })}
             </tr>
           );
         })}

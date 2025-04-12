@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "test:watch": "jest --watch",
+    "test:watchAll": "jest --watchAll",
+    "lint": "eslint my-table-app/src/**/*.js",
+    "lint:fix": "eslint my-table-app/src/**/*.js --fix"
+  },
+  "dependencies": {
+    "prop-types": "^15.8.1"
+  }
+}

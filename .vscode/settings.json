@@ -1,7 +1,24 @@
 {
+  "editor.tabSize": 2,
+  "[javascript]": {
     "editor.tabSize": 2,
-    "[javascript]": {
-      "editor.tabSize": 2
-    }
+    "editor.formatOnSave": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+  "editor.defaultFormatter": "GitHub.copilot",
+  "prettier.printWidth": 120,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact"
+  ],
+  "jest.runMode": "on-demand",
+  "workbench.colorTheme": "Visual Studio Dark",
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "diffEditor.ignoreTrimWhitespace": false,
+  "editor.fontSize": 16,
+  "editor.lineHeight": 1.5
 }
-  
