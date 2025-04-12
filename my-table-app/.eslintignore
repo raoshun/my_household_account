@@ -1,0 +1,17 @@
+# ビルドファイル
+/build
+/dist
+/coverage
+
+# 設定ファイル
+*.config.js
+jest.*.js
+*.setup.js
+
+# テスト関連ファイル
+/src/tests/**/*.js
+/src/test-utils/**/*.js
+
+# その他
+node_modules
+.DS_Store

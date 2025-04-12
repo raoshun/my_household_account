@@ -26,10 +26,16 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint src/**/*.ts src/**/*.tsx",
+    "lint:fix": "eslint src/**/*.js src/**/*.jsx --fix",
     "test:watch": "react-scripts test --watch",
+    "test:watchAll": "react-scripts test --watchAll",
     "test:coverage": "react-scripts test --coverage --watchAll=false",
-    "test:debug": "react-scripts --inspect-brk test --runInBand --no-cache",
-    "test:ci": "react-scripts test --env=jsdom --watchAll=false"
+    "test:debug": "TEST_DEBUG=true react-scripts test --verbose",
+    "test:debug-file": "node src/tests/run-debug-test.js",
+    "test:watch-debug": "TEST_DEBUG=true react-scripts test --watch",
+    "test:ci": "react-scripts test --env=jsdom --watchAll=false",
+    "test:ci-debug": "TEST_DEBUG=true react-scripts test --watchAll=false --ci --verbose",
+    "test:single": "react-scripts test --testNamePattern"
   },
   "eslintConfig": {
     "extends": [

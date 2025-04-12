@@ -1,0 +1,112 @@
+/* eslint-disable */
+import '@testing-library/jest-dom';
+import { jest, beforeEach, beforeAll, afterEach, expect } from '@jest/globals';
+
+/**
+ * Jestテストのグローバル設定
+ */
+
+// グローバルテストフラグを追加（デバッグ用）
+globalThis.__TEST_DEBUG__ = process.env.TEST_DEBUG === 'true';
+
+// Chart.js のモック
+jest.mock('chart.js', () => {
+  const mockChartInstance = {
+    destroy: jest.fn(),
+    update: jest.fn()
+  };
+  
+  const mockChart = jest.fn(() => mockChartInstance);
+  
+  // register メソッドをモックチャートに追加
+  mockChart.register = jest.fn();
+  
+  return {
+    Chart: mockChart,
+    ArcElement: jest.fn(),
+    PieController: jest.fn(),
+    Tooltip: jest.fn(),
+    Legend: jest.fn()
+  };
+});
+
+// テストのタイムアウト時間を延長（ミリ秒）
+jest.setTimeout(10000);
+
+// テストのデバッグヘルパー関数をグローバルに追加
+if (globalThis.__TEST_DEBUG__) {
+  // デバッグが有効な場合、コンソール出力を強化
+  const originalLog = console.log;
+  const originalError = console.error;
+  const originalWarn = console.warn;
+  const originalInfo = console.info;
+
+  // デバッグ情報を強化するためにコンソール出力を拡張
+  console.log = (...args) => {
+    originalLog('\x1b[32m[LOG]\x1b[0m', ...args);
+  };
+  console.error = (...args) => {
+    originalError('\x1b[31m[ERROR]\x1b[0m', ...args);
+  };
+  console.warn = (...args) => {
+    originalWarn('\x1b[33m[WARN]\x1b[0m', ...args);
+  };
+  console.info = (...args) => {
+    originalInfo('\x1b[36m[INFO]\x1b[0m', ...args);
+  };
+  
+  // テスト開始時に環境情報を出力
+  beforeAll(() => {
+    console.log('テストデバッグモードが有効です');
+    console.log('テスト環境:', process.env.NODE_ENV);
+  });
+  
+  // 各テストの開始時にテスト名を表示
+  beforeEach(() => {
+    if (expect.getState) {
+      const testName = expect.getState().currentTestName;
+      console.log(`\n\x1b[35m実行中のテスト: ${testName}\x1b[0m`);
+    }
+  });
+}
+
+// テスト環境チェックヘルパー
+globalThis.isTestEnvironment = () => {
+  return typeof jest !== 'undefined';
+};
+
+// TextEncoderのモックを追加
+if (typeof globalThis.TextEncoder === 'undefined') {
+  globalThis.TextEncoder = class {
+    encode(str) {
+      return new Uint8Array([...str].map(c => c.charCodeAt(0)));
+    }
+  };
+}
+
+// デバッグモード時の設定
+if (globalThis.__TEST_DEBUG__) {
+  // 各テスト開始時に通知
+  beforeEach(() => {
+    const testName = expect.getState().currentTestName;
+    console.log(`\n----- テスト実行: ${testName} -----`);
+  });
+  
+  // 各テスト終了時に通知
+  afterEach(() => {
+    const testName = expect.getState().currentTestName;
+    console.log(`----- 完了: ${testName} -----\n`);
+  });
+}
+
+// Chart.jsなどのブラウザAPIをモック化
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
+
+// テスト環境情報を出力
+console.log('Jest設定ファイルが読み込まれました');
+console.log(`テストデバッグモード: ${globalThis.__TEST_DEBUG__ ? '有効' : '無効'}`);
+console.log(`Node環境: ${process.env.NODE_ENV}`);

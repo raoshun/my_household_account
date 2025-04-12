@@ -2,6 +2,85 @@
     "configurations": [
         {
             "type": "node",
+            "name": "Debug Current Test File",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
+            "args": [
+                "test",
+                "${relativeFile}",
+                "--runInBand",
+                "--no-cache",
+                "--watchAll=false",
+                "--verbose"
+            ],
+            "cwd": "${workspaceFolder}/my-table-app",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "env": {
+                "TEST_DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "name": "Debug Current Test",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
+            "args": [
+                "test",
+                "${fileBasename}",
+                "--runInBand",
+                "--no-cache",
+                "--watchAll=false",
+                "--verbose"
+            ],
+            "cwd": "${workspaceFolder}/my-table-app",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "env": {
+                "TEST_DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "name": "Debug Single Test",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
+            "args": [
+                "test",
+                "--testNamePattern",
+                "${input:testName}",
+                "--runInBand",
+                "--no-cache",
+                "--watchAll=false",
+                "--verbose"
+            ],
+            "cwd": "${workspaceFolder}/my-table-app",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "env": {
+                "TEST_DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
+            "name": "Debug All Tests",
+            "request": "launch",
+            "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
+            "args": [
+                "test",
+                "--runInBand",
+                "--no-cache",
+                "--watchAll=false"
+            ],
+            "cwd": "${workspaceFolder}/my-table-app",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "env": {
+                "TEST_DEBUG": "true"
+            }
+        },
+        {
+            "type": "node",
             "name": "Debug Tests",
             "request": "launch",
             "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
@@ -35,6 +114,12 @@
             "options": [
                 "my-table-app"
             ]
+        },
+        {
+            "id": "testName",
+            "type": "promptString",
+            "description": "テスト名を入力してください (正規表現を使用可能)",
+            "default": "renders"
         }
     ]
 }

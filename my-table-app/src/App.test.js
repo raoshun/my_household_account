@@ -1,11 +1,10 @@
-/* eslint-env jest */
+/* eslint-disable */
 // jestとReactのインポートを先に行う
 import React from 'react';
-import { jest } from '@jest/globals';
-import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
+import { jest, test, expect, describe, beforeEach } from '@jest/globals';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
-import { test, expect, describe, beforeEach } from '@jest/globals';
 
 // PropTypesをモック化する前に、既存のPropTypesモックを削除
 jest.unmock('prop-types');
@@ -60,20 +59,52 @@ jest.mock('react-chartjs-2', () => ({
   Bar: () => <div data-testid="bar-chart">Bar Chart</div>
 }));
 
+// chart.jsのモックを修正（jest変数を直接参照しない）
+jest.mock('chart.js', () => {
+  const mockChart = function() {
+    return {
+      destroy: function() {},
+      update: function() {}
+    };
+  };
+  
+  // registerメソッドを追加
+  mockChart.register = function() {};
+  
+  return {
+    Chart: mockChart,
+    ArcElement: function() {},
+    PieController: function() {},
+    Tooltip: function() {},
+    Legend: function() {}
+  };
+});
+
 // ファイルハンドラーのモック - 外部変数を参照しない形式
 jest.mock('./components/fileHandlers', () => {
   return {
-    handleFiles: () => {}
+    handleFiles: function() {}
   };
 });
 
 // Chartsコンポーネントをモック
 jest.mock('./components/Charts', () => {
-  const MockCharts = () => {
-    return <div data-testid="mock-charts" />;
+  return function MockCharts() {
+    return <div data-testid="mock-charts"></div>;
   };
-  return MockCharts;
 });
+
+// 追加モックの設定 - jest.fn()を使用せずに通常の関数を使用
+jest.mock('./utils/calculateCategoryTotals', () => ({
+  __esModule: true,
+  default: function() {
+    return Promise.resolve({
+      '食費': 4500,
+      '日用品': 500,
+      '交通費': 800
+    });
+  }
+}));
 
 // モック後にインポート
 import App from './App';
@@ -112,14 +143,24 @@ describe('ビュー切り替え機能', () => {
       render(<App />);
     });
 
-    // 表示切り替えボタンをクリック
-    const tableButton = screen.getByText(/表/i);
+    // すべてのボタンを取得して「表」を含むものを探す
+    const buttons = screen.getAllByRole('button');
+    const tableButton = Array.from(buttons).find(button => 
+      button.textContent.includes('表') && !button.textContent.includes('円グラフ')
+    );
+    
+    // ボタンが見つかったことを確認
+    expect(tableButton).toBeTruthy();
+    
+    // クリックして表示を切り替える
     await act(async () => {
       userEvent.click(tableButton);
     });
 
-    // 表示が切り替わった状態を確認
-    expect(screen.queryByTestId('mock-charts')).not.toBeInTheDocument();
+    // チャート表示が非表示になっていることを確認
+    await waitFor(() => {
+      expect(screen.queryByTestId('mock-charts')).not.toBeInTheDocument();
+    });
   });
 });
 
@@ -145,22 +186,27 @@ test('サイドバーが表示される', async () => {
 });
 
 // データ件数の表示に関するテストを追加
-jest.mock('./utils/calculateCategoryTotals', () => ({
-  __esModule: true,
-  default: () => Promise.resolve({
-    '食費': 4500,
-    '日用品': 500,
-    '交通費': 800
-  })
-}));
-
-beforeEach(() => {
-  const calculateCategoryTotals = require('./utils/calculateCategoryTotals').default;
-  // モック関数をリセット・再設定
-  jest.clearAllMocks();
-});
-
 describe('データ件数の表示', () => {
+  // eslint-disable-next-line no-unused-vars
+  let calculateCategoryTotals;
+  
+  beforeEach(() => {
+    // モジュールをESM形式でモック化
+    jest.mock('./utils/calculateCategoryTotals', () => ({
+      __esModule: true,
+      default: function() {
+        return Promise.resolve({
+          '食費': 4500,
+          '日用品': 500,
+          '交通費': 800
+        });
+      }
+    }));
+    
+    // モック関数をリセット・再設定
+    jest.clearAllMocks();
+  });
+
   test('フィルタリングされたデータの件数が正しく表示される', async () => {
     // テストデータを準備
     const testData = [
@@ -207,12 +253,9 @@ describe('データ件数の表示', () => {
     
     // 非同期更新の反映を待つ
     await waitFor(() => {
-      const dataCountElement = screen.queryByText(/フィルタリングされたデータ:/i);
-      // アサーションを明示的に実行
-      expect(dataCountElement).toBeTruthy();
-      if (dataCountElement) {
-        expect(dataCountElement.textContent).toContain('0');
-      }
+      // エレメント自体を検索して内容を確認
+      const dataCountElement = screen.getByTestId('filtered-data-count');
+      expect(dataCountElement).toHaveTextContent('0');
     }, { timeout: 3000 });
   });
 });

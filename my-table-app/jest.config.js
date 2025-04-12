@@ -1,47 +1,65 @@
-/* eslint-disable no-undef */
-/* eslint-env node */
+/* eslint-disable */
 module.exports = {
   // テスト環境
   testEnvironment: 'jsdom',
   
-  // テストの場所
+  // テスト対象のファイルパターン
   testMatch: [
-    '**/__tests__/**/*.js?(x)',
-    '**/?(*.)+(spec|test).js?(x)'
+    '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
+    '<rootDir>/src/**/*.{spec,test}.{js,jsx,ts,tsx}'
   ],
   
-  // モック設定
-  moduleNameMapper: {
-    '\\.(css|less|scss|sass)$': '<rootDir>/src/tests/__mocks__/styleMock.js',
-    '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': '<rootDir>/src/tests/__mocks__/fileMock.js',
-    '\\.csv$': '<rootDir>/src/tests/__mocks__/csvMock.js'
-  },
+  // 無視するファイルパターン
+  testPathIgnorePatterns: [
+    '/node_modules/', 
+    '/build/'
+  ],
+  
+  // カバレッジの設定
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx,ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/index.js',
+    '!src/serviceWorker.js',
+    '!src/reportWebVitals.js'
+  ],
   
   // テストのセットアップファイル
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
   
-  // カバレッジレポート
-  collectCoverageFrom: [
-    'src/**/*.{js,jsx}',
-    '!src/index.js',
-    '!src/reportWebVitals.js'
-  ],
-  
-  // 変換設定
-  transform: {
-    '^.+\\.[t|j]sx?$': 'babel-jest'
+  // モックの設定
+  moduleNameMapper: {
+    // スタイルファイルやアセットのモック
+    '\\.(css|less|sass|scss)$': '<rootDir>/src/__mocks__/styleMock.js',
+    '\\.(gif|ttf|eot|svg|png|jpg|jpeg)$': '<rootDir>/src/__mocks__/fileMock.js',
+    // chart.jsを常に同じモックに置き換え
+    'chart.js$': '<rootDir>/src/__mocks__/chart.js'
   },
   
-  // 変換を無視するパターン
+  // トランスフォーマー
+  transform: {
+    '^.+\\.(js|jsx|ts|tsx)$': '<rootDir>/node_modules/babel-jest'
+  },
+  
+  // トランスフォームを無視するファイル
   transformIgnorePatterns: [
-    '/node_modules/(?!papaparse|chart.js).+\\.js$'
+    '/node_modules/',
+    '^.+\\.module\\.(css|sass|scss)$'
   ],
   
-  // テストタイムアウト設定
-  testTimeout: 10000,
+  // 設定ファイル
+  moduleFileExtensions: [
+    'js',
+    'jsx',
+    'json',
+    'node'
+  ],
   
-  // カスタムテスト環境変数
-  globals: {
-    __TEST__: true
-  }
+  // コンソールの設定
+  verbose: true,
+  
+  // グローバル設定のリセット
+  resetMocks: false,
+  restoreMocks: true,
+  clearMocks: true
 };

@@ -1,38 +1,210 @@
-.App {
-  text-align: center;
+/* グローバルスタイル */
+:root {
+  --primary-color: #3f51b5;
+  --secondary-color: #f50057;
+  --background-color: #f5f7fa;
+  --card-bg-color: #ffffff;
+  --text-color: #333333;
+  --text-light: #666666;
+  --border-color: #e0e0e0;
+  --success-color: #4caf50;
+  --error-color: #f44336;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --radius: 12px;
+  --transition: 0.3s ease;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  color: var(--text-color);
+  background-color: var(--background-color);
+  line-height: 1.5;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+/* アプリ全体のレイアウト */
+.app-container {
+  display: flex;
   min-height: 100vh;
+}
+
+/* メインコンテンツエリア */
+.main-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* ページヘッダー */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* フィルターコンテナ */
+.filters-container {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.filter-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-input label {
+  font-weight: 500;
+  color: var(--text-light);
+}
+
+.modern-input {
+  padding: 10px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: var(--transition);
+  outline: none;
+  width: 200px;
+}
+
+.modern-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.2);
+}
+
+/* データ概要カード */
+.data-summary-card {
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--card-bg-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.data-summary-item {
+  display: flex;
+  align-items: baseline;
+}
+
+.data-summary-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-light);
+  margin-right: 8px;
+}
+
+.data-summary-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.data-summary-unit {
+  font-size: 14px;
+  color: var(--text-light);
+  margin-left: 4px;
+}
+
+/* コンテンツコンテナ */
+.content-container {
+  background-color: var(--card-bg-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+/* チャートセクション */
+.chart-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* テーブルセクション */
+.table-section {
+  overflow-x: auto;
+}
+
+/* ホバー情報カード */
+.hover-info-card {
+  background-color: var(--card-bg-color);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  border-left: 4px solid var(--primary-color);
+  margin-top: 16px;
+}
+
+.hover-info-card h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 18px;
+  color: var(--primary-color);
+}
+
+.hover-info-card p {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+/* データが空の時の表示 */
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  padding: 60px 0;
+  color: var(--text-light);
+  text-align: center;
 }
 
-.App-link {
-  color: #61dafb;
+.empty-state-icon {
+  font-size: 60px;
+  margin-bottom: 16px;
+  opacity: 0.5;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+.empty-state p {
+  margin: 8px 0;
+}
+
+.empty-state-hint {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
   }
-  to {
-    transform: rotate(360deg);
+  
+  .data-summary-card {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

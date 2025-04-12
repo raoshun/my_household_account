@@ -7,6 +7,7 @@ import { chartOptions } from './config/chartOptions';
 import calculateCategoryTotals from './utils/calculateCategoryTotals';
 import { filterData } from './utils/sortData';
 import PropTypes from 'prop-types';
+import './App.css';
 
 const App = ({ initialData = [] }) => {
   const [data, setData] = useState(initialData);
@@ -94,46 +95,78 @@ const App = ({ initialData = [] }) => {
   }, [initialData]);
 
   return (
-    <div className="App" style={{ display: 'flex' }}>
+    <div className="app-container">
       <Sidebar setView={setView} handleFiles={handleFileUpload} />
-      <div className="content" style={{ flex: 1, padding: '10px' }}>
-        <div className="filters">
-          <input 
-            type="text" 
-            placeholder="大項目でフィルター" 
-            onChange={(e) => handleFilterChange('大項目', e.target.value)}
-          />
+      <main className="main-content">
+        <div className="page-header">
+          <h1>家計簿分析</h1>
+          <div className="filters-container">
+            <div className="filter-input">
+              <label htmlFor="category-filter">カテゴリ:</label>
+              <input 
+                id="category-filter"
+                type="text" 
+                placeholder="大項目でフィルター" 
+                onChange={(e) => handleFilterChange('大項目', e.target.value)}
+                className="modern-input"
+              />
+            </div>
+          </div>
         </div>
-        <div className="data-summary">
-          <div className="data-count">フィルタリングされたデータ: <span data-testid="filtered-data-count">{filteredData.length}</span>件</div>
-          <div>カテゴリ別合計: <span data-testid="category-count">{Object.keys(categoryTotals).length}</span>カテゴリ</div>
-          <div>総データ件数: <span data-testid="total-data-count">{data.length}</span>件</div>
+        
+        <div className="data-summary-card">
+          <div className="data-summary-item">
+            <span className="data-summary-label">フィルタリングされたデータ:</span> 
+            <span className="data-summary-value" data-testid="filtered-data-count">{filteredData.length}</span>
+            <span className="data-summary-unit">件</span>
+          </div>
+          <div className="data-summary-item">
+            <span className="data-summary-label">カテゴリ別合計:</span> 
+            <span className="data-summary-value" data-testid="category-count">{Object.keys(categoryTotals).length}</span>
+            <span className="data-summary-unit">カテゴリ</span>
+          </div>
+          <div className="data-summary-item">
+            <span className="data-summary-label">総データ件数:</span> 
+            <span className="data-summary-value" data-testid="total-data-count">{data.length}</span>
+            <span className="data-summary-unit">件</span>
+          </div>
         </div>
-        {view === 'chart' && (
-          <>
-            <Charts
-              positiveChartData={positiveChartData}
-              negativeChartData={negativeChartData}
-              positiveTotal={positiveTotal}
-              negativeTotal={negativeTotal}
-              options={chartOptions}
-              onHover={handleHover}
-              onClick={handleClick}
-            />
-            {hoverInfo && hoverInfo.subtotal !== undefined && (
-              <div>
-                <p>項目名: {hoverInfo.label}</p>
-                <p>小計: ¥{hoverInfo.subtotal.toLocaleString()}</p>
-              </div>
-            )}
-          </>
-        )}
-        {view === 'table' && (
-          data.length ? 
-            <AggregatedTable aggregatedData={aggregatedData} /> : 
-            <p>データがありません。CSVファイルをアップロードしてください。</p>
-        )}
-      </div>
+        
+        <div className="content-container">
+          {view === 'chart' && (
+            <div className="chart-section">
+              <Charts
+                positiveChartData={positiveChartData}
+                negativeChartData={negativeChartData}
+                positiveTotal={positiveTotal}
+                negativeTotal={negativeTotal}
+                options={chartOptions}
+                onHover={handleHover}
+                onClick={handleClick}
+              />
+              {hoverInfo && hoverInfo.subtotal !== undefined && (
+                <div className="hover-info-card">
+                  <h3>詳細情報</h3>
+                  <p><strong>項目名:</strong> {hoverInfo.label}</p>
+                  <p><strong>小計:</strong> ¥{hoverInfo.subtotal.toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          )}
+          {view === 'table' && (
+            <div className="table-section">
+              {data.length ? 
+                <AggregatedTable aggregatedData={aggregatedData} /> : 
+                <div className="empty-state">
+                  <div className="empty-state-icon">📊</div>
+                  <p>データがありません</p>
+                  <p className="empty-state-hint">CSVファイルをアップロードしてください</p>
+                </div>
+              }
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 };
@@ -143,11 +176,9 @@ App.propTypes = {
   initialData: PropTypes.array
 };
 
-// テスト用にセッター関数をエクスポート
-if (process.env.NODE_ENV === 'test') {
-  App.__testExports = {
-    setData: null // 実際のコンポーネントレンダリング時に設定される
-  };
-}
+// テスト用にセッター関数をエクスポート - process.envを使わない形式に変更
+App.__testExports = {
+  setData: null // 実際のコンポーネントレンダリング時に設定される
+};
 
 export default App;
