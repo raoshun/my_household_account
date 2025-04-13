@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
 import { describe, test, expect } from '@jest/globals';
@@ -31,67 +31,29 @@ describe('App Debug Tests', () => {
     expect(true).toBe(true);
   });
 
-  // 表ボタンのクリックをデバッグするテスト
-  test('表ボタンクリックのデバッグ', async () => {
-    await act(async () => {
-      render(<App />);
-    });
+  // 表ボタンクリックのデバッグテストを修正
+  test('表ボタンクリックのデバッグ', () => {
+    render(<App />);
     
-    console.log('=== 表ボタンの検索 ===');
+    console.log('=== 表示切り替えボタンの検索 ===');
     
-    // 様々な方法でボタンを検索してみる
+    // 「表」ボタンが廃止されたので「生データ」ボタンに変更
     try {
-      const buttonByText = screen.getByText('表');
-      console.log('getByText("表") で見つかりました:', buttonByText);
-    } catch (_) {
-      console.log('getByText("表") では見つかりませんでした');
-    }
-    
-    try {
-      const buttonByRegex = screen.getByText(/表$/);
-      console.log('getByText(/表$/) で見つかりました:', buttonByRegex);
-    } catch (_) {
-      console.log('getByText(/表$/) では見つかりませんでした');
-    }
-    
-    try {
-      const buttonByEmoji = screen.getByText(/📋/);
-      console.log('getByText(/📋/) で見つかりました:', buttonByEmoji);
-    } catch (_) {
-      console.log('getByText(/📋/) では見つかりませんでした');
-    }
-    
-    try {
-      const buttonByRole = screen.getByRole('button', { name: /表/ });
-      console.log('getByRole("button", { name: /表/ }) で見つかりました:', buttonByRole);
-    } catch (_) {
-      console.log('getByRole("button", { name: /表/ }) では見つかりませんでした');
-    }
-    
-    try {
-      const buttonByFullEmoji = screen.getByText(/📋 表/);
-      console.log('getByText(/📋 表/) で見つかりました:', buttonByFullEmoji);
-    } catch (_) {
-      console.log('getByText(/📋 表/) では見つかりませんでした');
-    }
-    
-    try {
-      const buttonByRoleWithEmoji = screen.getByRole('button', { name: /📋 表/ });
-      console.log('getByRole("button", { name: /📋 表/ }) で見つかりました:', buttonByRoleWithEmoji);
+      const dataButton = screen.getByRole('button', { name: /📄.*生データ/i });
+      console.log('生データボタンが見つかりました:', dataButton.textContent);
       
-      // 成功したらクリックしてみる
-      await act(async () => {
-        userEvent.click(buttonByRoleWithEmoji);
-      });
-      
-      // 表示が切り替わったか確認
-      const chartsElement = screen.queryByTestId('mock-charts');
-      console.log('チャート要素が非表示になったか:', chartsElement === null);
-    } catch (_) {
-      console.log('getByRole("button", { name: /📋 表/ }) では見つかりませんでした');
+      // ボタンをクリックしてテーブル表示に切り替え
+      fireEvent.click(dataButton);
+    } catch (e) {
+      console.log('生データボタンが見つかりませんでした');
     }
     
-    // ダミーアサーションを追加してテストを通過させる
-    expect(true).toBe(true);
+    // ダッシュボードボタンもチェック
+    try {
+      const dashboardButton = screen.getByRole('button', { name: /📊.*ダッシュボード/i });
+      console.log('ダッシュボードボタンが見つかりました:', dashboardButton.textContent);
+    } catch (e) {
+      console.log('ダッシュボードボタンが見つかりませんでした');
+    }
   });
 });

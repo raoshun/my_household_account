@@ -11,23 +11,28 @@ globalThis.__TEST_DEBUG__ = process.env.TEST_DEBUG === 'true';
 
 // Chart.js のモック
 jest.mock('chart.js', () => {
-  const mockChartInstance = {
-    destroy: jest.fn(),
-    update: jest.fn()
-  };
-  
-  const mockChart = jest.fn(() => mockChartInstance);
-  
-  // register メソッドをモックチャートに追加
-  mockChart.register = jest.fn();
-  
   return {
-    Chart: mockChart,
-    ArcElement: jest.fn(),
-    PieController: jest.fn(),
-    Tooltip: jest.fn(),
-    Legend: jest.fn()
+    Chart: jest.fn().mockImplementation(() => {
+      return {
+        destroy: jest.fn(),
+        update: jest.fn(),
+        data: {},
+        options: {}
+      };
+    }),
+    registerables: []
   };
+});
+
+jest.mock('chart.js/auto', () => {
+  return jest.fn().mockImplementation(() => {
+    return {
+      destroy: jest.fn(),
+      update: jest.fn(),
+      data: {},
+      options: {}
+    };
+  });
 });
 
 // テストのタイムアウト時間を延長（ミリ秒）

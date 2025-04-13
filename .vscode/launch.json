@@ -70,7 +70,8 @@
                 "test",
                 "--runInBand",
                 "--no-cache",
-                "--watchAll=false"
+                "--watchAll=false",
+                "--verbose"
             ],
             "cwd": "${workspaceFolder}/my-table-app",
             "console": "integratedTerminal",

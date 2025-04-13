@@ -43,7 +43,7 @@ const mockGetContext = jest.fn(() => ({
 }));
 
 // HTML Canvas要素のモック
-if (window.HTMLCanvasElement) {
+if (typeof window !== 'undefined' && window.HTMLCanvasElement) {
   Object.defineProperty(window.HTMLCanvasElement.prototype, 'getContext', {
     writable: true,
     value: mockGetContext
@@ -51,54 +51,90 @@ if (window.HTMLCanvasElement) {
 }
 
 // Chart.jsのモック
-jest.mock('chart.js', () => ({
-  Chart: jest.fn().mockImplementation(() => ({
+jest.mock('chart.js', () => {
+  const mockChartInstance = {
     destroy: jest.fn(),
     update: jest.fn(),
     data: { labels: [], datasets: [] }
-  })),
-  ArcElement: jest.fn(),
-  PieController: jest.fn(), 
-  Tooltip: jest.fn(),
-  Legend: jest.fn(),
-  register: jest.fn()
-}));
+  };
 
-// テストのデバッグヘルパー関数をグローバルに追加
-if (globalThis.__TEST_DEBUG__) {
-  // デバッグが有効な場合、コンソール出力を強化
-  const originalLog = console.log;
-  const originalError = console.error;
-  const originalWarn = console.warn;
-  const originalInfo = console.info;
+  const mockChart = jest.fn(() => mockChartInstance);
+  
+  // registerメソッドを追加
+  mockChart.register = jest.fn();
+  
+  return {
+    Chart: mockChart,
+    ArcElement: jest.fn(),
+    PieController: jest.fn(), 
+    Tooltip: jest.fn(),
+    Legend: jest.fn(),
+    register: jest.fn()
+  };
+});
 
-  // デバッグ情報を強化するためにコンソール出力を拡張
+// テストデバッグ用の設定
+const isDebugMode = process.env.TEST_DEBUG === 'true';
+
+// デバッグログの設定
+const originalLog = console.log;
+const originalInfo = console.info;
+const originalWarn = console.warn;
+const originalError = console.error;
+
+// ログラッパー
+if (isDebugMode) {
   console.log = (...args) => {
-    originalLog('\x1b[32m[LOG]\x1b[0m', ...args);
+    originalLog("[LOG]", ...args);
   };
-  console.error = (...args) => {
-    originalError('\x1b[31m[ERROR]\x1b[0m', ...args);
-  };
-  console.warn = (...args) => {
-    originalWarn('\x1b[33m[WARN]\x1b[0m', ...args);
-  };
+  
   console.info = (...args) => {
-    originalInfo('\x1b[36m[INFO]\x1b[0m', ...args);
+    originalInfo("[INFO]", ...args);
   };
   
-  // テスト開始時に環境情報を出力
-  beforeAll(() => {
-    console.log('テストデバッグモードが有効です');
-    console.log('テスト環境:', process.env.NODE_ENV);
-  });
+  console.warn = (...args) => {
+    originalWarn("[WARN]", ...args);
+  };
   
-  // 各テストの開始時にテスト名を表示
-  beforeEach(() => {
-    if (expect.getState) {
-      const testName = expect.getState().currentTestName;
-      console.log(`\n\x1b[35m実行中のテスト: ${testName}\x1b[0m`);
-    }
+  console.error = (...args) => {
+    originalError("[ERROR]", ...args);
+  };
+
+  // テスト開始時にデバッグモードを表示
+  beforeAll(() => {
+    console.log("テストデバッグモードが有効です");
+    console.log("テスト環境:", process.env.NODE_ENV);
   });
+
+  // 各テスト実行前に情報表示
+  beforeEach(() => {
+    const testPath = expect.getState().testPath;
+    const testName = expect.getState().currentTestName;
+    console.log("\n実行中のテスト:", testName);
+  });
+
+  // UIボタン検索デバッグヘルパー
+  globalThis.debugButtons = (screen) => {
+    console.log('=== 利用可能なボタン ===');
+    try {
+      const buttons = screen.getAllByRole('button');
+      console.log(`全ボタン: ${buttons.length}件`);
+      buttons.forEach((button, index) => {
+        console.log(`[${index}] "${button.textContent}" (${button.getAttribute('class') || 'クラスなし'})`);
+      });
+    } catch (e) {
+      console.log('ボタンが見つかりませんでした:', e.message);
+    }
+  };
+} else {
+  // デバッグモード無効時は最小限のログ
+  console.log = () => {};
+  console.info = () => {};
+  console.warn = () => {};
+  // エラーのみ表示
+  console.error = (...args) => {
+    originalError(...args);
+  };
 }
 
 // React警告のコンソール出力を抑制（テスト実行時のみ）
@@ -129,15 +165,71 @@ console.error = (...args) => {
 
 // ResizeObserver APIのモック
 class MockResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  constructor(callback) {
+    this.callback = callback;
+    this.observedElements = new Set();
+  }
+  
+  observe(element) {
+    // 要素を記録して監視
+    this.observedElements.add(element);
+  }
+  
+  unobserve(element) {
+    // 要素の監視を解除
+    this.observedElements.delete(element);
+  }
+  
+  disconnect() {
+    // すべての監視を解除
+    this.observedElements.clear();
+  }
+  
+  // テスト用：リサイズイベントをシミュレート
+  simulateResize(element, contentRect = { width: 100, height: 100 }) {
+    if (this.observedElements.has(element)) {
+      this.callback([{ target: element, contentRect }]);
+      return true;
+    }
+    return false;
+  }
 }
 
 // ResizeObserverが未定義の場合はモックをグローバルに設定
 if (typeof window !== 'undefined' && !window.ResizeObserver) {
   window.ResizeObserver = MockResizeObserver;
 }
+
+// ResizeObserver テスト用ヘルパー関数
+globalThis.testResizeObserver = (element) => {
+  // 現在のResizeObserverインスタンスを探す
+  const mockInstances = [];
+  for (const key in element) {
+    if (key.startsWith('__resizeObserver') && element[key] instanceof window.ResizeObserver) {
+      mockInstances.push(element[key]);
+    }
+  }
+  
+  return {
+    // ResizeObserverインスタンスの有無を確認
+    exists: () => mockInstances.length > 0,
+    // リサイズイベントをシミュレート
+    simulateResize: (contentRect) => {
+      if (mockInstances.length > 0) {
+        mockInstances[0].simulateResize(element, contentRect);
+        return true;
+      }
+      return false;
+    },
+    // ResizeObserverが対象要素を監視しているか確認
+    isObserving: () => {
+      if (mockInstances.length > 0) {
+        return mockInstances[0].observedElements.has(element);
+      }
+      return false;
+    }
+  };
+};
 
 // テスト環境チェックヘルパー
 globalThis.isTestEnvironment = () => {

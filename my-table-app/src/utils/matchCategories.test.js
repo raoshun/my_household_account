@@ -1,109 +1,39 @@
-/* eslint-env jest */
-// デフォルトインポートを使用
+// matchCategories.test.js
+import { jest, test, expect, describe, beforeEach } from '@jest/globals';
+
+// モックデータ（モジュールの外部で定義）
+const mockCategoryData = [
+  { "大項目": "食費", "type": "expense", "frequency": "daily" },
+  { "大項目": "日用品", "type": "expense", "frequency": "weekly" },
+  { "大項目": "交通費", "type": "expense", "frequency": "daily" }
+];
+
+// ファクトリー関数を使用せず、直接オブジェクトを返すようにモック
+jest.mock('./fetchCategories', () => ({
+  fetchCategories: () => Promise.resolve(mockCategoryData)
+}));
+
+// デフォルトインポートに修正
 import matchCategories from './matchCategories';
-import fetchCategories from './fetchCategories';
-import loadCategories from './loadCategories';
-import { describe, it, expect, beforeEach, jest, test } from '@jest/globals';
-
-// fetchCategoriesをモック化
-jest.mock('./fetchCategories');
-
-// loadCategoriesをモック化
-jest.mock('./loadCategories');
 
 describe('matchCategories', () => {
-  beforeEach(() => {
-    loadCategories.mockClear();
-    fetchCategories.mockClear();
+  test('正確に一致するカテゴリを見つける', async () => {
+    const expense = { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 };
     
-    // デフォルトの実装を設定
-    fetchCategories.mockImplementation(() => {
-      return [
-        { '大項目': '食費', 'type': '必需品', 'frequency': '定期' },
-        { '大項目': '交通費', 'type': '必需品', 'frequency': '定期' },
-        { '大項目': '娯楽', 'type': '娯楽', 'frequency': '臨時' },
-      ];
-    });
-  });
-
-  test('should add type and frequency to expense with matching category', async () => {
-    // カテゴリのモックデータを設定
-    loadCategories.mockResolvedValue([
-      { name: '食費', type: '必需品', frequency: '定期' },
-      { name: '外食', type: '娯楽', frequency: '臨時' }
-    ]);
-
-    const expense = { '大項目': '食費', '金額（円）': 1000 };
     const result = await matchCategories(expense);
-    
     expect(result).toEqual({
       '大項目': '食費',
+      '中項目': '食料品',
       '金額（円）': 1000,
-      type: '必需品',
-      frequency: '定期'
+      'type': 'expense',
+      'frequency': 'daily'
     });
   });
-
-  test('should return original expense when no matching category', async () => {
-    loadCategories.mockResolvedValue([
-      { name: '食費', type: '必需品', 'frequency': '定期' }
-    ]);
-
-    const expense = { '大項目': '旅行', '金額（円）': 5000 };
-    const result = await matchCategories(expense);
+  
+  test('存在しないカテゴリは元のデータを返す', async () => {
+    const expense = { '大項目': '未分類', '中項目': 'その他', '金額（円）': 500 };
     
+    const result = await matchCategories(expense);
     expect(result).toEqual(expense);
-  });
-
-  it('should handle invalid categories data', async () => {
-    const expense = {
-      '大項目': '食費',
-      '金額（円）': 1000,
-    };
-    
-    const result = await matchCategories(expense);
-    
-    // 期待値を実際の結果と一致させる
-    const expectedResult = {
-      '大項目': '食費',
-      '金額（円）': 1000,
-      'frequency': '定期',
-      'type': '必需品'
-    };
-    expect(result).toEqual(expectedResult);
-  });
-
-  it('should match expense categories correctly', async () => {
-    const expense = {
-      '大項目': '食費',
-      '金額（円）': 1000,
-    };
-    
-    const result = await matchCategories(expense);
-    
-    // 期待値を実際の結果に合わせる
-    expect(result).toEqual({
-      '大項目': '食費',
-      '金額（円）': 1000,
-      'frequency': '定期',
-      'type': '必需品'
-    });
-  });
-
-  it('should handle expected category data', async () => {
-    const expense = { 
-      "大項目": "食費", 
-      "金額（円）": 1000 
-    };
-    
-    const result = await matchCategories(expense);
-    
-    // 期待値を明示的に設定
-    expect(result).toEqual({
-      "大項目": "食費",
-      "金額（円）": 1000,
-      "frequency": "定期",
-      "type": "必需品"
-    });
   });
 });

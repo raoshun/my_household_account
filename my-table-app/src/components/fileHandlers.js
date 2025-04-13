@@ -2,7 +2,6 @@ import { parse } from 'papaparse';
 import { sortAndAggregateData } from '../utils/sortData';
 import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 import iconv from 'iconv-lite';
-import { calculatePositiveSum, calculateNegativeSum } from '../utils/calculateSums';
 import { splitDataBySign } from '../utils';
 
 /**
@@ -98,7 +97,8 @@ export const handleFiles = (files, setters = {}) => {
     setNegativeTotal,
     setAggregatedData,
     setCategoryTotals,
-    setIsLoading
+    setIsLoading,
+    setError // エラー設定関数を追加
   } = setters;
   
   if (setIsLoading) {
@@ -120,10 +120,10 @@ export const handleFiles = (files, setters = {}) => {
         
         // すべてのファイル処理が完了したら結果を設定
         if (filesProcessed === files.length) {
+          // 基本データをセット - 空配列でも常にセットする
+          setData(allData);
+          
           if (allData.length > 0) {
-            // 基本データをセット
-            setData(allData);
-            
             // 集計データを計算・セット
             const aggregated = sortAndAggregateData(allData);
             if (setAggregatedData) {
@@ -166,8 +166,20 @@ export const handleFiles = (files, setters = {}) => {
                   if (setCategoryTotals) {
                     setCategoryTotals({});
                   }
+                  // エラー処理を追加
+                  if (setError) {
+                    setError('カテゴリ合計の計算中にエラーが発生しました');
+                  }
                 });
             }
+          } else {
+            // 空の配列の場合も必要なデータを初期化する
+            if (setAggregatedData) setAggregatedData({});
+            if (setPositiveChartData) setPositiveChartData({ labels: [], datasets: [{ data: [] }] });
+            if (setNegativeChartData) setNegativeChartData({ labels: [], datasets: [{ data: [] }] });
+            if (setPositiveTotal) setPositiveTotal(0);
+            if (setNegativeTotal) setNegativeTotal(0);
+            if (setCategoryTotals) setCategoryTotals({});
           }
           
           if (setIsLoading) {
@@ -179,6 +191,11 @@ export const handleFiles = (files, setters = {}) => {
       (error) => {
         console.error('Error processing file:', file.name, error);
         filesProcessed++;
+        
+        // エラーハンドラーが提供されていれば呼び出す
+        if (setError) {
+          setError(`ファイル処理エラー: ${file.name} - ${error.message || 'Unknown error'}`);
+        }
         
         // エラーがあっても他のファイルの処理を続行
         if (filesProcessed === files.length && setIsLoading) {

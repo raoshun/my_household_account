@@ -1,4 +1,4 @@
-import fetchCategories from './fetchCategories';
+import { fetchCategories } from './fetchCategories';
 
 /**
  * 経費項目にカテゴリ情報をマッチングする関数
@@ -9,7 +9,7 @@ import fetchCategories from './fetchCategories';
 async function matchCategories(expense, categoryKey = '大項目') {
   if (!expense || typeof expense !== 'object') {
     console.warn('matchCategories: Invalid expense data');
-    return {};
+    return expense; // 空オブジェクトではなく元のデータを返す
   }
   
   try {

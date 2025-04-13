@@ -1,30 +1,48 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import ReactFileReader from 'react-file-reader';
 import './Sidebar.css';
 
-const Sidebar = ({ setView, handleFiles }) => {
+const Sidebar = ({ setView, handleFiles, currentView }) => {
+    const [expanded, setExpanded] = useState(false);
+    
+    const toggleSidebar = () => {
+        setExpanded(!expanded);
+    };
+    
+    const handleViewChange = (view) => {
+        setView(view);
+        if (window.innerWidth <= 768) {
+            setExpanded(false);
+        }
+    };
+
     return (
-        <div className="sidebar">
+        <div className={`sidebar ${expanded ? 'expanded' : ''}`}>
             <div className="sidebar-header">
                 <h2>家計簿分析</h2>
+                <button className="mobile-toggle" onClick={toggleSidebar}>
+                    {expanded ? '✕' : '☰'}
+                </button>
             </div>
             
             <div className="sidebar-menu">
                 <h3 className="sidebar-section-title">表示</h3>
                 <button 
-                    className="sidebar-button" 
-                    onClick={() => setView('chart')}
+                    className={`sidebar-button ${currentView === 'dashboard' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('dashboard')}
+                    data-testid="dashboard-button"
                 >
                     <span className="sidebar-button-icon">📊</span>
-                    円グラフ
+                    ダッシュボード
                 </button>
                 <button 
-                    className="sidebar-button" 
-                    onClick={() => setView('table')}
+                    className={`sidebar-button ${currentView === 'rawdata' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('rawdata')}
+                    data-testid="rawdata-button"
                 >
-                    <span className="sidebar-button-icon">📋</span>
-                    表
+                    <span className="sidebar-button-icon">📄</span>
+                    生データ
                 </button>
                 
                 <h3 className="sidebar-section-title">データ</h3>
@@ -50,6 +68,11 @@ const Sidebar = ({ setView, handleFiles }) => {
 Sidebar.propTypes = {
     setView: PropTypes.func.isRequired,
     handleFiles: PropTypes.func.isRequired,
+    currentView: PropTypes.string
+};
+
+Sidebar.defaultProps = {
+    currentView: 'chart'
 };
 
 export default Sidebar;

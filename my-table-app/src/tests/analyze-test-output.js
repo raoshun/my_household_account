@@ -76,4 +76,38 @@ function analyzeTestOutput(output) {
     console.log('- getByRole の代わりに getAllByRole を使い、テキスト内容で絞り込む');
     console.log('- data-testid を追加してgetByTestId を使用する');
   }
+  
+  // ChartHighlight.test.jsのSpyエラー検出
+  if (output.includes('Cannot spyOn on a primitive value; undefined given')) {
+    console.log('- モック対象のオブジェクトが正しく定義されているか確認する');
+    console.log('- モックの作成順序を見直す（jest.mock の後にモックの追加実装を行う）');
+    console.log('- モック関数のプロパティアクセス方法を確認（mockChartInstance.update）');
+  }
+  
+  // テスト要素が見つからないエラーの検出
+  if (output.includes('Unable to find an element with the testid:')) {
+    console.log('- data-testid 属性が正しく設定されているか確認する');
+    console.log('- コンポーネントのレンダリング順序を確認する');
+    console.log('- screen.debug() を使用してDOM構造を確認する');
+    console.log('- waitFor を使用して非同期レンダリングを待機する');
+  }
+  
+  // React act()警告の検出
+  if (output.includes('not wrapped in act(...)')) {
+    console.log('- 状態更新とレンダリングをact()で囲む');
+    console.log('- 非同期更新の場合は await act(async () => {...}) を使用する');
+    console.log('- waitFor を使用して状態の安定を待つ');
+  }
+  
+  // ResizeObserver関連のエラー検出
+  if (output.includes('ResizeObserver')) {
+    console.log('- ResizeObserver のモックが正しく機能しているか確認する');
+    console.log('- testResizeObserver ヘルパー関数を使用してテストする');
+  }
+  
+  // テストのタイムアウト検出
+  if (output.includes('Timeout')) {
+    console.log('- 非同期テストのタイムアウト設定を増やす');
+    console.log('- 非同期処理が完了するのを待つためにawaitを使用する');
+  }
 }

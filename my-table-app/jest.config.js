@@ -17,11 +17,10 @@ module.exports = {
   
   // カバレッジの設定
   collectCoverageFrom: [
-    'src/**/*.{js,jsx,ts,tsx}',
+    'src/**/*.{js,jsx}',
     '!src/**/*.d.ts',
-    '!src/index.js',
-    '!src/serviceWorker.js',
-    '!src/reportWebVitals.js'
+    '!src/**/__mocks__/**',
+    '!src/**/*.test.{js,jsx}'
   ],
   
   // テストのセットアップファイル
@@ -31,20 +30,19 @@ module.exports = {
   moduleNameMapper: {
     // スタイルファイルやアセットのモック
     '\\.(css|less|sass|scss)$': '<rootDir>/src/__mocks__/styleMock.js',
-    '\\.(gif|ttf|eot|svg|png|jpg|jpeg)$': '<rootDir>/src/__mocks__/fileMock.js',
+    '\\.(gif|ttf|eot|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
     // chart.jsを常に同じモックに置き換え
-    'chart.js$': '<rootDir>/src/__mocks__/chart.js'
+    '^chart.js/auto$': '<rootDir>/src/__mocks__/chart.js/auto.js'
   },
   
   // トランスフォーマー
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': '<rootDir>/node_modules/babel-jest'
+    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest'
   },
   
   // トランスフォームを無視するファイル
   transformIgnorePatterns: [
-    '/node_modules/',
-    '^.+\\.module\\.(css|sass|scss)$'
+    '/node_modules/(?!chart.js).+\\.js$'
   ],
   
   // 設定ファイル
@@ -61,5 +59,15 @@ module.exports = {
   // グローバル設定のリセット
   resetMocks: false,
   restoreMocks: true,
-  clearMocks: true
+  clearMocks: true,
+
+  // カバレッジの閾値
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70
+    }
+  }
 };

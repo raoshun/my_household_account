@@ -33,7 +33,9 @@ body {
 .main-content {
   flex: 1;
   padding: 24px;
+  margin-left: 280px; /* サイドバーの新しい幅に合わせて調整 */
   overflow-y: auto;
+  transition: margin-left 0.3s ease;
 }
 
 /* ページヘッダー */
@@ -152,6 +154,7 @@ body {
   padding: 16px;
   border-left: 4px solid var(--primary-color);
   margin-top: 16px;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .hover-info-card h3 {
@@ -164,6 +167,18 @@ body {
 .hover-info-card p {
   margin: 8px 0;
   font-size: 14px;
+}
+
+.hover-info-hint {
+  font-style: italic;
+  color: var(--text-light);
+  font-size: 12px !important;
+  margin-top: 12px !important;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* データが空の時の表示 */
@@ -192,6 +207,90 @@ body {
   color: var(--text-light);
 }
 
+/* 選択されたカテゴリの詳細表示 */
+.selected-category-details {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.category-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+}
+
+.category-color-indicator {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.clear-selection {
+  font-size: 12px;
+  color: var(--text-light);
+  background: none;
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.clear-selection:hover {
+  background-color: #f0f0f0;
+}
+
+/* 生データセクション */
+.rawdata-section {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--primary-color);
+  padding-bottom: 8px;
+}
+
+/* ダッシュボードセクション */
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.dashboard-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-tables {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.dashboard-category-details {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
 /* レスポンシブデザイン */
 @media (max-width: 768px) {
   .app-container {
@@ -206,5 +305,32 @@ body {
   .page-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .main-content {
+    margin-left: 0;
+    margin-top: 60px; /* モバイルでは上部にマージンを設定 */
+  }
+  
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    max-height: 60px; /* モバイル時のサイドバーの高さ */
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+  
+  .sidebar.expanded {
+    max-height: 100vh;
+  }
+}
+
+@media (min-width: 768px) {
+  .dashboard-charts,
+  .dashboard-tables {
+    padding: 16px;
   }
 }
