@@ -1,5 +1,5 @@
 /* eslint-env jest */
-import { sortData, sortAndAggregateData } from './sortData';
+import { sortData, sortAndAggregateData, filterData } from './sortData';
 import { test, expect } from '@jest/globals';
 
 test('sortAndAggregateData should aggregate data by categories', () => {
@@ -91,4 +91,66 @@ test('sortData should handle missing keys in data objects', () => {
   // undefinedを持つデータが存在することを確認
   const hasUndefinedKey = sortedByCategory.some(item => item['大項目'] === undefined);
   expect(hasUndefinedKey).toBe(true);
+});
+
+// filterData関数のテスト
+test('filterData should filter data by specified filters', () => {
+  const testData = [
+    { '大項目': '食費', '金額（円）': 3000 },
+    { '大項目': '娯楽', '金額（円）': 2000 },
+    { '大項目': '交通費', '金額（円）': 1000 },
+  ];
+  
+  // 大項目が食費のデータだけをフィルタリング
+  const filtered = filterData(testData, { '大項目': '食費' });
+  expect(filtered).toHaveLength(1);
+  expect(filtered[0]['大項目']).toBe('食費');
+});
+
+test('filterData should handle empty or invalid input', () => {
+  expect(filterData(null, { key: 'value' })).toEqual([]);
+  expect(filterData([], { key: 'value' })).toEqual([]);
+  expect(filterData({}, { key: 'value' })).toEqual([]);
+});
+
+test('filterData should filter out transfers when excludeTransfers is true', () => {
+  const testData = [
+    { '大項目': '食費', '金額（円）': 3000, '振替': '' },
+    { '大項目': '娯楽', '金額（円）': 2000, '振替': '0' },
+    { '大項目': '交通費', '金額（円）': 1000, '振替': '1' },
+    { '大項目': '住居費', '金額（円）': 5000, '振替': '振替対象' },
+  ];
+  
+  // 振替を除外するフィルタを適用
+  const filtered = filterData(testData, { excludeTransfers: true });
+  expect(filtered).toHaveLength(2);
+  
+  // 振替が空または0のデータのみが含まれていることを確認
+  const includesNonTransfer = filtered.every(item => 
+    item['振替'] === '' || item['振替'] === '0' || item['振替'] === 0
+  );
+  expect(includesNonTransfer).toBe(true);
+  
+  // 振替があるデータが除外されていることを確認
+  const hasTransferItems = filtered.some(item => 
+    item['振替'] === '1' || item['振替'] === '振替対象'
+  );
+  expect(hasTransferItems).toBe(false);
+});
+
+test('filterData should not filter transfers when excludeTransfers is false or undefined', () => {
+  const testData = [
+    { '大項目': '食費', '金額（円）': 3000, '振替': '' },
+    { '大項目': '娯楽', '金額（円）': 2000, '振替': '0' },
+    { '大項目': '交通費', '金額（円）': 1000, '振替': '1' },
+    { '大項目': '住居費', '金額（円）': 5000, '振替': '振替対象' },
+  ];
+  
+  // excludeTransfersをfalseに設定
+  const filteredWithFlag = filterData(testData, { excludeTransfers: false });
+  expect(filteredWithFlag).toHaveLength(4); // すべてのデータが含まれる
+  
+  // excludeTransfersを指定しない
+  const filteredWithoutFlag = filterData(testData, {});
+  expect(filteredWithoutFlag).toHaveLength(4); // すべてのデータが含まれる
 });

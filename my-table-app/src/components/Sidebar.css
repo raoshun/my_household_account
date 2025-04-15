@@ -185,3 +185,29 @@
     display: block;
   }
 }
+
+/* チェックボックスコンテナのスタイル */
+.sidebar-filter-option {
+    margin: 10px 0;
+    padding: 5px 15px;
+}
+
+.sidebar-checkbox-container {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sidebar-checkbox-container input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: #4E79A7;
+}
+
+.sidebar-checkbox-text {
+    color: white;
+}

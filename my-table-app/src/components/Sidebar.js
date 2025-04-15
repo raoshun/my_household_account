@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import ReactFileReader from 'react-file-reader';
 import './Sidebar.css';
 
-const Sidebar = ({ setView, handleFiles, currentView = 'chart' }) => {
+const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, onFilterChange }) => {
     const [expanded, setExpanded] = useState(false);
     
     const toggleSidebar = () => {
@@ -15,6 +15,10 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart' }) => {
         if (window.innerWidth <= 768) {
             setExpanded(false);
         }
+    };
+
+    const toggleExcludeTransfers = () => {
+        onFilterChange && onFilterChange('excludeTransfers', !filters.excludeTransfers);
     };
 
     return (
@@ -53,6 +57,19 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart' }) => {
                     月次推移
                 </button>
                 
+                <h3 className="sidebar-section-title">フィルター</h3>
+                <div className="sidebar-filter-option">
+                    <label className="sidebar-checkbox-container">
+                        <input 
+                            type="checkbox"
+                            checked={!!filters.excludeTransfers}
+                            onChange={toggleExcludeTransfers}
+                            data-testid="exclude-transfers-checkbox"
+                        />
+                        <span className="sidebar-checkbox-text">振替を除外する</span>
+                    </label>
+                </div>
+                
                 <h3 className="sidebar-section-title">データ</h3>
                 <ReactFileReader
                     handleFiles={handleFiles}
@@ -76,9 +93,9 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart' }) => {
 Sidebar.propTypes = {
     setView: PropTypes.func.isRequired,
     handleFiles: PropTypes.func.isRequired,
-    currentView: PropTypes.string
+    currentView: PropTypes.string,
+    filters: PropTypes.object,
+    onFilterChange: PropTypes.func
 };
-
-// defaultPropsを削除し、代わりに関数の引数でデフォルト値を設定しました
 
 export default Sidebar;

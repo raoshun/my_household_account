@@ -10,6 +10,7 @@ import { chartOptions } from './config/chartOptions';
 import { createMonthlyTrendData } from './utils/monthlyTrendUtils'; // 新しい関数を使用
 import calculateCategoryTotals from './utils/calculateCategoryTotals';
 import { filterData } from './utils/sortData';
+import { splitDataBySign } from './utils'; // splitDataBySign関数をインポート
 import PropTypes from 'prop-types';
 import CategoryDetailsTable from './components/CategoryDetailsTable';
 import './App.css';
@@ -46,7 +47,7 @@ const App = ({ initialData = [] }) => {
   const [hoverInfo, setHoverInfo] = useState(null); // ホバー情報を保持する状態
   const [aggregatedData, setAggregatedData] = useState({});
   const [categoryTotals, setCategoryTotals] = useState({});
-  const [filters, setFilters] = useState({}); // filters状態を追加
+  const [filters, setFilters] = useState({ excludeTransfers: true }); // 振替除外をデフォルトに設定
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categoryFilteredData, setCategoryFilteredData] = useState([]);
   const [prevFilters, setPrevFilters] = useState({}); // 前回のフィルタ状態を保存
@@ -118,6 +119,15 @@ const App = ({ initialData = [] }) => {
     if (filtersChanged) {
       setPrevFilters(filters);
       setChartKey(prevKey => prevKey + 1); // キーを変更して強制リロード
+
+      // フィルタリングされたデータから新しいチャートデータを生成
+      const chartData = splitDataBySign(newFilteredData);
+      
+      // 円グラフデータを更新
+      setPositiveChartData(chartData.positiveData);
+      setNegativeChartData(chartData.negativeData);
+      setPositiveTotal(chartData.positiveTotal);
+      setNegativeTotal(chartData.negativeTotal);
     }
     
     calculateCategoryTotals(newFilteredData)
@@ -207,7 +217,13 @@ const App = ({ initialData = [] }) => {
 
   return (
     <div className="app-container">
-      <Sidebar setView={setView} handleFiles={handleFileUpload} currentView={view} />
+      <Sidebar 
+        setView={setView} 
+        handleFiles={handleFileUpload} 
+        currentView={view} 
+        filters={filters}
+        onFilterChange={handleFilterChange}
+      />
       <main className="main-content">
         <div className="page-header">
           <h1>家計簿分析</h1>

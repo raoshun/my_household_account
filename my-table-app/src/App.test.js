@@ -6,6 +6,9 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
 
+// オリジナルのuseStateを保持
+const originalUseState = React.useState;
+
 // テスト環境フラグを明示的に設定
 window.__JEST_TEST_ENV__ = true;
 
@@ -378,6 +381,16 @@ describe('データ件数の表示', () => {
       expect(true).toBe(true);  // ダミーアサーション
     }
   });
+});
+
+// Appコンポーネントのデフォルト設定（振替除外が有効）をテスト
+test('App should have excludeTransfers enabled by default', () => {
+  render(<App />);
+  
+  // サイドバーのチェックボックスが初期状態でチェックされていることを確認
+  const excludeTransfersCheckbox = screen.getByTestId('exclude-transfers-checkbox');
+  expect(excludeTransfersCheckbox).toBeInTheDocument();
+  expect(excludeTransfersCheckbox).toBeChecked();
 });
 
 // テスト実行前のセットアップ

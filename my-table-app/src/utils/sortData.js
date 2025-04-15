@@ -90,8 +90,20 @@ export const filterData = (data, filters) => {
   
   // フィルタリング処理
   return data.filter(item => {
+    // 振替除外オプションの処理
+    if (filters.excludeTransfers) {
+      // 振替列があり、値が0（または空）でない場合は除外
+      const transferValue = item['振替'];
+      if (transferValue !== undefined && transferValue !== null && transferValue !== '' && transferValue !== 0 && transferValue !== '0') {
+        return false;
+      }
+    }
+
     // すべてのフィルタ条件に一致するかをチェック
     return Object.entries(filters).every(([key, value]) => {
+      // excludeTransfersは特殊なフラグなので、通常のフィルター条件としては処理しない
+      if (key === 'excludeTransfers') return true;
+      
       // フィルタ値が空の場合はチェックしない
       if (value === undefined || value === null || value === '') {
         return true;
