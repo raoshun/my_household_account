@@ -283,25 +283,69 @@ export const parseNumber = (value) => {
  * 改良版: より効率的でエラーに強い実装
  * 
  * @param {Array} data - 集計対象のデータ配列
- * @param {Object} options - オプション設定
- * @param {string} options.dateKey - 日付キー（デフォルト: '日付'）
- * @param {string} options.categoryKey - カテゴリキー（デフォルト: '大項目'）
- * @param {string} options.amountKey - 金額キー（デフォルト: '金額（円）'）
- * @param {number} options.maxCategories - 表示するカテゴリの最大数（デフォルト: 5）
- * @param {boolean} options.debugMode - デバッグ情報を出力するか（デフォルト: false）
+ * @param {Object|string} options - オプション設定またはdateKey
+ * @param {string} [categoryKey] - カテゴリキー（位置パラメータ方式の場合）
+ * @param {string} [amountKey] - 金額キー（位置パラメータ方式の場合）
+ * @param {number} [maxCategories] - 表示するカテゴリの最大数（位置パラメータ方式の場合）
  * @returns {Object} - Chart.js折れ線グラフ用のデータ形式
  */
-export const prepareMonthlyTrendData = (data, options = {}) => {
-  // 共通の集計関数を利用
-  return aggregateMonthlyData(data, {
-    dateKey: options.dateKey || '日付',
-    categoryKey: options.categoryKey || '大項目',
-    amountKey: options.amountKey || '金額（円）',
-    maxCategories: options.maxCategories || 5,
-    normalizeDate: normalizeYearMonth,
-    colorGenerator: generateColorPalette,
-    compareMonths: compareMonths
-  });
+export const prepareMonthlyTrendData = (data, options = {}, categoryKey, amountKey, maxCategories) => {
+  // パラメータの形式をチェックして適切に変換
+  let normalizedOptions = options;
+  
+  // 第2引数が文字列の場合は位置パラメータ方式と判断
+  if (typeof options === 'string') {
+    normalizedOptions = {
+      dateKey: options, // 第2引数をdateKeyとして使用
+      categoryKey: categoryKey || '大項目',
+      amountKey: amountKey || '金額（円）',
+      maxCategories: maxCategories || 5
+    };
+    
+    console.log('位置パラメータ方式でprepareMonthlyTrendDataが呼び出されました');
+  } else {
+    // デフォルト値の設定
+    normalizedOptions = {
+      dateKey: options.dateKey || '日付',
+      categoryKey: options.categoryKey || '大項目',
+      amountKey: options.amountKey || '金額（円）',
+      maxCategories: options.maxCategories || 5,
+      ...options
+    };
+  }
+  
+  try {
+    // データ入力チェック
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      console.warn('月次推移データの生成: 有効なデータがありません');
+      return { labels: [], datasets: [] };
+    }
+    
+    // データのサンプルをログ出力（開発時のデバッグ用）
+    if (normalizedOptions.debugMode) {
+      console.log('月次推移データ生成: データサンプル', 
+        data.slice(0, 2).map(item => ({
+          [normalizedOptions.dateKey]: item[normalizedOptions.dateKey],
+          [normalizedOptions.categoryKey]: item[normalizedOptions.categoryKey],
+          [normalizedOptions.amountKey]: item[normalizedOptions.amountKey]
+        }))
+      );
+    }
+    
+    // 共通の集計関数を利用
+    return aggregateMonthlyData(data, {
+      dateKey: normalizedOptions.dateKey,
+      categoryKey: normalizedOptions.categoryKey,
+      amountKey: normalizedOptions.amountKey,
+      maxCategories: normalizedOptions.maxCategories,
+      normalizeDate: normalizeYearMonth,
+      colorGenerator: generateColorPalette,
+      compareMonths: compareMonths
+    });
+  } catch (error) {
+    console.error('月次推移データの生成中にエラーが発生しました:', error);
+    return { labels: [], datasets: [] };
+  }
 };
 
 // 後方互換性のためのラッパー関数

@@ -1,0 +1,226 @@
+.monthly-trend-table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.monthly-trend-table-header {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.monthly-trend-table-header h3 {
+  margin: 0;
+  color: #495057;
+  font-size: 1.2rem;
+}
+
+.monthly-trend-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.monthly-trend-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background-color: white;
+}
+
+.monthly-trend-table thead {
+  background-color: #f8f9fa;
+}
+
+.monthly-trend-table th {
+  position: sticky;
+  top: 0;
+  background-color: #f8f9fa;
+  color: #495057;
+  padding: 12px 15px;
+  text-align: center;
+  font-weight: 600;
+  border-bottom: 2px solid #dee2e6;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.monthly-trend-table th:hover {
+  background-color: #e9ecef;
+}
+
+.monthly-trend-table td {
+  padding: 10px 15px;
+  border-bottom: 1px solid #f2f2f2;
+}
+
+.monthly-trend-table tbody tr {
+  transition: background-color 0.2s;
+}
+
+.monthly-trend-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.monthly-trend-table tbody tr.selected {
+  background-color: rgba(78, 121, 167, 0.1);
+}
+
+.monthly-trend-table .category-header {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background-color: #f8f9fa;
+}
+
+.monthly-trend-table .category-cell {
+  font-weight: 500;
+  text-align: left;
+  color: #333;
+  padding-left: 15px;
+  white-space: nowrap;
+}
+
+.monthly-trend-table .data-cell {
+  color: #495057;
+}
+
+.monthly-trend-table .amount-cell {
+  text-align: right;
+  color: #555;
+}
+
+.monthly-trend-table .total-column,
+.monthly-trend-table .total-cell {
+  text-align: right;
+  font-weight: 600;
+  color: #333;
+  border-left: 1px solid #f0f0f0;
+  background-color: #f8f9fa;
+}
+
+.monthly-trend-table .total-row {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+.monthly-trend-table .total-row .category-cell {
+  color: #495057;
+}
+
+.monthly-trend-table .total-row .amount-cell,
+.monthly-trend-table .total-row .total-cell {
+  color: #333;
+}
+
+.monthly-trend-table .total-label {
+  text-align: left;
+  font-weight: 600;
+}
+
+.monthly-trend-table .monthly-total {
+  color: #495057;
+}
+
+.monthly-trend-table .grand-total {
+  font-weight: 700;
+  color: #212529;
+  background-color: #e9ecef;
+}
+
+.monthly-trend-table-footer {
+  padding: 0.75rem;
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.sort-icon {
+  margin-left: 5px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.sort-icon.asc,
+.sort-icon.desc {
+  opacity: 1;
+  color: #4E79A7;
+}
+
+/* ソート関連のスタイル */
+.sort-indicator {
+  margin-left: 4px;
+  display: inline-block;
+}
+
+th.sorted {
+  background-color: #e9ecef;
+}
+
+/* 行のハイライト */
+.monthly-trend-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.monthly-trend-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.monthly-trend-table tbody tr.active-row {
+  background-color: rgba(var(--highlight-color, '#4E79A7'), 0.1);
+  box-shadow: inset 0 0 0 1px rgba(var(--highlight-color, '#4E79A7'), 0.3);
+}
+
+.monthly-trend-table-no-data {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #dee2e6;
+  min-height: 200px;
+}
+
+.monthly-trend-table-no-data p {
+  color: #6c757d;
+  margin: 5px 0;
+}
+
+.monthly-trend-table-no-data .hint {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .monthly-trend-table {
+    font-size: 13px;
+  }
+  
+  .monthly-trend-table th,
+  .monthly-trend-table td {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+}
+
+/* 空の状態のスタイル */
+.monthly-trend-table-container.empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  color: #6c757d;
+  font-style: italic;
+}

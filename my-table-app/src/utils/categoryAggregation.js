@@ -220,12 +220,18 @@ export const aggregateMonthlyData = (data, options = {}) => {
   
   // 入力チェック
   if (!data || !Array.isArray(data) || data.length === 0) {
+    console.warn('集計データが空です');
     return { labels: [], datasets: [] };
   }
+
+  // データの中身をログに出力（デバッグ用）
+  console.log('集計対象データの最初の要素:', data[0]);
+  console.log('日付キー:', dateKey, '| カテゴリキー:', categoryKey, '| 金額キー:', amountKey);
 
   // 日付キーが存在するかチェック
   const hasValidDateKey = data.some(item => item[dateKey] !== undefined);
   if (!hasValidDateKey) {
+    console.warn(`データに日付キー '${dateKey}' が存在しないか、すべて undefined です`);
     return { labels: [], datasets: [] };
   }
   
@@ -236,22 +242,82 @@ export const aggregateMonthlyData = (data, options = {}) => {
   // normalizeDate関数を取得または定義
   const normalizeDateFn = normalizeDate || ((dateValue) => {
     try {
+      if (!dateValue) {
+        console.warn('日付データが空です');
+        return '日付不明';
+      }
+      
+      console.log('処理する日付データ:', dateValue, '| 型:', typeof dateValue);
+      
       if (dateValue instanceof Date) {
         return `${dateValue.getFullYear()}年${dateValue.getMonth() + 1}月`;
       }
+      
       if (typeof dateValue === 'string') {
-        const date = new Date(dateValue);
-        if (!isNaN(date.getTime())) {
-          return `${date.getFullYear()}年${date.getMonth() + 1}月`;
-        }
-        // YYYY/MM/DD形式の処理
-        const match = dateValue.match(/(\d{4})[/-](\d{1,2})[/-]\d{1,2}/);
+        // 文字列の場合、複数の形式に対応
+        
+        // 1. YYYY/MM/DD または YYYY-MM-DD 形式
+        let match = dateValue.match(/^(\d{4})[/-](\d{1,2})[/-]\d{1,2}$/);
         if (match) {
-          return `${match[1]}年${match[2]}月`;
+          return `${match[1]}年${parseInt(match[2], 10)}月`;
+        }
+        
+        // 2. YYYY年MM月DD日 形式
+        match = dateValue.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日$/);
+        if (match) {
+          return `${match[1]}年${parseInt(match[2], 10)}月`;
+        }
+        
+        // 3. MM/DD/YYYY 形式 (米国式)
+        match = dateValue.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+        if (match) {
+          return `${match[3]}年${parseInt(match[1], 10)}月`;
+        }
+        
+        // 4. YYYY.MM.DD 形式
+        match = dateValue.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
+        if (match) {
+          return `${match[1]}年${parseInt(match[2], 10)}月`;
+        }
+        
+        // 5. YYYY年MM月 形式（すでに年月形式の場合）
+        match = dateValue.match(/^(\d{4})年(\d{1,2})月$/);
+        if (match) {
+          return dateValue; // そのまま返す
+        }
+        
+        // 6. 日付型への変換を試みる（他の形式に対応）
+        try {
+          const date = new Date(dateValue);
+          if (!isNaN(date.getTime())) {
+            return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+          }
+        } catch (e) {
+          console.warn('標準日付変換に失敗:', e.message);
         }
       }
+      
+      // 7. 数値型の場合（エクセルの日付シリアル値や他の形式）
+      if (typeof dateValue === 'number') {
+        try {
+          // エクセルの日付シリアル値として解釈を試みる（1900年1月1日からの日数）
+          const excelEpoch = new Date(1900, 0, 1);
+          const millisPerDay = 24 * 60 * 60 * 1000;
+          const offsetDays = dateValue - 1; // エクセルの日付は1900/1/1が1
+          
+          const date = new Date(excelEpoch.getTime() + offsetDays * millisPerDay);
+          if (!isNaN(date.getTime())) {
+            return `${date.getFullYear()}年${date.getMonth() + 1}月`;
+          }
+        } catch (e) {
+          console.warn('数値型日付変換に失敗:', e.message);
+        }
+      }
+      
+      console.warn('認識できない日付形式:', dateValue);
       return '日付不明';
     } catch (error) {
+      console.error('日付変換エラー:', error, '対象値:', dateValue);
       return '日付不明';
     }
   });
@@ -276,10 +342,25 @@ export const aggregateMonthlyData = (data, options = {}) => {
     return monthA - monthB;
   });
   
+  // 日付変換の結果をカウント（デバッグ用）
+  const dateConversionResults = {
+    total: 0,
+    success: 0,
+    unknown: 0
+  };
+  
   // 各データを処理して月次データに変換
   data.forEach(item => {
+    dateConversionResults.total++;
+    
     // 日付を年月形式に正規化
     const monthKey = normalizeDateFn(item[dateKey]);
+    
+    if (monthKey === '日付不明') {
+      dateConversionResults.unknown++;
+    } else {
+      dateConversionResults.success++;
+    }
     
     // カテゴリを取得（未設定の場合は「未分類」）
     const category = item[categoryKey] || '未分類';
@@ -309,14 +390,19 @@ export const aggregateMonthlyData = (data, options = {}) => {
     }
   });
   
+  // 日付変換の結果をログ出力
+  console.log('日付変換結果:', dateConversionResults);
+  
   // 有効なデータがあるかチェック
   const validMonths = Object.keys(monthlyData);
   if (validMonths.length === 0) {
+    console.warn('有効な月次データがありません');
     return { labels: [], datasets: [] };
   }
   
   // 月を時系列順にソート
   const sortedMonths = validMonths.sort(compareMonthsFn);
+  console.log('ソート済み月次データ:', sortedMonths);
   
   // カテゴリごとの合計金額を計算
   const categoryTotals = {};
@@ -333,7 +419,10 @@ export const aggregateMonthlyData = (data, options = {}) => {
     .sort((a, b) => categoryTotals[b] - categoryTotals[a])
     .slice(0, maxCategories);
   
+  console.log('選択されたトップカテゴリ:', topCategories);
+  
   if (topCategories.length === 0) {
+    console.warn('表示可能なカテゴリがありません');
     return { labels: [], datasets: [] };
   }
   
@@ -376,10 +465,18 @@ export const aggregateMonthlyData = (data, options = {}) => {
   });
   
   // 結果を返す
-  return {
+  const result = {
     labels: sortedMonths,
     datasets: datasets
   };
+  
+  console.log('生成された月次推移データ:', {
+    labels: result.labels.length,
+    datasets: result.datasets.length,
+    sample: result.datasets.length > 0 ? result.datasets[0].label : 'なし'
+  });
+  
+  return result;
 };
 
 // デフォルトエクスポート

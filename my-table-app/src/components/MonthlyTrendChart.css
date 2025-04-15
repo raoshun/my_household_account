@@ -1,0 +1,63 @@
+.monthly-trend-chart-container {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  margin-bottom: 20px;
+}
+
+.monthly-trend-chart {
+  width: 100%;
+  height: 100%;
+}
+
+/* ローディング表示 */
+.monthly-trend-chart-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* スピナーアニメーション */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(78, 121, 167, 0.3);
+  border-radius: 50%;
+  border-top-color: #4E79A7;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* データが無い場合のメッセージ */
+.monthly-trend-chart-no-data {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px dashed #dee2e6;
+}
+
+.monthly-trend-chart-no-data p {
+  color: #6c757d;
+  font-size: 16px;
+  max-width: 80%;
+}

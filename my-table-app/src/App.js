@@ -4,9 +4,10 @@ import Sidebar from './components/Sidebar';
 import Charts from './components/Charts';
 import DataTable from './components/DataTable';
 import MonthlyTrendChart from './components/MonthlyTrendChart'; 
+import MonthlyTrendTable from './components/MonthlyTrendTable';
 import { handleFiles } from './components/fileHandlers';
 import { chartOptions } from './config/chartOptions';
-import { prepareMonthlyTrendData } from './utils/chartDataUtils'; 
+import { createMonthlyTrendData } from './utils/monthlyTrendUtils'; // 新しい関数を使用
 import calculateCategoryTotals from './utils/calculateCategoryTotals';
 import { filterData } from './utils/sortData';
 import PropTypes from 'prop-types';
@@ -51,6 +52,7 @@ const App = ({ initialData = [] }) => {
   const [prevFilters, setPrevFilters] = useState({}); // 前回のフィルタ状態を保存
   const [chartKey, setChartKey] = useState(0); // チャートの強制リロード用キー
   const [dataProcessing, setDataProcessing] = useState(false); // データ処理中フラグ
+  const [monthlyViewMode, setMonthlyViewMode] = useState('chart'); // 月次推移の表示モード（chart or table）
 
   // ファイルハンドラをラップする関数を作成
   const handleFileUpload = (files) => {
@@ -138,33 +140,22 @@ const App = ({ initialData = [] }) => {
       
       // フィルタ後もデータがあるか確認
       if (filteredData && filteredData.length > 0) {
-        // データの形式を確認（最初の数件をログ出力）
-        console.log('フィルタ後のデータサンプル:', filteredData.slice(0, 2));
+        // 新しい関数を使用して月次推移データを生成
+        const trendData = createMonthlyTrendData(filteredData, {
+          dateKey: '日付',
+          categoryKey: '大項目',
+          amountKey: '金額（円）',
+          maxCategories: 5,
+          debug: true
+        });
         
-        const trendData = prepareMonthlyTrendData(
-          filteredData,
-          '日付', // 日付キー
-          '大項目', // カテゴリキー
-          '金額（円）', // 金額キー
-          5 // 表示する最大カテゴリ数
-        );
+        console.log('生成された月次推移データ:', 
+                    'ラベル数:', trendData.labels?.length || 0, 
+                    'データセット数:', trendData.datasets?.length || 0);
         
-        console.log('生成された月次推移データ:', trendData);
-        console.log('月次推移データの内容確認:', 
-          '- labels:', trendData.labels?.length || 0, 
-          '- datasets:', trendData.datasets?.length || 0
-        );
+        // データを状態にセット
+        setMonthlyTrendData(trendData);
         
-        // 生成されたデータに必要なプロパティが含まれているか検証
-        if (trendData && trendData.labels && trendData.datasets && 
-            trendData.labels.length > 0 && trendData.datasets.length > 0) {
-          console.log('有効な月次推移データをセットしました');
-          setMonthlyTrendData(trendData);
-        } else {
-          // 無効なデータの場合は空のデータをセット
-          console.warn('無効な月次推移データが生成されました - データ構造:', trendData);
-          setMonthlyTrendData(EMPTY_MONTHLY_DATA);
-        }
       } else {
         // フィルタ後データがない場合
         console.log('フィルタ後のデータがありません');
@@ -187,22 +178,25 @@ const App = ({ initialData = [] }) => {
 
       // 初期データから月次推移データを安全に生成
       try {
-        const initialTrendData = prepareMonthlyTrendData(
-          initialData,
-          '日付',
-          '大項目',
-          '金額（円）',
-          5
-        );
-        if (initialTrendData && initialTrendData.labels && initialTrendData.datasets) {
+        // 新しい関数を使用
+        const initialTrendData = createMonthlyTrendData(initialData, {
+          dateKey: '日付',
+          categoryKey: '大項目',
+          amountKey: '金額（円）',
+          maxCategories: 5
+        });
+        
+        // 有効なデータかチェック
+        if (initialTrendData && initialTrendData.labels && initialTrendData.datasets && 
+            initialTrendData.labels.length > 0 && initialTrendData.datasets.length > 0) {
           setMonthlyTrendData(initialTrendData);
+        } else {
+          setMonthlyTrendData(EMPTY_MONTHLY_DATA);
         }
       } catch (error) {
         console.error('初期月次推移データ生成中にエラーが発生しました:', error);
+        setMonthlyTrendData(EMPTY_MONTHLY_DATA);
       }
-    } else {
-      // 初期データがない場合は空のデータを設定
-      setMonthlyTrendData(EMPTY_MONTHLY_DATA);
     }
 
     // テスト環境でグローバル変数を確認（別のアプローチ）
@@ -325,14 +319,28 @@ const App = ({ initialData = [] }) => {
               {data.length ? (
                 <div>
                   <h2 className="section-title">項目別月次推移</h2>
+                  <div className="view-mode-toggle">
+                    <button 
+                      className={`toggle-button ${monthlyViewMode === 'chart' ? 'active' : ''}`}
+                      onClick={() => setMonthlyViewMode('chart')}
+                    >
+                      グラフ表示
+                    </button>
+                    <button 
+                      className={`toggle-button ${monthlyViewMode === 'table' ? 'active' : ''}`}
+                      onClick={() => setMonthlyViewMode('table')}
+                    >
+                      表表示
+                    </button>
+                  </div>
                   <div className="trend-chart-container">
                     {dataProcessing ? (
                       <div className="loading-indicator">データを処理中...</div>
                     ) : (
-                      <div>
-                        {monthlyTrendData && monthlyTrendData.labels && monthlyTrendData.labels.length > 0 ? (
+                      <>
+                        {monthlyViewMode === 'chart' ? (
                           <MonthlyTrendChart 
-                            key={`trend-chart-${chartKey}`} // 強制リロード用のキー
+                            key={`trend-chart-${chartKey}`}
                             trendData={monthlyTrendData}
                             options={{
                               plugins: {
@@ -345,20 +353,20 @@ const App = ({ initialData = [] }) => {
                             }} 
                           />
                         ) : (
-                          <div className="empty-chart-state">
-                            <p>月次推移データを生成できませんでした</p>
-                            <p>データ内容： {JSON.stringify(monthlyTrendData)}</p>
-                            <p className="chart-hint">日付データが正しい形式であることを確認してください</p>
-                          </div>
+                          <MonthlyTrendTable 
+                            key={`trend-table-${chartKey}`}
+                            trendData={monthlyTrendData} 
+                          />
                         )}
-                      </div>
+                      </>
                     )}
                   </div>
                   <div className="trend-explanation">
-                    <h3>グラフの見方</h3>
-                    <p>このグラフは各カテゴリの月別推移を表示しています。金額の大きい上位5カテゴリを自動で選択して表示します。</p>
-                    <p>・折れ線の色: 各カテゴリを色分けして表示</p>
-                    <p>・グラフの範囲: CSVファイルに含まれる日付の範囲</p>
+                    <h3>データの見方</h3>
+                    <p>このデータは各カテゴリの月別推移を表示しています。金額の大きい上位5カテゴリを自動で選択して表示します。</p>
+                    <p>・グラフ表示: 各カテゴリの推移を折れ線グラフで視覚化</p>
+                    <p>・表表示: カテゴリ別・月別の金額を一覧表として閲覧可能</p>
+                    <p>・表の行をクリックすると、そのカテゴリを強調表示できます</p>
                   </div>
                 </div>
               ) : (

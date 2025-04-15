@@ -97,9 +97,9 @@ jest.mock('chart.js', () => {
 const handleFilesMock = function(files, options = {}) {
   // テストデータ
   const mockData = [
-    { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
-    { '大項目': '食費', '中項目': '外食', '金額（円）': 2000 },
-    { '大項目': '交通費', '中項目': '電車', '金額（円）': 500 }
+    { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000, '日付': '2023/1/10' },
+    { '大項目': '食費', '中項目': '外食', '金額（円）': 2000, '日付': '2023/2/15' },
+    { '大項目': '交通費', '中項目': '電車', '金額（円）': 500, '日付': '2023/1/5' }
   ];
   
   // コールバック関数の存在を確認してから呼び出す
@@ -122,6 +122,26 @@ const handleFilesMock = function(files, options = {}) {
     '食費': 3000,
     '交通費': 500
   });
+  // 月次推移データのモックを追加
+  if (options.setMonthlyTrendData) options.setMonthlyTrendData({
+    labels: ['2023年1月', '2023年2月'],
+    datasets: [
+      {
+        label: '食費',
+        data: [1000, 2000],
+        borderColor: '#FF6384',
+        backgroundColor: 'rgba(255, 99, 132, 0.1)'
+      },
+      {
+        label: '交通費',
+        data: [500, 0],
+        borderColor: '#36A2EB',
+        backgroundColor: 'rgba(54, 162, 235, 0.1)'
+      }
+    ]
+  });
+  // 処理状態のモックを追加
+  if (options.setIsLoading) options.setIsLoading(false);
   
   return { success: true };
 };
