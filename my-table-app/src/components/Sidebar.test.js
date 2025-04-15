@@ -32,10 +32,44 @@ test('サイドバーのボタンが正しく動作する', () => {
   fireEvent.click(dataButton);
   expect(setViewMock).toHaveBeenCalledWith('rawdata'); // 'table'から'rawdata'に修正
   
+  // 収支バランスボタンをチェック - 新しいテストケース
+  const balanceButton = screen.getByRole('button', { name: /💹.*収支バランス/i });
+  expect(balanceButton).toBeInTheDocument();
+  expect(balanceButton).toHaveAttribute('data-testid', 'balance-button');
+  
+  // 収支バランスボタンをクリック
+  fireEvent.click(balanceButton);
+  expect(setViewMock).toHaveBeenCalledWith('balance');
+  
   // CSVアップロードボタンをチェック
   const uploadButton = screen.getByRole('button', { name: /📂.*CSVをアップロード/i });
   expect(uploadButton).toBeInTheDocument();
   
   // CSVアップロードボタンは通常ReactFileReader内にあり直接テストが難しいため、
   // ボタンが存在することのみ検証
+});
+
+test('現在のビューに応じてボタンがアクティブになる', () => {
+  const setViewMock = jest.fn();
+  const handleFilesMock = jest.fn();
+  
+  // balance ビューを現在のビューとしてレンダリング
+  render(
+    <Sidebar 
+      setView={setViewMock} 
+      handleFiles={handleFilesMock}
+      currentView="balance"
+    />
+  );
+  
+  // 収支バランスボタンがアクティブであることをチェック
+  const balanceButton = screen.getByTestId('balance-button');
+  expect(balanceButton).toHaveClass('active');
+  
+  // 他のボタンはアクティブでないことをチェック
+  const dashboardButton = screen.getByTestId('dashboard-button');
+  const rawdataButton = screen.getByTestId('rawdata-button');
+  
+  expect(dashboardButton).not.toHaveClass('active');
+  expect(rawdataButton).not.toHaveClass('active');
 });

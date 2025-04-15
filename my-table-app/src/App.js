@@ -5,6 +5,7 @@ import Charts from './components/Charts';
 import DataTable from './components/DataTable';
 import MonthlyTrendChart from './components/MonthlyTrendChart'; 
 import MonthlyTrendTable from './components/MonthlyTrendTable';
+import BalanceView from './components/BalanceView'; // 新しいコンポーネントをインポート
 import { handleFiles } from './components/fileHandlers';
 import { chartOptions } from './config/chartOptions';
 import { createMonthlyTrendData } from './utils/monthlyTrendUtils'; // 新しい関数を使用
@@ -388,6 +389,28 @@ const App = ({ initialData = [] }) => {
               ) : (
                 <div className="empty-state">
                   <div className="empty-state-icon">📈</div>
+                  <p>データがありません</p>
+                  <p className="empty-state-hint">CSVファイルをアップロードしてください</p>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* 収支バランスビューを追加 */}
+          {view === 'balance' && (
+            <div className="balance-section" data-testid="balance-view">
+              {data.length ? (
+                <div>
+                  <BalanceView 
+                    positiveTotal={positiveTotal}
+                    negativeTotal={negativeTotal}
+                    positiveData={positiveChartData}
+                    negativeData={negativeChartData}
+                  />
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-state-icon">📊</div>
                   <p>データがありません</p>
                   <p className="empty-state-hint">CSVファイルをアップロードしてください</p>
                 </div>
