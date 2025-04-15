@@ -66,12 +66,28 @@ try {
   console.error('Failed to register Chart.js components:', error);
 }
 
+// 数値を安全にフォーマットするヘルパー関数
+const safeNumberFormat = (value) => {
+  if (value === undefined || value === null) return '0';
+  return typeof value === 'number' ? value.toLocaleString() : '0';
+};
+
+// 空のチャートデータの定義
+const emptyChartData = {
+  labels: [],
+  datasets: [{
+    data: [],
+    backgroundColor: [],
+    hoverBackgroundColor: []
+  }]
+};
+
 // defaultPropsの代わりにデフォルトパラメータを使用
 const Charts = ({ 
-  positiveChartData, 
-  negativeChartData, 
-  positiveTotal, 
-  negativeTotal, 
+  positiveChartData = emptyChartData, 
+  negativeChartData = emptyChartData, 
+  positiveTotal = 0, 
+  negativeTotal = 0, 
   options = {}, 
   onHover = () => {}, 
   onClick = () => {} 
@@ -91,11 +107,15 @@ const Charts = ({
       return;
     }
     
+    // データの安全な参照を確保
+    const safePositiveData = positiveChartData || emptyChartData;
+    const safeNegativeData = negativeChartData || emptyChartData;
+    
     // データが空の場合は初期化しない
-    const hasPositiveData = positiveChartData.labels.length > 0 && 
-                            positiveChartData.datasets[0].data.length > 0;
-    const hasNegativeData = negativeChartData.labels.length > 0 && 
-                            negativeChartData.datasets[0].data.length > 0;
+    const hasPositiveData = safePositiveData.labels?.length > 0 && 
+                          safePositiveData.datasets?.[0]?.data?.length > 0;
+    const hasNegativeData = safeNegativeData.labels?.length > 0 && 
+                          safeNegativeData.datasets?.[0]?.data?.length > 0;
                             
     if (!hasPositiveData && !hasNegativeData) {
       return;
@@ -121,7 +141,7 @@ const Charts = ({
           if (ctx) {
             positiveChartInstance.current = new Chart(ctx, {
               type: 'pie',
-              data: positiveChartData,
+              data: safePositiveData,
               options: {
                 ...options,
                 events: ['click'], // マウス移動ではなく、クリック時のみイベントを発火
@@ -171,7 +191,7 @@ const Charts = ({
                 
                 // Chart.jsの内部メソッドを使わずにヒットテストを実装
                 const chart = positiveChartInstance.current;
-                if (!chart) return;
+                if (!chart || !chart.data || !chart.data.datasets || !chart.data.datasets[0]) return;
                 
                 // 中心点とマウス位置からヒットテスト
                 const centerX = rect.width / 2;
@@ -265,7 +285,7 @@ const Charts = ({
           if (ctx) {
             negativeChartInstance.current = new Chart(ctx, {
               type: 'pie',
-              data: negativeChartData,
+              data: safeNegativeData,
               options: {
                 ...options,
                 events: ['click'], // マウス移動ではなく、クリック時のみイベントを発火
@@ -315,7 +335,7 @@ const Charts = ({
                 
                 // Chart.jsの内部メソッドを使わずにヒットテストを実装
                 const chart = negativeChartInstance.current;
-                if (!chart) return;
+                if (!chart || !chart.data || !chart.data.datasets || !chart.data.datasets[0]) return;
                 
                 // 中心点とマウス位置からヒットテスト
                 const centerX = rect.width / 2;
@@ -462,26 +482,29 @@ const Charts = ({
   // 修正: 適切なレンダリング条件と構造
   if (isTestEnvironment) {
     // テスト環境用のモックUIを返す
+    const safePositive = positiveChartData || emptyChartData;
+    const safeNegative = negativeChartData || emptyChartData;
+    
     return (
       <div data-testid="mock-charts-container">
         <div data-testid="mock-positive-chart">
-          <h2>収入: ¥{positiveTotal.toLocaleString()}</h2>
+          <h2>収入: ¥{safeNumberFormat(positiveTotal)}</h2>
           <div>
-            {positiveChartData.labels.map((label, index) => (
+            {safePositive.labels && safePositive.labels.map((label, index) => (
               <div key={`pos-${label}`} className="chart-item">
                 <span className="label">{label}</span>
-                <span className="value">¥{positiveChartData.datasets[0]?.data?.[index]?.toLocaleString() || '0'}</span>
+                <span className="value">¥{safeNumberFormat(safePositive.datasets?.[0]?.data?.[index])}</span>
               </div>
             ))}
           </div>
         </div>
         <div data-testid="mock-negative-chart">
-          <h2>支出: ¥{negativeTotal.toLocaleString()}</h2>
+          <h2>支出: ¥{safeNumberFormat(negativeTotal)}</h2>
           <div>
-            {negativeChartData.labels.map((label, index) => (
+            {safeNegative.labels && safeNegative.labels.map((label, index) => (
               <div key={`neg-${label}`} className="chart-item">
                 <span className="label">{label}</span>
-                <span className="value">¥{negativeChartData.datasets[0]?.data?.[index]?.toLocaleString() || '0'}</span>
+                <span className="value">¥{safeNumberFormat(safeNegative.datasets?.[0]?.data?.[index])}</span>
               </div>
             ))}
           </div>
@@ -514,7 +537,7 @@ const Charts = ({
           width: '100%',
           textAlign: 'center'
         }}>
-          収入: <span style={{ fontWeight: 'bold', color: '#4CAF50' }}>¥{positiveTotal.toLocaleString()}</span>
+          収入: <span style={{ fontWeight: 'bold', color: '#4CAF50' }}>¥{safeNumberFormat(positiveTotal)}</span>
         </h2>
         <div style={{ width: '100%', height: '300px', position: 'relative' }}>
           <canvas ref={positiveChartRef} data-testid="positive-chart" />
@@ -542,7 +565,7 @@ const Charts = ({
           width: '100%',
           textAlign: 'center'
         }}>
-          支出: <span style={{ fontWeight: 'bold', color: '#F44336' }}>¥{negativeTotal.toLocaleString()}</span>
+          支出: <span style={{ fontWeight: 'bold', color: '#F44336' }}>¥{safeNumberFormat(negativeTotal)}</span>
         </h2>
         <div style={{ width: '100%', height: '300px', position: 'relative' }}>
           <canvas ref={negativeChartRef} data-testid="negative-chart" />
@@ -635,7 +658,7 @@ Charts.propTypes = {
       backgroundColor: PropTypes.array.isRequired,
       hoverBackgroundColor: PropTypes.array
     })).isRequired
-  }).isRequired,
+  }),
   negativeChartData: PropTypes.shape({
     labels: PropTypes.array.isRequired,
     datasets: PropTypes.arrayOf(PropTypes.shape({
@@ -643,9 +666,9 @@ Charts.propTypes = {
       backgroundColor: PropTypes.array.isRequired,
       hoverBackgroundColor: PropTypes.array
     })).isRequired
-  }).isRequired,
-  positiveTotal: PropTypes.number.isRequired,
-  negativeTotal: PropTypes.number.isRequired,
+  }),
+  positiveTotal: PropTypes.number,
+  negativeTotal: PropTypes.number,
   options: PropTypes.object,
   onHover: PropTypes.func,
   onClick: PropTypes.func

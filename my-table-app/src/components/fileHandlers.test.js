@@ -375,3 +375,121 @@ describe('fileHandlers エッジケーステスト', () => {
     expect(setIsLoading).toHaveBeenCalledWith(false);
   });
 });
+
+// 空行フィルタリングのテスト
+describe('CSV空行フィルタリングテスト', () => {
+  test('空行が正しくフィルタリングされること', async () => {
+    // 空行を含むCSVデータをシミュレートするためのモック
+    parse.mockImplementationOnce((text, options) => {
+      options.complete({
+        data: [
+          { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
+          { '大項目': '', '中項目': '', '金額（円）': '' }, // 完全な空行
+          { '大項目': '食費', '中項目': '外食', '金額（円）': 2000 },
+          {}, // キーがない空オブジェクト
+          { '大項目': null, '中項目': null, '金額（円）': null }, // null値の行
+          { '大項目': '交通費', '中項目': '電車', '金額（円）': -500 }
+        ]
+      });
+    });
+    
+    // モックのCSVファイル
+    const mockFile = new File(['dummy csv with empty lines'], 'test_with_empty_lines.csv', { type: 'text/csv' });
+    const mockFiles = [mockFile];
+    
+    // セッター関数をモック
+    const setData = jest.fn();
+    const setPositiveChartData = jest.fn();
+    const setNegativeChartData = jest.fn();
+    const setIsLoading = jest.fn();
+    
+    // handleFiles関数を実行
+    handleFiles(mockFiles, {
+      setData,
+      setPositiveChartData,
+      setNegativeChartData,
+      setIsLoading
+    });
+    
+    // 非同期処理の完了を待つ
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 検証：空行がフィルタリングされているか
+    expect(setData).toHaveBeenCalled();
+    
+    // setDataに渡されたデータを検証
+    const passedData = setData.mock.calls[0][0];
+    expect(Array.isArray(passedData)).toBe(true);
+    
+    // 空行がフィルタリングされ、有効なデータのみが残っていることを確認
+    expect(passedData.length).toBe(3); // 元の6行から空行3行が除去され3行に
+    
+    // 残ったデータが正しいか確認
+    const validItems = passedData.filter(item => 
+      item['大項目'] === '食費' || item['大項目'] === '交通費'
+    );
+    expect(validItems.length).toBe(3);
+
+    // フィルタリングされたデータに空行が含まれていないことを確認
+    const emptyRows = passedData.filter(item => 
+      !item || 
+      Object.keys(item).length === 0 || 
+      Object.values(item).every(val => val === null || val === undefined || val === '')
+    );
+    expect(emptyRows.length).toBe(0);
+    
+    expect(setIsLoading).toHaveBeenCalledWith(false);
+  });
+
+  test('様々な形式の空行が正しくフィルタリングされること', async () => {
+    // 様々な形式の空行を含むCSVデータをシミュレート
+    parse.mockImplementationOnce((text, options) => {
+      options.complete({
+        data: [
+          { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
+          { '大項目': '', '中項目': '', '金額（円）': '' }, // 空文字列の行
+          { '大項目': '食費', '中項目': '外食', '金額（円）': 2000 },
+          { '大項目': undefined, '中項目': undefined, '金額（円）': undefined }, // undefined値の行
+          { '大項目': '交通費', '中項目': '電車', '金額（円）': -500 },
+          { '大項目': null, '中項目': null, '金額（円）': null }, // null値の行
+          { '大項目': ' ', '中項目': '  ', '金額（円）': '   ' } // 空白文字だけの行
+        ]
+      });
+    });
+    
+    // モックのCSVファイル
+    const mockFile = new File(['dummy csv with various empty lines'], 'test_with_various_empty.csv', { type: 'text/csv' });
+    const mockFiles = [mockFile];
+    
+    // セッター関数をモック
+    const setData = jest.fn();
+    const setPositiveChartData = jest.fn();
+    const setNegativeChartData = jest.fn();
+    const setIsLoading = jest.fn();
+    
+    // handleFiles関数を実行
+    handleFiles(mockFiles, {
+      setData,
+      setPositiveChartData,
+      setNegativeChartData,
+      setIsLoading
+    });
+    
+    // 非同期処理の完了を待つ
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // 検証：空行がフィルタリングされているか
+    const passedData = setData.mock.calls[0][0];
+    
+    // 空行がフィルタリングされ、有効なデータのみが残っていることを確認
+    expect(passedData.length).toBe(3); // 元の7行から空行4行が除去され3行に
+    
+    // 各行の内容を確認
+    expect(passedData[0]['大項目']).toBe('食費');
+    expect(passedData[0]['中項目']).toBe('食料品');
+    expect(passedData[1]['大項目']).toBe('食費');
+    expect(passedData[1]['中項目']).toBe('外食');
+    expect(passedData[2]['大項目']).toBe('交通費');
+    expect(passedData[2]['中項目']).toBe('電車');
+  });
+});

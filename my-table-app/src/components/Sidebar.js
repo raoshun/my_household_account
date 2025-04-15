@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import ReactFileReader from 'react-file-reader';
 import './Sidebar.css';
 
-const Sidebar = ({ setView, handleFiles, currentView }) => {
+const Sidebar = ({ setView, handleFiles, currentView = 'chart' }) => {
     const [expanded, setExpanded] = useState(false);
     
     const toggleSidebar = () => {
@@ -44,6 +44,14 @@ const Sidebar = ({ setView, handleFiles, currentView }) => {
                     <span className="sidebar-button-icon">📄</span>
                     生データ
                 </button>
+                <button 
+                    className={`sidebar-button ${currentView === 'monthlytrend' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('monthlytrend')}
+                    data-testid="monthlytrend-button"
+                >
+                    <span className="sidebar-button-icon">📈</span>
+                    月次推移
+                </button>
                 
                 <h3 className="sidebar-section-title">データ</h3>
                 <ReactFileReader
@@ -71,8 +79,6 @@ Sidebar.propTypes = {
     currentView: PropTypes.string
 };
 
-Sidebar.defaultProps = {
-    currentView: 'chart'
-};
+// defaultPropsを削除し、代わりに関数の引数でデフォルト値を設定しました
 
 export default Sidebar;

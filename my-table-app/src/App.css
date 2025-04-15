@@ -291,7 +291,102 @@ body {
   border-top: 1px solid var(--border-color);
 }
 
-/* レスポンシブデザイン */
+/* 月次推移チャートのコンテナスタイル */
+.trend-chart-container {
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 24px;
+  width: 100%;
+  min-height: 400px; /* チャート表示エリアの最小高さ */
+}
+
+/* 月次推移の説明テキストスタイル */
+.trend-explanation {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #4e79a7;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.trend-explanation h3 {
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.trend-explanation p {
+  margin: 8px 0;
+  color: #555;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* モックチャート（テスト環境用）のスタイル */
+.mock-trend-chart {
+  background-color: #f9f9f9;
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  min-height: 300px;
+}
+
+.mock-trend-chart h3 {
+  text-align: center;
+  margin-top: 0;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.mock-trend-chart-data {
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.chart-labels {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #eee;
+  border-radius: 4px;
+}
+
+.chart-label-item {
+  display: inline-block;
+  margin: 0 5px;
+  background-color: #fff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-datasets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chart-dataset {
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.chart-data-point {
+  display: inline-block;
+  margin: 5px;
+  padding: 2px 6px;
+  background-color: #eee;
+  border-radius: 3px;
+  font-size: 0.85rem;
+}
+
+/* メディアクエリ（レスポンシブ対応） */
 @media (max-width: 768px) {
   .app-container {
     flex-direction: column;
@@ -325,6 +420,21 @@ body {
   
   .sidebar.expanded {
     max-height: 100vh;
+  }
+
+  .trend-chart-container {
+    padding: 15px;
+    min-height: 350px;
+  }
+  
+  .trend-explanation {
+    padding: 12px;
+  }
+  
+  .chart-label-item,
+  .chart-data-point {
+    font-size: 0.8rem;
+    margin: 3px;
   }
 }
 

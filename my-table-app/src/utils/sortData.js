@@ -5,6 +5,8 @@
  * @param {string} order - ソート順序 ('asc' または 'desc')
  * @returns {Array} - ソート済みの配列
  */
+import { aggregateByCategory } from './categoryAggregation';
+
 export function sortData(data, key, order = 'asc') {
   // 入力チェック
   if (!data || !Array.isArray(data) || data.length === 0) {
@@ -44,19 +46,25 @@ export function sortAndAggregateData(data) {
     return {};
   }
 
+  // 共通の集計関数を使って合計金額を計算
+  const categoryTotals = aggregateByCategory(data, {
+    categoryKey: '大項目',
+    amountKey: '金額（円）',
+    defaultCategory: '未分類'
+  });
+  
+  // 結果オブジェクトを初期化
   const result = {};
-
+  
+  // カテゴリごとにアイテムをグループ化
   data.forEach(item => {
     const category = item['大項目'] || '未分類';
     if (!result[category]) {
       result[category] = {
-        total: 0,
+        total: categoryTotals[category] || 0,
         items: []
       };
     }
-
-    const amount = parseFloat(item['金額（円）'] || 0);
-    result[category].total += amount;
     result[category].items.push(item);
   });
 

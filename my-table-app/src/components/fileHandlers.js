@@ -3,6 +3,7 @@ import { sortAndAggregateData } from '../utils/sortData';
 import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 import iconv from 'iconv-lite';
 import { splitDataBySign } from '../utils';
+import { prepareMonthlyTrendData } from '../utils/chartDataUtils'; // 追加: 月次データ生成用の関数をインポート
 
 /**
  * ファイル名を処理する単純なユーティリティ関数
@@ -38,7 +39,33 @@ const parseCSVFile = (file, onComplete, onError) => {
         header: true,
         complete: (result) => {
           if (result && result.data) {
-            onComplete(result.data);
+            // 空行をフィルタリング
+            // 空行とは、全てのフィールドが空（undefined、null、空文字列、または空白文字のみ）である行
+            const filteredData = result.data.filter(row => {
+              // オブジェクトが空（キーがない）場合はスキップ
+              if (!row || Object.keys(row).length === 0) return false;
+              
+              // すべてのフィールドが空かどうかをチェック
+              const allEmpty = Object.values(row).every(
+                value => {
+                  // null、undefined、空文字列の場合は空とみなす
+                  if (value === undefined || value === null || value === '') return true;
+                  
+                  // 文字列の場合、空白文字のみかチェック
+                  if (typeof value === 'string' && value.trim() === '') return true;
+                  
+                  // それ以外の場合は空ではない
+                  return false;
+                }
+              );
+              
+              // 空でない行だけを残す
+              return !allEmpty;
+            });
+            
+            console.log(`CSVデータの行数: ${result.data.length}, フィルタリング後: ${filteredData.length}`);
+            
+            onComplete(filteredData);
           } else {
             onError(new Error('CSV解析結果にデータがありません'));
           }
@@ -98,7 +125,8 @@ export const handleFiles = (files, setters = {}) => {
     setAggregatedData,
     setCategoryTotals,
     setIsLoading,
-    setError // エラー設定関数を追加
+    setError, // エラー設定関数を追加
+    setMonthlyTrendData // 追加: 月次推移データ設定関数
   } = setters;
   
   if (setIsLoading) {
@@ -151,6 +179,23 @@ export const handleFiles = (files, setters = {}) => {
               setNegativeTotal(chartData.negativeTotal);
             }
             
+            // 追加: 月次推移データを生成・設定
+            if (setMonthlyTrendData) {
+              try {
+                const trendData = prepareMonthlyTrendData(
+                  allData,
+                  '日付', // 日付キー
+                  '大項目', // カテゴリキー
+                  '金額（円）', // 金額キー
+                  5 // 表示する最大カテゴリ数
+                );
+                setMonthlyTrendData(trendData);
+              } catch (error) {
+                console.error('月次推移データの生成中にエラーが発生しました:', error);
+                setMonthlyTrendData({ labels: [], datasets: [] });
+              }
+            }
+            
             // calculateCategoryTotals 関数を呼び出す
             const categoryPromise = calculateCategoryTotals(allData);
             
@@ -180,6 +225,7 @@ export const handleFiles = (files, setters = {}) => {
             if (setPositiveTotal) setPositiveTotal(0);
             if (setNegativeTotal) setNegativeTotal(0);
             if (setCategoryTotals) setCategoryTotals({});
+            if (setMonthlyTrendData) setMonthlyTrendData({ labels: [], datasets: [] }); // 追加: 空の月次推移データを設定
           }
           
           if (setIsLoading) {
