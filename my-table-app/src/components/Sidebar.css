@@ -210,4 +210,63 @@
 
 .sidebar-checkbox-text {
     color: white;
+    margin-left: 8px;
+    font-size: 14px;
+}
+
+/* 期間フィルタースタイル */
+.sidebar-filter-section {
+    margin: 10px 0;
+    padding: 5px 15px;
+}
+
+.sidebar-filter-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 5px 0;
+    color: #e0e0e0;
+}
+
+.sidebar-date-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.date-filter-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.date-filter-row label {
+    font-size: 13px;
+    color: #e0e0e0;
+}
+
+.date-input {
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.05);
+    color: white;
+    font-size: 13px;
+    width: 100%;
+}
+
+.clear-date-filter {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    color: #e0e0e0;
+    cursor: pointer;
+    margin-top: 5px;
+    transition: background-color 0.2s;
+    width: 100%;
+}
+
+.clear-date-filter:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }

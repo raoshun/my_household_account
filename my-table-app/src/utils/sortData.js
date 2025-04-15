@@ -99,10 +99,71 @@ export const filterData = (data, filters) => {
       }
     }
 
+    // 日付範囲フィルターの処理
+    if (filters.startDate || filters.endDate) {
+      // 日付データがない場合は含めない
+      if (!item['日付']) {
+        return false;
+      }
+      
+      // 文字列の日付をDateオブジェクトに変換（YYYY/MM/DD形式を想定）
+      const itemDateStr = String(item['日付']);
+      let itemDate;
+      
+      try {
+        // 日付フォーマットに応じて処理（YYYY/MM/DD または YYYY-MM-DD）
+        if (itemDateStr.includes('/')) {
+          const [year, month, day] = itemDateStr.split('/').map(Number);
+          itemDate = new Date(year, month - 1, day); // JavaScriptの月は0-11
+        } else if (itemDateStr.includes('-')) {
+          const [year, month, day] = itemDateStr.split('-').map(Number);
+          itemDate = new Date(year, month - 1, day);
+        } else if (!isNaN(itemDateStr)) {
+          // 数値形式の場合（Excelの日付など）
+          const excelEpoch = new Date(1900, 0, 1);
+          const millisPerDay = 24 * 60 * 60 * 1000;
+          const offsetDays = parseInt(itemDateStr) - 1; // Excelの日付は1900/1/1が1
+          itemDate = new Date(excelEpoch.getTime() + offsetDays * millisPerDay);
+        } else {
+          itemDate = new Date(itemDateStr);
+        }
+        
+        // 日付が無効な場合は含めない
+        if (isNaN(itemDate.getTime())) {
+          return false;
+        }
+        
+        // 開始日フィルターの適用
+        if (filters.startDate) {
+          const startDate = new Date(filters.startDate);
+          // 開始日より前のアイテムは除外
+          if (itemDate < startDate) {
+            return false;
+          }
+        }
+        
+        // 終了日フィルターの適用
+        if (filters.endDate) {
+          const endDate = new Date(filters.endDate);
+          // 終了日の23:59:59までを含めるため、翌日の0時と比較
+          const nextDay = new Date(endDate);
+          nextDay.setDate(nextDay.getDate() + 1);
+          
+          // 終了日より後のアイテムは除外
+          if (itemDate >= nextDay) {
+            return false;
+          }
+        }
+      } catch (error) {
+        console.warn('日付のフィルタリングエラー:', error);
+        return false;
+      }
+    }
+
     // すべてのフィルタ条件に一致するかをチェック
     return Object.entries(filters).every(([key, value]) => {
-      // excludeTransfersは特殊なフラグなので、通常のフィルター条件としては処理しない
-      if (key === 'excludeTransfers') return true;
+      // 特殊なフィルターキーは個別に処理済みなのでスキップ
+      if (key === 'excludeTransfers' || key === 'startDate' || key === 'endDate') return true;
       
       // フィルタ値が空の場合はチェックしない
       if (value === undefined || value === null || value === '') {

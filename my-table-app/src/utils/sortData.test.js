@@ -154,3 +154,94 @@ test('filterData should not filter transfers when excludeTransfers is false or u
   const filteredWithoutFlag = filterData(testData, {});
   expect(filteredWithoutFlag).toHaveLength(4); // すべてのデータが含まれる
 });
+
+// 日付範囲フィルターのテスト
+test('filterData should filter data by date range using startDate filter', () => {
+  const testData = [
+    { '大項目': '食費', '日付': '2023/01/15', '金額（円）': 1000 },
+    { '大項目': '食費', '日付': '2023/02/10', '金額（円）': 2000 },
+    { '大項目': '食費', '日付': '2023/03/20', '金額（円）': 3000 },
+  ];
+  
+  // 開始日のみのフィルター
+  const filtered = filterData(testData, { startDate: '2023-02-01' });
+  expect(filtered).toHaveLength(2);
+  
+  // 日付が2023/02/01以降のデータのみが含まれることを確認
+  const dates = filtered.map(item => item['日付']);
+  expect(dates).toContain('2023/02/10');
+  expect(dates).toContain('2023/03/20');
+  expect(dates).not.toContain('2023/01/15');
+});
+
+test('filterData should filter data by date range using endDate filter', () => {
+  const testData = [
+    { '大項目': '食費', '日付': '2023/01/15', '金額（円）': 1000 },
+    { '大項目': '食費', '日付': '2023/02/10', '金額（円）': 2000 },
+    { '大項目': '食費', '日付': '2023/03/20', '金額（円）': 3000 },
+  ];
+  
+  // 終了日のみのフィルター
+  const filtered = filterData(testData, { endDate: '2023-02-15' });
+  expect(filtered).toHaveLength(2);
+  
+  // 日付が2023/02/15以前のデータのみが含まれることを確認
+  const dates = filtered.map(item => item['日付']);
+  expect(dates).toContain('2023/01/15');
+  expect(dates).toContain('2023/02/10');
+  expect(dates).not.toContain('2023/03/20');
+});
+
+test('filterData should filter data by date range using both startDate and endDate filters', () => {
+  const testData = [
+    { '大項目': '食費', '日付': '2023/01/15', '金額（円）': 1000 },
+    { '大項目': '食費', '日付': '2023/02/10', '金額（円）': 2000 },
+    { '大項目': '食費', '日付': '2023/03/20', '金額（円）': 3000 },
+  ];
+  
+  // 開始日と終了日の両方を指定
+  const filtered = filterData(testData, {
+    startDate: '2023-01-20',
+    endDate: '2023-03-01'
+  });
+  
+  expect(filtered).toHaveLength(1);
+  expect(filtered[0]['日付']).toBe('2023/02/10');
+});
+
+test('filterData should handle different date formats correctly', () => {
+  const testData = [
+    { '大項目': '食費', '日付': '2023/01/15', '金額（円）': 1000 }, // YYYY/MM/DD形式
+    { '大項目': '食費', '日付': '2023-02-10', '金額（円）': 2000 }, // YYYY-MM-DD形式
+    { '大項目': '食費', '日付': '44640', '金額（円）': 3000 },      // Excel日付（2022/3/15に対応する数値）
+    { '大項目': '食費', '日付': '無効な日付', '金額（円）': 4000 }, // 無効な日付
+  ];
+  
+  // 日付範囲でフィルタリング
+  const filtered = filterData(testData, {
+    startDate: '2023-01-01',
+    endDate: '2023-02-28'
+  });
+  
+  expect(filtered).toHaveLength(2);
+  expect(filtered.some(item => item['日付'] === '2023/01/15')).toBe(true);
+  expect(filtered.some(item => item['日付'] === '2023-02-10')).toBe(true);
+  
+  // 無効な日付と範囲外の日付が除外されていることを確認
+  expect(filtered.some(item => item['日付'] === '44640')).toBe(false);
+  expect(filtered.some(item => item['日付'] === '無効な日付')).toBe(false);
+});
+
+test('filterData should skip date filtering if neither startDate nor endDate is provided', () => {
+  const testData = [
+    { '大項目': '食費', '日付': '2023/01/15', '金額（円）': 1000 },
+    { '大項目': '食費', '日付': '2023/02/10', '金額（円）': 2000 },
+    { '大項目': '食費', '日付': '無効な日付', '金額（円）': 3000 },
+  ];
+  
+  // 日付フィルターなしでフィルタリング
+  const filtered = filterData(testData, { '大項目': '食費' });
+  
+  // すべての食費データが含まれることを確認（日付無効なものも含む）
+  expect(filtered).toHaveLength(3);
+});

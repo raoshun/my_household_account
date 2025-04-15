@@ -73,3 +73,99 @@ test('現在のビューに応じてボタンがアクティブになる', () =>
   expect(dashboardButton).not.toHaveClass('active');
   expect(rawdataButton).not.toHaveClass('active');
 });
+
+// 期間フィルターのテストケースを追加
+test('期間フィルターが正しく表示され、値を更新できる', () => {
+  const setViewMock = jest.fn();
+  const handleFilesMock = jest.fn();
+  const onFilterChangeMock = jest.fn();
+  const filters = {
+    excludeTransfers: true,
+    startDate: '',
+    endDate: ''
+  };
+  
+  // 必要なプロップスを渡してレンダリング
+  render(
+    <Sidebar 
+      setView={setViewMock} 
+      handleFiles={handleFilesMock}
+      filters={filters}
+      onFilterChange={onFilterChangeMock}
+    />
+  );
+  
+  // 開始日と終了日の入力欄が表示されていることを確認
+  const startDateInput = screen.getByTestId('start-date-input');
+  const endDateInput = screen.getByTestId('end-date-input');
+  
+  expect(startDateInput).toBeInTheDocument();
+  expect(endDateInput).toBeInTheDocument();
+  
+  // 開始日を設定
+  const startDate = '2023-01-01';
+  fireEvent.change(startDateInput, { target: { value: startDate } });
+  expect(onFilterChangeMock).toHaveBeenCalledWith('startDate', startDate);
+  
+  // 終了日を設定
+  const endDate = '2023-12-31';
+  fireEvent.change(endDateInput, { target: { value: endDate } });
+  expect(onFilterChangeMock).toHaveBeenCalledWith('endDate', endDate);
+});
+
+test('期間フィルターがクリアボタンで正しくリセットされる', () => {
+  const setViewMock = jest.fn();
+  const handleFilesMock = jest.fn();
+  const onFilterChangeMock = jest.fn();
+  const filters = {
+    excludeTransfers: true,
+    startDate: '2023-01-01',
+    endDate: '2023-12-31'
+  };
+  
+  // 日付が設定された状態でレンダリング
+  render(
+    <Sidebar 
+      setView={setViewMock} 
+      handleFiles={handleFilesMock}
+      filters={filters}
+      onFilterChange={onFilterChangeMock}
+    />
+  );
+  
+  // クリアボタンが表示されていることを確認
+  const clearButton = screen.getByTestId('clear-date-filter');
+  expect(clearButton).toBeInTheDocument();
+  
+  // クリアボタンをクリック
+  fireEvent.click(clearButton);
+  
+  // startDateとendDateがクリアされたことを確認
+  expect(onFilterChangeMock).toHaveBeenCalledWith('startDate', '');
+  expect(onFilterChangeMock).toHaveBeenCalledWith('endDate', '');
+});
+
+test('フィルターが設定されていない場合、クリアボタンは表示されない', () => {
+  const setViewMock = jest.fn();
+  const handleFilesMock = jest.fn();
+  const onFilterChangeMock = jest.fn();
+  const filters = {
+    excludeTransfers: true,
+    startDate: '',
+    endDate: ''
+  };
+  
+  // 日付なしでレンダリング
+  render(
+    <Sidebar 
+      setView={setViewMock} 
+      handleFiles={handleFilesMock}
+      filters={filters}
+      onFilterChange={onFilterChangeMock}
+    />
+  );
+  
+  // クリアボタンが存在しないことを確認
+  const clearButton = screen.queryByTestId('clear-date-filter');
+  expect(clearButton).not.toBeInTheDocument();
+});

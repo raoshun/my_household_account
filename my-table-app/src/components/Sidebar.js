@@ -21,6 +21,19 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
         onFilterChange && onFilterChange('excludeTransfers', !filters.excludeTransfers);
     };
 
+    const handleStartDateChange = (e) => {
+        onFilterChange && onFilterChange('startDate', e.target.value);
+    };
+
+    const handleEndDateChange = (e) => {
+        onFilterChange && onFilterChange('endDate', e.target.value);
+    };
+
+    const clearDateFilter = () => {
+        onFilterChange && onFilterChange('startDate', '');
+        onFilterChange && onFilterChange('endDate', '');
+    };
+
     return (
         <div className={`sidebar ${expanded ? 'expanded' : ''}`}>
             <div className="sidebar-header">
@@ -76,6 +89,44 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
                         />
                         <span className="sidebar-checkbox-text">振替を除外する</span>
                     </label>
+                </div>
+                
+                <div className="sidebar-filter-section">
+                    <h4 className="sidebar-filter-title">期間を指定</h4>
+                    <div className="sidebar-date-filter">
+                        <div className="date-filter-row">
+                            <label htmlFor="start-date">開始日:</label>
+                            <input 
+                                type="date"
+                                id="start-date"
+                                value={filters.startDate || ''}
+                                onChange={handleStartDateChange}
+                                className="date-input"
+                                data-testid="start-date-input"
+                            />
+                        </div>
+                        <div className="date-filter-row">
+                            <label htmlFor="end-date">終了日:</label>
+                            <input 
+                                type="date"
+                                id="end-date"
+                                value={filters.endDate || ''}
+                                onChange={handleEndDateChange}
+                                className="date-input"
+                                data-testid="end-date-input"
+                            />
+                        </div>
+                        
+                        {(filters.startDate || filters.endDate) && (
+                            <button 
+                                className="clear-date-filter" 
+                                onClick={clearDateFilter}
+                                data-testid="clear-date-filter"
+                            >
+                                期間フィルターをクリア
+                            </button>
+                        )}
+                    </div>
                 </div>
                 
                 <h3 className="sidebar-section-title">データ</h3>
