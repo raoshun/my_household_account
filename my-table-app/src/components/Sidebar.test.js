@@ -1,3 +1,4 @@
+import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import Sidebar from './Sidebar';
 
@@ -141,6 +142,73 @@ test('期間フィルターがクリアボタンで正しくリセットされ�
   fireEvent.click(clearButton);
   
   // startDateとendDateがクリアされたことを確認
+  expect(onFilterChangeMock).toHaveBeenCalledWith('startDate', '');
+  expect(onFilterChangeMock).toHaveBeenCalledWith('endDate', '');
+});
+
+test('期間フィルターが初期値にリセットされること', () => {
+  const setViewMock = jest.fn();
+  const handleFilesMock = jest.fn();
+  const onFilterChangeMock = jest.fn();
+  const filters = {
+    excludeTransfers: true,
+    startDate: '2023-01-01',
+    endDate: '2023-12-31'
+  };
+  const initialDateRange = {
+    startDate: '2022-01-01',
+    endDate: '2022-12-31'
+  };
+  
+  // 日付が設定された状態でレンダリング（初期日付範囲も指定）
+  render(
+    <Sidebar 
+      setView={setViewMock} 
+      handleFiles={handleFilesMock}
+      filters={filters}
+      onFilterChange={onFilterChangeMock}
+      initialDateRange={initialDateRange}
+    />
+  );
+  
+  // クリアボタンが表示されていることを確認
+  const resetButton = screen.getByTestId('clear-date-filter');
+  expect(resetButton).toBeInTheDocument();
+  expect(resetButton.textContent).toBe('期間フィルターを初期値にリセット');
+  
+  // リセットボタンをクリック
+  fireEvent.click(resetButton);
+  
+  // startDateとendDateが初期値にリセットされたことを確認
+  expect(onFilterChangeMock).toHaveBeenCalledWith('startDate', initialDateRange.startDate);
+  expect(onFilterChangeMock).toHaveBeenCalledWith('endDate', initialDateRange.endDate);
+});
+
+test('初期値が指定されていない場合、リセットすると空の値になる', () => {
+  const setViewMock = jest.fn();
+  const handleFilesMock = jest.fn();
+  const onFilterChangeMock = jest.fn();
+  const filters = {
+    excludeTransfers: true,
+    startDate: '2023-01-01',
+    endDate: '2023-12-31'
+  };
+  
+  // 初期日付範囲なしでレンダリング
+  render(
+    <Sidebar 
+      setView={setViewMock} 
+      handleFiles={handleFilesMock}
+      filters={filters}
+      onFilterChange={onFilterChangeMock}
+    />
+  );
+  
+  // リセットボタンをクリック
+  const resetButton = screen.getByTestId('clear-date-filter');
+  fireEvent.click(resetButton);
+  
+  // 初期値がないので空文字でリセットされることを確認
   expect(onFilterChangeMock).toHaveBeenCalledWith('startDate', '');
   expect(onFilterChangeMock).toHaveBeenCalledWith('endDate', '');
 });
