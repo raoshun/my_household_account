@@ -3,7 +3,98 @@ import { sortAndAggregateData } from '../utils/sortData';
 import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 import iconv from 'iconv-lite';
 import { splitDataBySign } from '../utils';
-import { prepareMonthlyTrendData } from '../utils/chartDataUtils'; // 追加: 月次データ生成用の関数をインポート
+import { prepareMonthlyTrendData } from '../utils/chartDataUtils';
+
+/**
+ * CSVデータから日付の範囲を検出する関数
+ * @param {Array} data - 解析するデータ配列
+ * @param {string} dateKey - 日付が格納されているキー（デフォルト: '日付'）
+ * @returns {Object} - 開始日と終了日を含むオブジェクト { startDate, endDate } - ISO形式（YYYY-MM-DD）
+ */
+export const detectDateRange = (data, dateKey = '日付') => {
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return { startDate: '', endDate: '' };
+  }
+
+  // 日付を持つレコードをフィルタリング
+  const recordsWithDate = data.filter(item => item[dateKey]);
+  if (recordsWithDate.length === 0) {
+    return { startDate: '', endDate: '' };
+  }
+
+  let minDate = null;
+  let maxDate = null;
+
+  // 日付を解析して最小・最大を検出
+  recordsWithDate.forEach(item => {
+    const dateStr = String(item[dateKey]);
+    
+    try {
+      let date;
+      
+      // YYYYMMDDの8桁数値形式
+      if (/^\d{8}$/.test(dateStr)) {
+        const year = parseInt(dateStr.substring(0, 4), 10);
+        const month = parseInt(dateStr.substring(4, 6), 10) - 1;
+        const day = parseInt(dateStr.substring(6, 8), 10);
+        date = new Date(year, month, day);
+      }
+      // YYYY/MM/DD または YYYY-MM-DD 形式
+      else if (dateStr.includes('/') || dateStr.includes('-')) {
+        const separator = dateStr.includes('/') ? '/' : '-';
+        const [year, month, day] = dateStr.split(separator).map(Number);
+        date = new Date(year, month - 1, day);
+      }
+      // YYYY年MM月DD日 形式
+      else if (dateStr.match(/^\d{4}年\d{1,2}月\d{1,2}日?$/)) {
+        const match = dateStr.match(/^(\d{4})年(\d{1,2})月(\d{1,2})日?$/);
+        if (match) {
+          const year = parseInt(match[1], 10);
+          const month = parseInt(match[2], 10) - 1;
+          const day = parseInt(match[3], 10);
+          date = new Date(year, month, day);
+        }
+      }
+      // 数値形式（Excelの連番など）
+      else if (!isNaN(dateStr)) {
+        const excelEpoch = new Date(1900, 0, 1);
+        const millisPerDay = 24 * 60 * 60 * 1000;
+        const offsetDays = parseInt(dateStr) - 1;
+        date = new Date(excelEpoch.getTime() + offsetDays * millisPerDay);
+      }
+      // その他の形式はDateコンストラクタに任せる
+      else {
+        date = new Date(dateStr);
+      }
+
+      // 有効な日付の場合のみ比較
+      if (!isNaN(date.getTime())) {
+        if (minDate === null || date < minDate) {
+          minDate = date;
+        }
+        if (maxDate === null || date > maxDate) {
+          maxDate = date;
+        }
+      }
+    } catch (error) {
+      console.warn('日付の解析エラー:', dateStr, error);
+    }
+  });
+
+  // 日付をYYYY-MM-DD形式に変換（HTML date inputで使用可能な形式）
+  const formatDateForInput = (date) => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    startDate: minDate ? formatDateForInput(minDate) : '',
+    endDate: maxDate ? formatDateForInput(maxDate) : ''
+  };
+};
 
 /**
  * ファイル名を処理する単純なユーティリティ関数
@@ -125,8 +216,9 @@ export const handleFiles = (files, setters = {}) => {
     setAggregatedData,
     setCategoryTotals,
     setIsLoading,
-    setError, // エラー設定関数を追加
-    setMonthlyTrendData // 追加: 月次推移データ設定関数
+    setError,
+    setMonthlyTrendData,
+    setDateRange // 日付範囲を設定する関数を追加
   } = setters;
   
   if (setIsLoading) {
@@ -152,6 +244,13 @@ export const handleFiles = (files, setters = {}) => {
           setData(allData);
           
           if (allData.length > 0) {
+            // 日付範囲を検出して設定（追加）
+            if (setDateRange) {
+              const dateRange = detectDateRange(allData);
+              console.log('検出された日付範囲:', dateRange);
+              setDateRange(dateRange);
+            }
+            
             // 集計データを計算・セット
             const aggregated = sortAndAggregateData(allData);
             if (setAggregatedData) {
