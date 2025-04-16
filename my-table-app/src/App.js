@@ -56,6 +56,8 @@ const App = ({ initialData = [] }) => {
   const [dataProcessing, setDataProcessing] = useState(false); // データ処理中フラグ
   const [monthlyViewMode, setMonthlyViewMode] = useState('chart'); // 月次推移の表示モード（chart or table）
   const [showPrediction, setShowPrediction] = useState(false); // 予測表示のオン/オフ状態
+  const [forecastPeriods, setForecastPeriods] = useState(3); // 予測期間（デフォルト3ヶ月）
+  const [predictionMethod, setPredictionMethod] = useState('seasonal_ma'); // 予測手法（デフォルトは季節性移動平均）
 
   // ファイルハンドラをラップする関数を作成
   const handleFileUpload = (files) => {
@@ -362,11 +364,64 @@ const App = ({ initialData = [] }) => {
                             checked={showPrediction} 
                             onChange={(e) => setShowPrediction(e.target.checked)} 
                           />
-                          翌月の予測を表示
+                          将来の予測を表示
                         </label>
                       </div>
                     )}
                   </div>
+                  
+                  {/* 予測設定コントロール - 予測表示が有効な場合のみ表示 */}
+                  {monthlyViewMode === 'chart' && showPrediction && (
+                    <div className="prediction-controls">
+                      <div className="prediction-control-row">
+                        <div className="prediction-control-group">
+                          <span className="prediction-control-label">予測期間:</span>
+                          <div className="prediction-period-options">
+                            <button 
+                              className={`period-option ${forecastPeriods === 1 ? 'active' : ''}`}
+                              onClick={() => setForecastPeriods(1)}
+                            >
+                              1ヶ月先
+                            </button>
+                            <button 
+                              className={`period-option ${forecastPeriods === 2 ? 'active' : ''}`}
+                              onClick={() => setForecastPeriods(2)}
+                            >
+                              2ヶ月先
+                            </button>
+                            <button 
+                              className={`period-option ${forecastPeriods === 3 ? 'active' : ''}`}
+                              onClick={() => setForecastPeriods(3)}
+                            >
+                              3ヶ月先
+                            </button>
+                          </div>
+                        </div>
+                        <div className="prediction-control-group">
+                          <span className="prediction-control-label">予測手法:</span>
+                          <select 
+                            className="prediction-select"
+                            value={predictionMethod}
+                            onChange={(e) => setPredictionMethod(e.target.value)}
+                          >
+                            <option value="auto">自動選択</option>
+                            <option value="arima">ARIMA</option>
+                            <option value="exponential">指数平滑法</option>
+                            <option value="seasonal_ma">季節性調整付き移動平均</option>
+                          </select>
+                          <div className="prediction-info-tooltip">
+                            <div className="tooltip-icon">?</div>
+                            <div className="tooltip-content">
+                              <strong>自動選択</strong>: データに最適な予測手法を自動選択<br/>
+                              <strong>ARIMA</strong>: 自己回帰和分移動平均モデル<br/>
+                              <strong>指数平滑法</strong>: トレンドと季節性を加味した予測<br/>
+                              <strong>季節性調整付き移動平均</strong>: 季節変動を考慮した移動平均予測
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="trend-chart-container">
                     {dataProcessing ? (
@@ -375,7 +430,7 @@ const App = ({ initialData = [] }) => {
                       <>
                         {monthlyViewMode === 'chart' ? (
                           <MonthlyTrendChart 
-                            key={`trend-chart-${chartKey}-${showPrediction ? 'with-prediction' : 'no-prediction'}`}
+                            key={`trend-chart-${chartKey}-${showPrediction ? 'with-prediction' : 'no-prediction'}-${forecastPeriods}-${predictionMethod}`}
                             trendData={monthlyTrendData}
                             options={{
                               plugins: {
@@ -387,6 +442,8 @@ const App = ({ initialData = [] }) => {
                               }
                             }}
                             showPrediction={showPrediction}
+                            forecastPeriods={forecastPeriods}
+                            predictionMethod={predictionMethod}
                           />
                         ) : (
                           <MonthlyTrendTable 

@@ -113,3 +113,136 @@
   font-size: 12px;
   margin-left: 5px;
 }
+
+.prediction-method {
+  margin-left: 10px;
+  padding: 2px 6px;
+  background-color: #e7f3ff;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #3a6ea5;
+  font-weight: 500;
+}
+
+/* 予測設定コントロール */
+.prediction-controls {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.prediction-control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.prediction-control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prediction-control-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  min-width: 90px;
+}
+
+.prediction-select {
+  padding: 6px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  min-width: 150px;
+}
+
+.prediction-select:focus {
+  outline: none;
+  border-color: #4e79a7;
+  box-shadow: 0 0 0 2px rgba(78, 121, 167, 0.25);
+}
+
+.prediction-period-options {
+  display: flex;
+  gap: 5px;
+}
+
+.period-option {
+  padding: 5px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.period-option:hover {
+  background-color: #f8f9fa;
+}
+
+.period-option.active {
+  background-color: #4e79a7;
+  color: white;
+  border-color: #4e79a7;
+}
+
+/* 予測情報ツールチップ */
+.prediction-info-tooltip {
+  position: relative;
+  display: inline-block;
+  margin-left: 5px;
+  cursor: help;
+}
+
+.tooltip-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #6c757d;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.tooltip-content {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  width: 220px;
+  z-index: 10;
+  font-size: 12px;
+  color: #212529;
+  display: none;
+}
+
+.prediction-info-tooltip:hover .tooltip-content {
+  display: block;
+}
+
+.tooltip-content:before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid white;
+}

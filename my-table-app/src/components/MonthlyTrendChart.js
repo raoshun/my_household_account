@@ -17,12 +17,16 @@ Chart.register(...registerables);
  * @param {Array} props.trendData.datasets - カテゴリごとのデータセット配列
  * @param {Object} props.options - Chart.jsのオプション（オプショナル）
  * @param {boolean} props.showPrediction - 予測データを表示するかどうか
+ * @param {number} props.forecastPeriods - 予測する期間（月数）
+ * @param {string} props.predictionMethod - 予測手法
  * @returns {JSX.Element} - 月次推移チャート
  */
 const MonthlyTrendChart = ({ 
   trendData = { labels: [], datasets: [] }, 
   options = {},
-  showPrediction = false
+  showPrediction = false,
+  forecastPeriods = 3,
+  predictionMethod = 'auto'
 }) => {
   const chartRef = useRef(null);
   const [chartInstance, setChartInstance] = useState(null);
@@ -44,7 +48,10 @@ const MonthlyTrendChart = ({
         setIsPredicting(true);
         // 本番環境では実際のAPIを呼び出す予定
         // テスト段階ではモックを使用
-        const result = await getMockPrediction(trendData);
+        const result = await getMockPrediction(trendData, {
+          forecastPeriods,
+          method: predictionMethod
+        });
         
         if (isMounted) {
           setPredictionData(result);
@@ -63,7 +70,7 @@ const MonthlyTrendChart = ({
     return () => {
       isMounted = false;
     };
-  }, [trendData, showPrediction]);
+  }, [trendData, showPrediction, forecastPeriods, predictionMethod]);
 
   // チャートデータに予測を追加
   const getTrendDataWithPredictions = () => {
@@ -83,29 +90,70 @@ const MonthlyTrendChart = ({
     const newData = JSON.parse(JSON.stringify(trendData));
     
     // 予測月を追加
-    newData.labels = [...newData.labels, predictionData.nextMonth];
+    const nextMonths = predictionData.nextMonths || [predictionData.nextMonth];
+    newData.labels = [...newData.labels, ...nextMonths];
     
     // 各データセットに予測値を追加
     newData.datasets = newData.datasets.map(dataset => {
-      const predictedValue = predictionData.predictions[dataset.label] || null;
+      const category = dataset.label;
       const originalData = [...dataset.data];
-      const extendedData = [...originalData, predictedValue];
+      
+      // カテゴリに対応する予測値を取得（配列または単一値）
+      let predictedValues = [];
+      if (predictionData.predictions[category]) {
+        // 新しい形式（複数月の予測）
+        if (Array.isArray(predictionData.predictions[category])) {
+          predictedValues = predictionData.predictions[category];
+        } 
+        // 旧形式（1ヶ月のみの予測）
+        else {
+          predictedValues = [predictionData.predictions[category]];
+        }
+      }
+      
+      // 予測値が足りない場合は最後の値を繰り返して埋める
+      while (predictedValues.length < forecastPeriods) {
+        const lastValue = predictedValues.length > 0 
+          ? predictedValues[predictedValues.length - 1] 
+          : (originalData.length > 0 ? originalData[originalData.length - 1] : 0);
+        predictedValues.push(lastValue);
+      }
+      
+      // 予測値を必要数に切り詰める
+      predictedValues = predictedValues.slice(0, forecastPeriods);
+      
+      const extendedData = [...originalData, ...predictedValues];
+      
+      // 予測ポイントの視覚的スタイルを設定
+      const pointStyles = [...originalData.map(() => 'circle')];
+      const pointRadii = [...originalData.map(() => 3)];
+      const pointHoverRadii = [...originalData.map(() => 5)];
+      const pointBackgroundColors = [...originalData.map(() => dataset.borderColor)];
+      
+      // 予測ポイントごとに異なるスタイルを適用
+      for (let i = 0; i < forecastPeriods; i++) {
+        // 予測期間が長い場合、異なる形状を使う
+        const pointStyle = i === 0 ? 'rectRot' : (i === 1 ? 'triangle' : 'cross');
+        pointStyles.push(pointStyle);
+        
+        // 予測期間に応じてサイズを少しずつ小さくする（不確実性の表現）
+        const sizeAdjustment = Math.max(0, 1 - i * 0.15);
+        pointRadii.push(5 * sizeAdjustment);
+        pointHoverRadii.push(7 * sizeAdjustment);
+        pointBackgroundColors.push(dataset.borderColor);
+      }
       
       // 予測データを含むデータセットを生成
       return {
         ...dataset,
         data: extendedData,
-        // 実データポイントと予測データポイントで異なるスタイルを設定
-        pointStyle: [...originalData.map(() => 'circle'), 'rectRot'],
-        // 実線と破線のセグメントを生成するためのデータセット分割
-        // 本来のデータは実線で表示
-        borderDash: undefined,
-        // データポイントのサイズを調整
-        pointRadius: [...originalData.map(() => 3), 5],
+        // ポイントのスタイル設定
+        pointStyle: pointStyles,
+        pointRadius: pointRadii,
+        pointHoverRadius: pointHoverRadii,
+        pointBackgroundColor: pointBackgroundColors,
         // データポイントのホバー時サイズ
-        pointHoverRadius: [...originalData.map(() => 5), 7],
         // 予測点を強調
-        pointBackgroundColor: [...originalData.map(() => dataset.borderColor), dataset.borderColor],
         // 予測線用のスタイル設定は別セグメントとして追加
         segment: {
           borderDash: ctx => ctx.p0DataIndex >= originalData.length - 1 ? [5, 5] : undefined
@@ -202,6 +250,20 @@ const MonthlyTrendChart = ({
     };
   }, [chartInstance]);
 
+  // 使用した予測手法の表示用テキスト
+  const getPredictionMethodText = () => {
+    if (!predictionData || !predictionData.method) return '自動選択';
+    
+    const methodMap = {
+      'auto': '自動選択',
+      'arima': 'ARIMA',
+      'exponential': '指数平滑法',
+      'seasonal_ma': '季節性調整付き移動平均'
+    };
+    
+    return methodMap[predictionData.method] || predictionData.method;
+  };
+
   return (
     <div className="monthly-trend-chart-container">
       {isLoading && (
@@ -234,7 +296,8 @@ const MonthlyTrendChart = ({
         <div className="prediction-info">
           <div className="prediction-badge">予測</div>
           <p>
-            <strong>{predictionData.nextMonth}</strong>の予測データを表示しています。
+            <strong>{predictionData.nextMonths ? predictionData.nextMonths.join(', ') : predictionData.nextMonth}</strong>の予測データを表示しています。
+            <span className="prediction-method">予測手法: {getPredictionMethodText()}</span>
             <span className="prediction-note">（直近のトレンドに基づく予測値）</span>
           </p>
         </div>
@@ -254,7 +317,9 @@ MonthlyTrendChart.propTypes = {
     }))
   }),
   options: PropTypes.object,
-  showPrediction: PropTypes.bool
+  showPrediction: PropTypes.bool,
+  forecastPeriods: PropTypes.number,
+  predictionMethod: PropTypes.string
 };
 
 export default MonthlyTrendChart;
