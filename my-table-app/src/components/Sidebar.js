@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import ReactFileReader from 'react-file-reader';
 import './Sidebar.css';
 
-const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, onFilterChange }) => {
+const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, onFilterChange, initialDateRange = {} }) => {
     const [expanded, setExpanded] = useState(false);
     
     const toggleSidebar = () => {
@@ -29,9 +29,10 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
         onFilterChange && onFilterChange('endDate', e.target.value);
     };
 
-    const clearDateFilter = () => {
-        onFilterChange && onFilterChange('startDate', '');
-        onFilterChange && onFilterChange('endDate', '');
+    const resetDateFilter = () => {
+        // 初期値（CSVから検出した日付範囲）にリセット
+        onFilterChange && onFilterChange('startDate', initialDateRange.startDate || '');
+        onFilterChange && onFilterChange('endDate', initialDateRange.endDate || '');
     };
 
     return (
@@ -120,10 +121,10 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
                         {(filters.startDate || filters.endDate) && (
                             <button 
                                 className="clear-date-filter" 
-                                onClick={clearDateFilter}
+                                onClick={resetDateFilter}
                                 data-testid="clear-date-filter"
                             >
-                                期間フィルターをクリア
+                                期間フィルターを初期値にリセット
                             </button>
                         )}
                     </div>
@@ -154,7 +155,8 @@ Sidebar.propTypes = {
     handleFiles: PropTypes.func.isRequired,
     currentView: PropTypes.string,
     filters: PropTypes.object,
-    onFilterChange: PropTypes.func
+    onFilterChange: PropTypes.func,
+    initialDateRange: PropTypes.object
 };
 
 export default Sidebar;
