@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Chart, registerables } from 'chart.js';
 import PropTypes from 'prop-types';
 import { getDefaultTrendChartOptions } from '../utils/monthlyTrendUtils';
+import { getMockPrediction } from '../api/trendPredictionApi';
 import './MonthlyTrendChart.css';
 
 // Chart.jsの機能を登録
@@ -15,13 +16,105 @@ Chart.register(...registerables);
  * @param {Array} props.trendData.labels - 月のラベル配列
  * @param {Array} props.trendData.datasets - カテゴリごとのデータセット配列
  * @param {Object} props.options - Chart.jsのオプション（オプショナル）
+ * @param {boolean} props.showPrediction - 予測データを表示するかどうか
  * @returns {JSX.Element} - 月次推移チャート
  */
-const MonthlyTrendChart = ({ trendData = { labels: [], datasets: [] }, options = {} }) => {
+const MonthlyTrendChart = ({ 
+  trendData = { labels: [], datasets: [] }, 
+  options = {},
+  showPrediction = false
+}) => {
   const chartRef = useRef(null);
   const [chartInstance, setChartInstance] = useState(null);
   const [noDataMessage, setNoDataMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [predictionData, setPredictionData] = useState(null);
+  const [isPredicting, setIsPredicting] = useState(false);
+
+  // 予測データの取得
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchPrediction = async () => {
+      if (!showPrediction || !trendData || !trendData.labels || trendData.labels.length < 3) {
+        return;
+      }
+
+      try {
+        setIsPredicting(true);
+        // 本番環境では実際のAPIを呼び出す予定
+        // テスト段階ではモックを使用
+        const result = await getMockPrediction(trendData);
+        
+        if (isMounted) {
+          setPredictionData(result);
+          setIsPredicting(false);
+        }
+      } catch (error) {
+        console.error('予測データの取得に失敗しました:', error);
+        if (isMounted) {
+          setIsPredicting(false);
+        }
+      }
+    };
+
+    fetchPrediction();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [trendData, showPrediction]);
+
+  // チャートデータに予測を追加
+  const getTrendDataWithPredictions = () => {
+    if (!showPrediction || !predictionData || !predictionData.predictions || 
+        Object.keys(predictionData.predictions).length === 0) {
+      return {
+        ...trendData,
+        datasets: trendData.datasets.map(dataset => ({
+          ...dataset,
+          borderDash: undefined, // 実データは実線を保証
+          pointStyle: 'circle'   // 統一したポイントスタイル
+        }))
+      };
+    }
+
+    // データのディープコピーを作成
+    const newData = JSON.parse(JSON.stringify(trendData));
+    
+    // 予測月を追加
+    newData.labels = [...newData.labels, predictionData.nextMonth];
+    
+    // 各データセットに予測値を追加
+    newData.datasets = newData.datasets.map(dataset => {
+      const predictedValue = predictionData.predictions[dataset.label] || null;
+      const originalData = [...dataset.data];
+      const extendedData = [...originalData, predictedValue];
+      
+      // 予測データを含むデータセットを生成
+      return {
+        ...dataset,
+        data: extendedData,
+        // 実データポイントと予測データポイントで異なるスタイルを設定
+        pointStyle: [...originalData.map(() => 'circle'), 'rectRot'],
+        // 実線と破線のセグメントを生成するためのデータセット分割
+        // 本来のデータは実線で表示
+        borderDash: undefined,
+        // データポイントのサイズを調整
+        pointRadius: [...originalData.map(() => 3), 5],
+        // データポイントのホバー時サイズ
+        pointHoverRadius: [...originalData.map(() => 5), 7],
+        // 予測点を強調
+        pointBackgroundColor: [...originalData.map(() => dataset.borderColor), dataset.borderColor],
+        // 予測線用のスタイル設定は別セグメントとして追加
+        segment: {
+          borderDash: ctx => ctx.p0DataIndex >= originalData.length - 1 ? [5, 5] : undefined
+        }
+      };
+    });
+    
+    return newData;
+  };
 
   // チャートの初期化と更新
   useEffect(() => {
@@ -35,8 +128,6 @@ const MonthlyTrendChart = ({ trendData = { labels: [], datasets: [] }, options =
       trendData.datasets && 
       trendData.labels.length > 0 && 
       trendData.datasets.length > 0;
-
-    console.log('MonthlyTrendChart: データの有効性チェック', isValidData);
 
     // データが無効な場合
     if (!isValidData) {
@@ -67,10 +158,13 @@ const MonthlyTrendChart = ({ trendData = { labels: [], datasets: [] }, options =
           ...options
         };
 
+        // 予測を含むデータを取得
+        const displayData = showPrediction ? getTrendDataWithPredictions() : trendData;
+
         // チャートの生成
         const newChartInstance = new Chart(ctx, {
           type: 'line',
-          data: trendData,
+          data: displayData,
           options: chartOptions
         });
 
@@ -92,7 +186,7 @@ const MonthlyTrendChart = ({ trendData = { labels: [], datasets: [] }, options =
         chartInstance.destroy();
       }
     };
-  }, [trendData, options]);
+  }, [trendData, options, predictionData, showPrediction]);
 
   // ウィンドウサイズが変わった時にチャートをリサイズ
   useEffect(() => {
@@ -117,6 +211,13 @@ const MonthlyTrendChart = ({ trendData = { labels: [], datasets: [] }, options =
         </div>
       )}
 
+      {!isLoading && isPredicting && showPrediction && (
+        <div className="prediction-loading-indicator">
+          <div className="spinner small"></div>
+          <span>予測データを計算中...</span>
+        </div>
+      )}
+
       {!isLoading && noDataMessage && (
         <div className="monthly-trend-chart-no-data">
           <p>{noDataMessage}</p>
@@ -128,6 +229,16 @@ const MonthlyTrendChart = ({ trendData = { labels: [], datasets: [] }, options =
         className="monthly-trend-chart"
         style={{ display: isLoading || noDataMessage ? 'none' : 'block' }}
       />
+      
+      {showPrediction && predictionData && (
+        <div className="prediction-info">
+          <div className="prediction-badge">予測</div>
+          <p>
+            <strong>{predictionData.nextMonth}</strong>の予測データを表示しています。
+            <span className="prediction-note">（直近のトレンドに基づく予測値）</span>
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -142,7 +253,8 @@ MonthlyTrendChart.propTypes = {
       backgroundColor: PropTypes.string
     }))
   }),
-  options: PropTypes.object
+  options: PropTypes.object,
+  showPrediction: PropTypes.bool
 };
 
 export default MonthlyTrendChart;

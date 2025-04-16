@@ -55,6 +55,7 @@ const App = ({ initialData = [] }) => {
   const [chartKey, setChartKey] = useState(0); // チャートの強制リロード用キー
   const [dataProcessing, setDataProcessing] = useState(false); // データ処理中フラグ
   const [monthlyViewMode, setMonthlyViewMode] = useState('chart'); // 月次推移の表示モード（chart or table）
+  const [showPrediction, setShowPrediction] = useState(false); // 予測表示のオン/オフ状態
 
   // ファイルハンドラをラップする関数を作成
   const handleFileUpload = (files) => {
@@ -336,20 +337,37 @@ const App = ({ initialData = [] }) => {
               {data.length ? (
                 <div>
                   <h2 className="section-title">項目別月次推移</h2>
-                  <div className="view-mode-toggle">
-                    <button 
-                      className={`toggle-button ${monthlyViewMode === 'chart' ? 'active' : ''}`}
-                      onClick={() => setMonthlyViewMode('chart')}
-                    >
-                      グラフ表示
-                    </button>
-                    <button 
-                      className={`toggle-button ${monthlyViewMode === 'table' ? 'active' : ''}`}
-                      onClick={() => setMonthlyViewMode('table')}
-                    >
-                      表表示
-                    </button>
+                  <div className="view-controls">
+                    <div className="view-mode-toggle">
+                      <button 
+                        className={`toggle-button ${monthlyViewMode === 'chart' ? 'active' : ''}`}
+                        onClick={() => setMonthlyViewMode('chart')}
+                      >
+                        グラフ表示
+                      </button>
+                      <button 
+                        className={`toggle-button ${monthlyViewMode === 'table' ? 'active' : ''}`}
+                        onClick={() => setMonthlyViewMode('table')}
+                      >
+                        表表示
+                      </button>
+                    </div>
+                    
+                    {/* 予測表示のトグルボタン - グラフ表示の場合のみ表示 */}
+                    {monthlyViewMode === 'chart' && monthlyTrendData.labels && monthlyTrendData.labels.length >= 3 && (
+                      <div className="prediction-toggle">
+                        <label className="prediction-toggle-label">
+                          <input 
+                            type="checkbox" 
+                            checked={showPrediction} 
+                            onChange={(e) => setShowPrediction(e.target.checked)} 
+                          />
+                          翌月の予測を表示
+                        </label>
+                      </div>
+                    )}
                   </div>
+                  
                   <div className="trend-chart-container">
                     {dataProcessing ? (
                       <div className="loading-indicator">データを処理中...</div>
@@ -357,7 +375,7 @@ const App = ({ initialData = [] }) => {
                       <>
                         {monthlyViewMode === 'chart' ? (
                           <MonthlyTrendChart 
-                            key={`trend-chart-${chartKey}`}
+                            key={`trend-chart-${chartKey}-${showPrediction ? 'with-prediction' : 'no-prediction'}`}
                             trendData={monthlyTrendData}
                             options={{
                               plugins: {
@@ -367,12 +385,14 @@ const App = ({ initialData = [] }) => {
                                   font: { size: 16, weight: 'bold' }
                                 }
                               }
-                            }} 
+                            }}
+                            showPrediction={showPrediction}
                           />
                         ) : (
                           <MonthlyTrendTable 
-                            key={`trend-table-${chartKey}`}
-                            trendData={monthlyTrendData} 
+                            key={`trend-table-${chartKey}-${showPrediction ? 'with-prediction' : 'no-prediction'}`}
+                            trendData={monthlyTrendData}
+                            showPrediction={showPrediction}
                           />
                         )}
                       </>
@@ -384,6 +404,9 @@ const App = ({ initialData = [] }) => {
                     <p>・グラフ表示: 各カテゴリの推移を折れ線グラフで視覚化</p>
                     <p>・表表示: カテゴリ別・月別の金額を一覧表として閲覧可能</p>
                     <p>・表の行をクリックすると、そのカテゴリを強調表示できます</p>
+                    {monthlyViewMode === 'chart' && (
+                      <p>・予測表示: 過去のトレンドに基づき翌月の予測値を点線で表示します</p>
+                    )}
                   </div>
                 </div>
               ) : (

@@ -296,6 +296,9 @@ body {
   display: flex;
   justify-content: center;
   margin-bottom: 15px;
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .toggle-button {
@@ -326,6 +329,14 @@ body {
 
 .toggle-button:hover:not(.active) {
   background-color: #e9ecef;
+}
+
+/* 月次推移のビューコントロール */
+.view-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
 }
 
 /* 月次推移のレイアウト調整 */
@@ -457,6 +468,31 @@ body {
   background-color: #eee;
   border-radius: 3px;
   font-size: 0.85rem;
+}
+
+/* 予測表示のトグルスタイル */
+.prediction-toggle {
+  background-color: #f8f9fa;
+  padding: 6px 12px;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.prediction-toggle:hover {
+  background-color: #e9ecef;
+}
+
+.prediction-toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #495057;
+}
+
+.prediction-toggle-label input {
+  margin-right: 6px;
 }
 
 /* メディアクエリ（レスポンシブ対応） */

@@ -35,6 +35,14 @@
   margin-bottom: 10px;
 }
 
+.spinner.small {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+  margin-bottom: 0;
+  margin-right: 8px;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -60,4 +68,48 @@
   color: #6c757d;
   font-size: 16px;
   max-width: 80%;
+}
+
+/* 予測データ関連のスタイル */
+.prediction-loading-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 5px 10px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+  font-size: 14px;
+  color: #666;
+}
+
+.prediction-info {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background-color: #f0f8ff;
+  border-left: 4px solid #4e79a7;
+  border-radius: 4px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.prediction-badge {
+  background-color: #4e79a7;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 8px;
+}
+
+.prediction-note {
+  color: #666;
+  font-size: 12px;
+  margin-left: 5px;
 }

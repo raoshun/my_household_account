@@ -224,3 +224,70 @@ th.sorted {
   color: #6c757d;
   font-style: italic;
 }
+
+/* 予測セル用のスタイル */
+.prediction-column {
+  background-color: #f0f8ff;
+  position: relative;
+}
+
+.prediction-cell {
+  background-color: #f0f8ff;
+  position: relative;
+}
+
+.predicted-value {
+  color: #4E79A7;
+  font-weight: 500;
+  font-style: italic;
+  position: relative;
+}
+
+.prediction-badge-small {
+  font-size: 9px;
+  padding: 1px 4px;
+  background-color: #4E79A7;
+  color: white;
+  border-radius: 8px;
+  vertical-align: super;
+  margin-left: 3px;
+  font-weight: bold;
+}
+
+/* テーブル下部の予測情報表示 */
+.table-prediction-info {
+  margin-top: 16px;
+  padding: 8px 12px;
+  background-color: #f0f8ff;
+  border-left: 4px solid #4e79a7;
+  border-radius: 4px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.prediction-badge {
+  background-color: #4e79a7;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-right: 8px;
+}
+
+/* ローディング表示（テーブル用） */
+.prediction-loading-indicator.table {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 5px 10px;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 13px;
+  color: #666;
+  display: flex;
+  align-items: center;
+}

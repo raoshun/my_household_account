@@ -105,6 +105,32 @@
             "skipFiles": [
                 "<node_internals>/**"
             ]
+        },
+        {
+            "name": "Python: Debug Pytest - Current File",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}",
+                "-v"
+            ],
+            "cwd": "${workspaceFolder}/my_household_analysis",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Python: Debug All Tests",
+            "type": "python",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "tests/",
+                "-v"
+            ],
+            "cwd": "${workspaceFolder}/my_household_analysis",
+            "console": "integratedTerminal",
+            "justMyCode": false
         }
     ],
     "inputs": [

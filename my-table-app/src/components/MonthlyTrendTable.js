@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { getMockPrediction } from '../api/trendPredictionApi';
 import './MonthlyTrendTable.css';
 
 /**
@@ -9,14 +10,54 @@ import './MonthlyTrendTable.css';
  * @param {Object} props.trendData - 表示するデータ
  * @param {Array} props.trendData.labels - 月のラベル配列
  * @param {Array} props.trendData.datasets - カテゴリごとのデータセット配列
+ * @param {boolean} props.showPrediction - 予測データを表示するかどうか
  * @returns {JSX.Element} - 月次推移テーブル
  */
-const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
+const MonthlyTrendTable = ({ 
+  trendData = { labels: [], datasets: [] },
+  showPrediction = false
+}) => {
   const [sortConfig, setSortConfig] = useState({ key: '', direction: '' });
   const [selectedRow, setSelectedRow] = useState(null);
   const [tableData, setTableData] = useState([]);
+  const [predictionData, setPredictionData] = useState(null);
+  const [isPredicting, setIsPredicting] = useState(false);
 
-  // trendDataからテーブルデータを生成
+  // 予測データの取得
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchPrediction = async () => {
+      if (!showPrediction || !trendData || !trendData.labels || trendData.labels.length < 3) {
+        return;
+      }
+
+      try {
+        setIsPredicting(true);
+        // 本番環境では実際のAPIを呼び出す予定
+        // テスト段階ではモックを使用
+        const result = await getMockPrediction(trendData);
+        
+        if (isMounted) {
+          setPredictionData(result);
+          setIsPredicting(false);
+        }
+      } catch (error) {
+        console.error('予測データの取得に失敗しました:', error);
+        if (isMounted) {
+          setIsPredicting(false);
+        }
+      }
+    };
+
+    fetchPrediction();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [trendData, showPrediction]);
+
+  // trendDataとpredictionDataからテーブルデータを生成
   useEffect(() => {
     if (!trendData || !trendData.labels || !trendData.datasets || 
         trendData.labels.length === 0 || trendData.datasets.length === 0) {
@@ -25,6 +66,16 @@ const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
     }
 
     try {
+      // 基本的なデータの準備
+      let displayLabels = [...trendData.labels];
+      let nextMonth = null;
+      
+      // 予測データがある場合は、ラベルに翌月を追加
+      if (showPrediction && predictionData && predictionData.nextMonth) {
+        nextMonth = predictionData.nextMonth;
+        displayLabels = [...displayLabels, nextMonth];
+      }
+
       // カテゴリごとに行データを作成
       const rows = trendData.datasets.map(dataset => {
         const row = {
@@ -36,6 +87,14 @@ const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
         trendData.labels.forEach((month, index) => {
           row[month] = dataset.data[index];
         });
+        
+        // 予測データがある場合は、翌月の予測値を追加
+        if (nextMonth && predictionData && predictionData.predictions) {
+          const predictedValue = predictionData.predictions[dataset.label] || null;
+          row[nextMonth] = predictedValue;
+          row.total += predictedValue || 0; // 合計に予測値を加算
+          row[`${nextMonth}_isPrediction`] = true; // 予測データのフラグを設定
+        }
 
         return row;
       });
@@ -48,13 +107,17 @@ const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
         };
 
         // 各カテゴリと月の合計を計算
-        trendData.labels.forEach(month => {
+        displayLabels.forEach(month => {
           totalRow[month] = 0;
+          // 予測月のフラグも引き継ぐ
+          if (month === nextMonth) {
+            totalRow[`${month}_isPrediction`] = true;
+          }
         });
 
         rows.forEach(row => {
           totalRow.total += row.total;
-          trendData.labels.forEach(month => {
+          displayLabels.forEach(month => {
             totalRow[month] += row[month] || 0;
           });
         });
@@ -67,7 +130,7 @@ const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
       console.error('MonthlyTrendTable: データ変換エラー', error);
       setTableData([]);
     }
-  }, [trendData]);
+  }, [trendData, predictionData, showPrediction]);
 
   // テーブルのソート処理
   const sortBy = (key) => {
@@ -97,10 +160,11 @@ const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
     });
   };
 
-  // 金額のフォーマット
-  const formatAmount = (amount) => {
+  // 金額のフォーマット（予測データかどうかのフラグ付き）
+  const formatAmount = (amount, isPrediction) => {
     if (amount === undefined || amount === null) return '-';
-    return `¥${amount.toLocaleString()}`;
+    const formattedAmount = `¥${amount.toLocaleString()}`;
+    return isPrediction ? <span className="predicted-value">{formattedAmount}</span> : formattedAmount;
   };
 
   // 行のクリックハンドラ
@@ -112,6 +176,14 @@ const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
   // 合計行かどうかを判定
   const isTotalRow = (index) => {
     return index === tableData.length - 1;
+  };
+
+  // 表示する月のラベル配列を取得（予測月を含む）
+  const getDisplayLabels = () => {
+    if (!showPrediction || !predictionData || !predictionData.nextMonth) {
+      return trendData.labels;
+    }
+    return [...trendData.labels, predictionData.nextMonth];
   };
 
   // データが無い場合の表示
@@ -134,17 +206,31 @@ const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
       : <span className="sort-icon desc">↓</span>;
   };
 
+  const displayLabels = getDisplayLabels();
+
   return (
     <div className="monthly-trend-table-container">
+      {isPredicting && showPrediction && (
+        <div className="prediction-loading-indicator table">
+          <div className="spinner small"></div>
+          <span>予測データを計算中...</span>
+        </div>
+      )}
+      
       <table className="monthly-trend-table">
         <thead>
           <tr>
             <th onClick={() => sortBy('category')}>
               カテゴリ {getSortIcon('category')}
             </th>
-            {trendData.labels.map((month) => (
-              <th key={month} onClick={() => sortBy(month)}>
+            {displayLabels.map((month) => (
+              <th 
+                key={month} 
+                onClick={() => sortBy(month)}
+                className={showPrediction && predictionData && month === predictionData.nextMonth ? 'prediction-column' : ''}
+              >
                 {month} {getSortIcon(month)}
+                {showPrediction && predictionData && month === predictionData.nextMonth && <span className="prediction-badge-small">予測</span>}
               </th>
             ))}
             <th onClick={() => sortBy('total')}>
@@ -163,16 +249,31 @@ const MonthlyTrendTable = ({ trendData = { labels: [], datasets: [] } }) => {
               onClick={() => handleRowClick(index)}
             >
               <td className="category-cell">{row.category}</td>
-              {trendData.labels.map((month) => (
-                <td key={month} className="amount-cell">
-                  {formatAmount(row[month])}
-                </td>
-              ))}
+              {displayLabels.map((month) => {
+                const isPrediction = row[`${month}_isPrediction`];
+                return (
+                  <td 
+                    key={month} 
+                    className={`amount-cell ${isPrediction ? 'prediction-cell' : ''}`}
+                  >
+                    {formatAmount(row[month], isPrediction)}
+                  </td>
+                );
+              })}
               <td className="total-cell">{formatAmount(row.total)}</td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {showPrediction && predictionData && (
+        <div className="table-prediction-info">
+          <div className="prediction-badge">予測</div>
+          <p>
+            <strong>{predictionData.nextMonth}</strong>の予測データを表示しています（直近のトレンドに基づく予測値）
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -186,7 +287,8 @@ MonthlyTrendTable.propTypes = {
       borderColor: PropTypes.string,
       backgroundColor: PropTypes.string
     }))
-  })
+  }),
+  showPrediction: PropTypes.bool
 };
 
 export default MonthlyTrendTable;
