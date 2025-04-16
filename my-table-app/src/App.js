@@ -49,6 +49,7 @@ const App = ({ initialData = [] }) => {
   const [aggregatedData, setAggregatedData] = useState({});
   const [categoryTotals, setCategoryTotals] = useState({});
   const [filters, setFilters] = useState({ excludeTransfers: true }); // 振替除外をデフォルトに設定
+  const [initialDateRange, setInitialDateRange] = useState({ startDate: '', endDate: '' }); // 初期日付範囲を保存
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categoryFilteredData, setCategoryFilteredData] = useState([]);
   const [prevFilters, setPrevFilters] = useState({}); // 前回のフィルタ状態を保存
@@ -71,7 +72,20 @@ const App = ({ initialData = [] }) => {
       setAggregatedData,
       setCategoryTotals,
       setMonthlyTrendData,
-      setIsLoading: setDataProcessing // 処理状態を共有
+      setIsLoading: setDataProcessing, // 処理状態を共有
+      // 日付範囲を設定する関数を追加
+      setDateRange: (dateRange) => {
+        // 初期日付範囲として保存
+        setInitialDateRange(dateRange);
+        
+        // 既存のexcludeTransfersフィルターを保持しつつ日付範囲を追加
+        setFilters(prev => ({
+          ...prev,
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate
+        }));
+        console.log('日付フィルターを自動設定しました:', dateRange);
+      }
     });
   };
 
@@ -227,6 +241,7 @@ const App = ({ initialData = [] }) => {
         currentView={view} 
         filters={filters}
         onFilterChange={handleFilterChange}
+        initialDateRange={initialDateRange}
       />
       <main className="main-content">
         <div className="page-header">
