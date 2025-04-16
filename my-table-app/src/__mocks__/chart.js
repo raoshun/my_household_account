@@ -6,5 +6,11 @@ const Chart = jest.fn().mockImplementation(() => {
   };
 });
 
-export { Chart };
+// 必要なメソッドを追加
+Chart.register = jest.fn();
+
+// registerables配列を提供
+const registerables = ['scale', 'legend', 'title'];
+
+export { Chart, registerables };
 export default Chart;

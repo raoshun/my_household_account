@@ -3,6 +3,7 @@
  */
 
 import { predictTrend, getPredictableCategories, convertPredictionToChartData } from './predictionApi';
+import { getMockPrediction } from './trendPredictionApi';
 
 // fetchのモック
 global.fetch = jest.fn();
@@ -243,6 +244,90 @@ describe('家計簿予測APIクライアント', () => {
       
       // undefinedの場合
       expect(convertPredictionToChartData(undefined)).toEqual({ labels: [], datasets: [] });
+    });
+  });
+});
+
+describe('trendPredictionApi', () => {
+  describe('getMockPrediction', () => {
+    it('有効なデータで予測データが正しく生成される', async () => {
+      // テスト用のデータを準備
+      const testData = {
+        labels: ['2025年1月', '2025年2月', '2025年3月'],
+        datasets: [
+          {
+            label: '食費',
+            data: [30000, 32000, 31000],
+            borderColor: '#FF6384'
+          },
+          {
+            label: '交通費',
+            data: [5000, 4800, 5200],
+            borderColor: '#36A2EB'
+          }
+        ]
+      };
+
+      // 予測データを取得
+      const prediction = await getMockPrediction(testData);
+
+      // 結果の検証
+      expect(prediction).toBeDefined();
+      expect(prediction.nextMonth).toBe('2025年4月');
+      expect(prediction.predictions).toBeDefined();
+      expect(prediction.predictions['食費']).toBeDefined();
+      expect(prediction.predictions['交通費']).toBeDefined();
+      
+      // 予測値が適切な範囲内にあることを確認
+      const foodAvg = (30000 + 32000 + 31000) / 3;
+      expect(prediction.predictions['食費']).toBeGreaterThanOrEqual(foodAvg * 0.85);
+      expect(prediction.predictions['食費']).toBeLessThanOrEqual(foodAvg * 1.15);
+      
+      const transportAvg = (5000 + 4800 + 5200) / 3;
+      expect(prediction.predictions['交通費']).toBeGreaterThanOrEqual(transportAvg * 0.85);
+      expect(prediction.predictions['交通費']).toBeLessThanOrEqual(transportAvg * 1.15);
+    });
+
+    it('データが足りない場合は適切なデフォルト値を返す', async () => {
+      // データが不足しているケース
+      const insufficientData = {
+        labels: ['2025年3月'], // 1ヶ月分しかない
+        datasets: [
+          {
+            label: '食費',
+            data: [30000],
+            borderColor: '#FF6384'
+          }
+        ]
+      };
+
+      const prediction = await getMockPrediction(insufficientData);
+      
+      // 結果の検証
+      expect(prediction).toBeDefined();
+      expect(prediction.nextMonth).toBe('2025年4月');
+      expect(prediction.predictions['食費']).toBeDefined();
+    });
+
+    it('空のデータの場合は適切なレスポンスを返す', async () => {
+      // 空のデータ
+      const emptyData = { labels: [], datasets: [] };
+      const prediction = await getMockPrediction(emptyData);
+      
+      // 結果の検証
+      expect(prediction).toBeDefined();
+      expect(prediction.nextMonth).toBe('予測不可');
+      expect(Object.keys(prediction.predictions).length).toBe(0);
+    });
+
+    it('データが未定義の場合も適切なレスポンスを返す', async () => {
+      // undefinedの場合
+      const prediction = await getMockPrediction(undefined);
+      
+      // 結果の検証
+      expect(prediction).toBeDefined();
+      expect(prediction.nextMonth).toBe('予測不可');
+      expect(Object.keys(prediction.predictions).length).toBe(0);
     });
   });
 });
