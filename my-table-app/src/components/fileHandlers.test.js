@@ -1,5 +1,5 @@
 /* eslint-env jest, browser */
-import { handleFiles, processFile, exportDataToCSV } from './fileHandlers';
+import { handleFiles, processFile, exportDataToCSV, detectDateRange } from './fileHandlers';
 import { parse } from 'papaparse';
 import { describe, test, expect, beforeEach, jest, beforeAll, afterAll, afterEach } from '@jest/globals';
 // ErrorEventのモックをインポート
@@ -491,5 +491,91 @@ describe('CSV空行フィルタリングテスト', () => {
     expect(passedData[1]['中項目']).toBe('外食');
     expect(passedData[2]['大項目']).toBe('交通費');
     expect(passedData[2]['中項目']).toBe('電車');
+  });
+});
+
+// detectDateRangeのテスト
+describe('detectDateRange 関数のテスト', () => {
+  test('YYYY/MM/DD形式の日付からの日付範囲検出', () => {
+    const testData = [
+      { '日付': '2023/01/15', '大項目': '食費', '金額（円）': 1000 },
+      { '日付': '2023/02/20', '大項目': '交通費', '金額（円）': 500 },
+      { '日付': '2023/01/05', '大項目': '食費', '金額（円）': 2000 }
+    ];
+
+    const result = detectDateRange(testData);
+    expect(result).toEqual({
+      startDate: '2023-01-05',
+      endDate: '2023-02-20'
+    });
+  });
+
+  test('YYYY-MM-DD形式の日付からの日付範囲検出', () => {
+    const testData = [
+      { '日付': '2023-01-15', '大項目': '食費', '金額（円）': 1000 },
+      { '日付': '2023-02-20', '大項目': '交通費', '金額（円）': 500 },
+      { '日付': '2023-01-05', '大項目': '食費', '金額（円）': 2000 }
+    ];
+
+    const result = detectDateRange(testData);
+    expect(result).toEqual({
+      startDate: '2023-01-05',
+      endDate: '2023-02-20'
+    });
+  });
+
+  test('YYYY年MM月DD日形式の日付からの日付範囲検出', () => {
+    const testData = [
+      { '日付': '2023年1月15日', '大項目': '食費', '金額（円）': 1000 },
+      { '日付': '2023年2月20日', '大項目': '交通費', '金額（円）': 500 },
+      { '日付': '2023年1月5日', '大項目': '食費', '金額（円）': 2000 }
+    ];
+
+    const result = detectDateRange(testData);
+    expect(result).toEqual({
+      startDate: '2023-01-05',
+      endDate: '2023-02-20'
+    });
+  });
+
+  test('混在する日付形式からの日付範囲検出', () => {
+    const testData = [
+      { '日付': '2023/01/15', '大項目': '食費', '金額（円）': 1000 },
+      { '日付': '2023-02-20', '大項目': '交通費', '金額（円）': 500 },
+      { '日付': '2023年1月5日', '大項目': '食費', '金額（円）': 2000 }
+    ];
+
+    const result = detectDateRange(testData);
+    expect(result).toEqual({
+      startDate: '2023-01-05',
+      endDate: '2023-02-20'
+    });
+  });
+
+  test('日付データがない場合は空文字を返す', () => {
+    const testData = [
+      { '大項目': '食費', '金額（円）': 1000 },
+      { '大項目': '交通費', '金額（円）': 500 }
+    ];
+
+    const result = detectDateRange(testData);
+    expect(result).toEqual({
+      startDate: '',
+      endDate: ''
+    });
+  });
+
+  test('無効な日付データがある場合は有効なデータのみ処理する', () => {
+    const testData = [
+      { '日付': '無効な日付', '大項目': '食費', '金額（円）': 1000 },
+      { '日付': '2023/02/20', '大項目': '交通費', '金額（円）': 500 },
+      { '日付': '2023/01/05', '大項目': '食費', '金額（円）': 2000 }
+    ];
+
+    const result = detectDateRange(testData);
+    expect(result).toEqual({
+      startDate: '2023-01-05',
+      endDate: '2023-02-20'
+    });
   });
 });
