@@ -2,42 +2,10 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "start-react-app",
-      "type": "shell",
-      "command": "cd ${workspaceFolder}/${input:reactAppFolder} && npm start",
-      "isBackground": true,
-      "problemMatcher": {
-        "pattern": {
-          "regexp": "."
-        },
-        "background": {
-          "beginsPattern": "Starting the development server",
-          "endsPattern": "Compiled successfully|Failed to compile"
-        }
-      }
-    },
-    {
+      "label": "react-app-start",
       "type": "npm",
       "script": "start",
-      "path": "my-table-app",
-      "problemMatcher": [],
-      "label": "npm: start - my-table-app",
-      "detail": "react-scripts start"
-    },
-    {
-      "type": "npm",
-      "script": "build",
-      "path": "my-table-app",
-      "group": "build",
-      "problemMatcher": [],
-      "label": "npm: build - my-table-app",
-      "detail": "react-scripts build"
-    },
-    {
-      "label": "react-table-app",
-      "type": "npm",
-      "script": "start",
-      "path": "my-table-app/",
+      "path": "${input:reactAppFolder}/",
       "isBackground": true,
       "problemMatcher": {
         "owner": "custom",
@@ -54,10 +22,46 @@
         "reveal": "always",
         "panel": "new"
       },
+      "group": "build"
+    },
+    {
+      "label": "react-app-build",
+      "type": "npm",
+      "script": "build",
+      "path": "${input:reactAppFolder}/",
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "problemMatcher": [],
+      "detail": "React アプリケーションを本番用にビルドします"
+    },
+    {
+      "label": "python-api-server",
+      "type": "shell",
+      "command": "cd ${workspaceFolder}/my_household_analysis && python -m my_household_analysis.api.rest_server",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "."
+        },
+        "background": {
+          "beginsPattern": "INFO:     Started server process",
+          "endsPattern": "Application startup complete"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      },
+      "detail": "Python FastAPI サーバーを起動します"
+    },
+    {
+      "label": "fullstack-dev",
+      "dependsOn": ["react-app-start", "python-api-server"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "detail": "React アプリと Python API サーバーを同時に起動します"
     }
   ],
   "inputs": [
@@ -67,7 +71,8 @@
       "description": "Select the React application folder",
       "options": [
         "my-table-app"
-      ]
+      ],
+      "default": "my-table-app"
     }
   ]
 }

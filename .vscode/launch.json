@@ -2,7 +2,7 @@
     "configurations": [
         {
             "type": "node",
-            "name": "Debug Current Test File",
+            "name": "Node: Debug Current Test",
             "request": "launch",
             "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
             "args": [
@@ -22,27 +22,7 @@
         },
         {
             "type": "node",
-            "name": "Debug Current Test",
-            "request": "launch",
-            "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
-            "args": [
-                "test",
-                "${fileBasename}",
-                "--runInBand",
-                "--no-cache",
-                "--watchAll=false",
-                "--verbose"
-            ],
-            "cwd": "${workspaceFolder}/my-table-app",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "env": {
-                "TEST_DEBUG": "true"
-            }
-        },
-        {
-            "type": "node",
-            "name": "Debug Single Test",
+            "name": "Node: Debug Single Test",
             "request": "launch",
             "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
             "args": [
@@ -63,7 +43,7 @@
         },
         {
             "type": "node",
-            "name": "Debug All Tests",
+            "name": "Node: Debug All Tests",
             "request": "launch",
             "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
             "args": [
@@ -84,30 +64,30 @@
             "type": "node",
             "name": "Debug Tests",
             "request": "launch",
-            "runtimeExecutable": "${workspaceFolder}/my-table-app/node_modules/.bin/react-scripts",
-            "args": [
-                "test",
-                "--runInBand",
-                "--no-cache",
-                "--watchAll=false"
-            ],
-            "cwd": "${workspaceFolder}/my-table-app",
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen"
-        },
-        {
-            "type": "msedge",
-            "request": "launch",
-            "name": "Launch React App (Edge)",
+            "name": "Launch React App",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}/${input:reactAppFolder}",
-            "preLaunchTask": "react-table-app",
+            "preLaunchTask": "react-app-start",
             "skipFiles": [
                 "<node_internals>/**"
             ]
         },
         {
-            "name": "Python: Debug Pytest - Current File",
+            "name": "Python: API Server",
+            "type": "python",
+            "request": "launch",
+            "module": "my_household_analysis.api.rest_server",
+            "args": ["${input:apiServerArgs}"],
+            "cwd": "${workspaceFolder}/my_household_analysis",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "envFile": "${workspaceFolder}/my_household_analysis/.env"
+        },
+        {
+            "name": "Python: Test Current File",
             "type": "python",
             "request": "launch",
             "module": "pytest",
@@ -120,7 +100,7 @@
             "justMyCode": false
         },
         {
-            "name": "Python: Debug All Tests",
+            "name": "Python: Test All",
             "type": "python",
             "request": "launch",
             "module": "pytest",
@@ -131,6 +111,21 @@
             "cwd": "${workspaceFolder}/my_household_analysis",
             "console": "integratedTerminal",
             "justMyCode": false
+        },
+        {
+            "name": "Full Stack: API + React",
+            "type": "python",
+            "request": "launch",
+            "module": "my_household_analysis.api.rest_server",
+            "args": [],
+            "cwd": "${workspaceFolder}/my_household_analysis",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "preLaunchTask": "react-app-start",
+            "envFile": "${workspaceFolder}/my_household_analysis/.env"
         }
     ],
     "inputs": [
@@ -140,13 +135,41 @@
             "description": "Select the React application folder",
             "options": [
                 "my-table-app"
-            ]
+            ],
+            "default": "my-table-app"
         },
         {
             "id": "testName",
             "type": "promptString",
             "description": "テスト名を入力してください (正規表現を使用可能)",
             "default": "renders"
+        },
+        {
+            "id": "portNumber",
+            "type": "promptString",
+            "description": "APIサーバーのポート番号を入力してください",
+            "default": "8000"
+        },
+        {
+            "id": "browserType",
+            "type": "pickString",
+            "description": "使用するブラウザを選択してください",
+            "options": [
+                "msedge",
+                "chrome",
+                "firefox"
+            ],
+            "default": "chrome"
+        },
+        {
+            "id": "apiServerArgs",
+            "type": "pickString",
+            "description": "APIサーバーの起動オプション",
+            "options": [
+                "",
+                "--port ${input:portNumber}"
+            ],
+            "default": ""
         }
     ]
 }
