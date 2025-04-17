@@ -78,6 +78,14 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
                     <span className="sidebar-button-icon">💹</span>
                     収支バランス
                 </button>
+                <button 
+                    className={`sidebar-button ${currentView === 'categoryQuadrant' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('categoryQuadrant')}
+                    data-testid="category-quadrant-button"
+                >
+                    <span className="sidebar-button-icon">🧩</span>
+                    カテゴリ四分法
+                </button>
                 
                 <h3 className="sidebar-section-title">フィルター</h3>
                 <div className="sidebar-filter-option">

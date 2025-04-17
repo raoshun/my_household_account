@@ -5,13 +5,14 @@ import Charts from './components/Charts';
 import DataTable from './components/DataTable';
 import MonthlyTrendChart from './components/MonthlyTrendChart'; 
 import MonthlyTrendTable from './components/MonthlyTrendTable';
-import BalanceView from './components/BalanceView'; // 新しいコンポーネントをインポート
+import BalanceView from './components/BalanceView';
+import CategoryQuadrantView from './components/CategoryQuadrantView'; // カテゴリ四分法ビューをインポート
 import { handleFiles } from './components/fileHandlers';
 import { chartOptions } from './config/chartOptions';
-import { createMonthlyTrendData } from './utils/monthlyTrendUtils'; // 新しい関数を使用
+import { createMonthlyTrendData } from './utils/monthlyTrendUtils';
 import calculateCategoryTotals from './utils/calculateCategoryTotals';
 import { filterData } from './utils/sortData';
-import { splitDataBySign } from './utils'; // splitDataBySign関数をインポート
+import { splitDataBySign } from './utils';
 import PropTypes from 'prop-types';
 import CategoryDetailsTable from './components/CategoryDetailsTable';
 import './App.css';
@@ -501,6 +502,27 @@ const App = ({ initialData = [] }) => {
                     negativeTotal={negativeTotal}
                     positiveData={positiveChartData}
                     negativeData={negativeChartData}
+                  />
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-state-icon">📊</div>
+                  <p>データがありません</p>
+                  <p className="empty-state-hint">CSVファイルをアップロードしてください</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* カテゴリ四分法ビューを追加 */}
+          {view === 'categoryQuadrant' && (
+            <div className="category-quadrant-section" data-testid="category-quadrant-view">
+              {data.length ? (
+                <div>
+                  <CategoryQuadrantView 
+                    data={filteredData}
+                    positiveTotal={positiveTotal}
+                    negativeTotal={negativeTotal}
                   />
                 </div>
               ) : (
