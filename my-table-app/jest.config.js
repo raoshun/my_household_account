@@ -20,6 +20,7 @@ module.exports = {
     'src/**/*.{js,jsx}',
     '!src/**/*.d.ts',
     '!src/**/__mocks__/**',
+    '!src/mocks/**',
     '!src/**/*.test.{js,jsx}'
   ],
   
@@ -28,11 +29,12 @@ module.exports = {
   
   // モックの設定
   moduleNameMapper: {
-    // スタイルファイルやアセットのモック
-    '\\.(css|less|sass|scss)$': '<rootDir>/src/__mocks__/styleMock.js',
-    '\\.(gif|ttf|eot|svg)$': '<rootDir>/src/__mocks__/fileMock.js',
-    // chart.jsを常に同じモックに置き換え
-    '^chart.js/auto$': '<rootDir>/src/__mocks__/chart.js/auto.js'
+    // スタイルファイルやアセットのモック - 新しい場所を参照
+    '\\.(css|less|sass|scss)$': '<rootDir>/src/mocks/styleMock.js',
+    '\\.(gif|ttf|eot|svg)$': '<rootDir>/src/mocks/fileMock.js',
+    // chart.jsを常に同じモックに置き換え - 新しい場所を参照
+    '^chart.js/auto$': '<rootDir>/src/mocks/chart.js',
+    '^chart.js$': '<rootDir>/src/mocks/chart.js'
   },
   
   // トランスフォーマー

@@ -278,14 +278,14 @@ describe('trendPredictionApi', () => {
       expect(prediction.predictions['食費']).toBeDefined();
       expect(prediction.predictions['交通費']).toBeDefined();
       
-      // 予測値が適切な範囲内にあることを確認
+      // 予測値が配列なので、最初の要素を比較するよう修正
       const foodAvg = (30000 + 32000 + 31000) / 3;
-      expect(prediction.predictions['食費']).toBeGreaterThanOrEqual(foodAvg * 0.85);
-      expect(prediction.predictions['食費']).toBeLessThanOrEqual(foodAvg * 1.15);
+      expect(prediction.predictions['食費'][0]).toBeGreaterThanOrEqual(foodAvg * 0.85);
+      expect(prediction.predictions['食費'][0]).toBeLessThanOrEqual(foodAvg * 1.15);
       
       const transportAvg = (5000 + 4800 + 5200) / 3;
-      expect(prediction.predictions['交通費']).toBeGreaterThanOrEqual(transportAvg * 0.85);
-      expect(prediction.predictions['交通費']).toBeLessThanOrEqual(transportAvg * 1.15);
+      expect(prediction.predictions['交通費'][0]).toBeGreaterThanOrEqual(transportAvg * 0.85);
+      expect(prediction.predictions['交通費'][0]).toBeLessThanOrEqual(transportAvg * 1.15);
     });
 
     it('データが足りない場合は適切なデフォルト値を返す', async () => {

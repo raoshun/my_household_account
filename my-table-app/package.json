@@ -2,51 +2,18 @@
   "name": "my-table-app",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@testing-library/user-event": "^13.5.0",
-    "buffer": "^6.0.3",
-    "chart.js": "^4.4.3",
-    "js-yaml": "^4.1.0",
-    "papaparse": "^5.4.1",
-    "prop-types": "^15.8.1",
-    "react": "^18.3.1",
-    "react-chartjs-2": "^5.2.0",
-    "react-datepicker": "^7.3.0",
-    "react-dom": "^18.3.1",
-    "react-file-reader": "^1.1.4",
-    "react-scripts": "^5.0.1",
-    "react-table": "^7.8.0",
-    "recharts": "^2.12.7",
-    "web-vitals": "^2.1.4",
-    "webpack": "^5.93.0"
-  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "lint": "eslint src/**/*.ts src/**/*.tsx",
-    "lint:fix": "eslint src/**/*.js src/**/*.jsx --fix",
-    "test:watch": "react-scripts test --watch",
-    "test:watchAll": "react-scripts test --watchAll",
-    "test:coverage": "react-scripts test --coverage --watchAll=false",
-    "test:debug": "TEST_DEBUG=true react-scripts test --verbose",
-    "test:debug-file": "node src/tests/run-debug-test.js",
-    "test:watch-debug": "TEST_DEBUG=true react-scripts test --watch",
-    "test:ci": "react-scripts test --env=jsdom --watchAll=false",
-    "test:ci-debug": "TEST_DEBUG=true react-scripts test --watchAll=false --ci --verbose",
-    "test:single": "react-scripts test --testNamePattern"
+    "test:ci": "react-scripts test --watchAll=false --ci",
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ],
-    "env": {
-      "jest": true,
-      "browser": true,
-      "node": true
-    }
+    ]
   },
   "browserslist": {
     "production": [
@@ -59,15 +26,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.9.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react": "^7.35.0",
-    "globals": "^15.9.0",
-    "jest": "^27.5.1",
-    "typescript-eslint": "^8.1.0"
   }
 }

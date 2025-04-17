@@ -2,25 +2,30 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { getMockPrediction } from '../api/trendPredictionApi';
+import MonthlyTrendChart from './MonthlyTrendChart';
 
 // APIモックを作成
 jest.mock('../api/trendPredictionApi', () => ({
   getMockPrediction: jest.fn()
 }));
 
-// コンポーネント全体をモック
+// コンポーネントのモックを修正 - Jest制約に従い外部スコープの変数を参照しない形に
 jest.mock('./MonthlyTrendChart', () => {
+  const mockUseEffect = jest.fn();
+  
   return function MockMonthlyTrendChart(props) {
     // 実際のコンポーネントのpropsを受け取り、APIを呼び出す
-    React.useEffect(() => {
-      if (props.showPrediction && props.trendData) {
-        const options = {
-          forecastPeriods: props.forecastPeriods,
-          method: props.predictionMethod
-        };
+    if (props.showPrediction && props.trendData) {
+      const options = {
+        forecastPeriods: props.forecastPeriods,
+        method: props.predictionMethod
+      };
+      
+      // useEffectをシミュレート
+      setTimeout(() => {
         require('../api/trendPredictionApi').getMockPrediction(props.trendData, options);
-      }
-    }, [props.showPrediction, props.trendData, props.forecastPeriods, props.predictionMethod]);
+      }, 0);
+    }
     
     return (
       <div data-testid="monthly-trend-chart">
@@ -71,15 +76,15 @@ describe('MonthlyTrendChart', () => {
   });
 
   it('基本的なレンダリングをテスト', () => {
-    // 実際のMonthlyTrendChartはモック化されているので、レンダリングは常に成功する
-    const { container } = render(<require('./MonthlyTrendChart').default trendData={sampleTrendData} />);
+    // 修正: JSXでrequireを使わずに直接コンポーネントを参照
+    const { container } = render(<MonthlyTrendChart trendData={sampleTrendData} />);
     expect(container.querySelector('.monthly-trend-chart')).toBeInTheDocument();
   });
 
   it('予測表示が有効な場合にAPIを呼び出す', async () => {
-    // モックを通じてAPIの呼び出しをテスト
+    // 修正: JSXでrequireを使わずに直接コンポーネントを参照
     render(
-      <require('./MonthlyTrendChart').default
+      <MonthlyTrendChart
         trendData={sampleTrendData}
         showPrediction={true}
       />
@@ -94,8 +99,9 @@ describe('MonthlyTrendChart', () => {
   it('予測期間が指定された場合にAPIに渡す', async () => {
     const forecastPeriods = 2;
     
+    // 修正: JSXでrequireを使わずに直接コンポーネントを参照
     render(
-      <require('./MonthlyTrendChart').default
+      <MonthlyTrendChart
         trendData={sampleTrendData}
         showPrediction={true}
         forecastPeriods={forecastPeriods}
@@ -114,8 +120,9 @@ describe('MonthlyTrendChart', () => {
   it('予測手法が指定された場合にAPIに渡す', async () => {
     const predictionMethod = 'seasonal_ma';
     
+    // 修正: JSXでrequireを使わずに直接コンポーネントを参照
     render(
-      <require('./MonthlyTrendChart').default
+      <MonthlyTrendChart
         trendData={sampleTrendData}
         showPrediction={true}
         predictionMethod={predictionMethod}
@@ -132,8 +139,9 @@ describe('MonthlyTrendChart', () => {
   });
 
   it('季節性調整付き移動平均が予測手法として指定できる', async () => {
+    // 修正: JSXでrequireを使わずに直接コンポーネントを参照
     render(
-      <require('./MonthlyTrendChart').default
+      <MonthlyTrendChart
         trendData={sampleTrendData}
         showPrediction={true}
         predictionMethod="seasonal_ma"

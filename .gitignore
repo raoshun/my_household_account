@@ -1,2 +1,3 @@
 *.csv
 my_household_analysis/
+node_modules/

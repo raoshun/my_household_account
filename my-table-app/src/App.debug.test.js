@@ -7,6 +7,26 @@ import { describe, test, expect } from '@jest/globals';
 import App from './App';
 import { dumpDOM, logAllRoles, debugButtons, findElementsByAttribute } from './test-utils/test-debug';
 
+// Chart.js の問題を回避するためにMonthlyTrendChartをモック化
+jest.mock('./components/MonthlyTrendChart', () => {
+  return function MockMonthlyTrendChart(props) {
+    return (
+      <div data-testid="monthly-trend-chart">
+        <canvas className="monthly-trend-chart" />
+        {props.showPrediction && (
+          <div className="prediction-info">
+            <div className="prediction-badge">予測</div>
+            <p>
+              <strong>予測データ</strong>
+              <span className="prediction-method">予測手法: {props.predictionMethod || 'auto'}</span>
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  };
+});
+
 // デバッグ専用のテストケース
 describe('App Debug Tests', () => {
   // UIコンポーネントの構造を表示するテスト

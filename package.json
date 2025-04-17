@@ -1,11 +1,85 @@
 {
-  "scripts": {
-    "test:watch": "jest --watch",
-    "test:watchAll": "jest --watchAll",
-    "lint": "eslint my-table-app/src/**/*.js",
-    "lint:fix": "eslint my-table-app/src/**/*.js --fix"
-  },
+  "name": "my-household-account-book",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "my-table-app"
+  ],
   "dependencies": {
-    "prop-types": "^15.8.1"
+    "@testing-library/user-event": "^13.5.0",
+    "buffer": "^6.0.3",
+    "chart.js": "^4.4.3",
+    "js-yaml": "^4.1.0",
+    "papaparse": "^5.4.1",
+    "prop-types": "^15.8.1",
+    "react": "^18.3.1",
+    "react-chartjs-2": "^5.2.0",
+    "react-datepicker": "^7.3.0",
+    "react-dom": "^18.3.1",
+    "react-file-reader": "^1.1.4",
+    "react-scripts": "^5.0.1",
+    "react-table": "^7.8.0",
+    "recharts": "^2.12.7",
+    "web-vitals": "^2.1.4",
+    "webpack": "^5.93.0"
+  },
+  "scripts": {
+    "start": "cd my-table-app && react-scripts start",
+    "build": "cd my-table-app && react-scripts build",
+    "test": "cd my-table-app && react-scripts test",
+    "eject": "cd my-table-app && react-scripts eject",
+    "lint": "eslint my-table-app/src/**/*.{js,jsx,ts,tsx}",
+    "lint:fix": "eslint my-table-app/src/**/*.{js,jsx,ts,tsx} --fix",
+    "test:watch": "cd my-table-app && react-scripts test --watch",
+    "test:watchAll": "cd my-table-app && react-scripts test --watchAll",
+    "test:coverage": "cd my-table-app && react-scripts test --coverage --watchAll=false",
+    "test:debug": "cd my-table-app && TEST_DEBUG=true react-scripts test --verbose",
+    "test:debug-file": "node my-table-app/src/tests/run-debug-test.js",
+    "test:watch-debug": "cd my-table-app && TEST_DEBUG=true react-scripts test --watch",
+    "test:ci": "cd my-table-app && react-scripts test --env=jsdom --watchAll=false",
+    "test:ci-debug": "cd my-table-app && TEST_DEBUG=true react-scripts test --watchAll=false --ci --verbose",
+    "test:single": "cd my-table-app && react-scripts test --testNamePattern",
+    "prepare": "husky"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ],
+    "env": {
+      "jest": true,
+      "browser": true,
+      "node": true
+    }
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.35.0",
+    "globals": "^15.9.0",
+    "husky": "^9.1.7",
+    "jest": "^27.5.1",
+    "lint-staged": "^15.5.1",
+    "typescript-eslint": "^8.1.0"
+  },
+  "lint-staged": {
+    "my-table-app/src/**/*.{js,jsx,ts,tsx}": [
+      "npm run lint:fix",
+      "npm run test:ci -- --findRelatedTests"
+    ]
   }
 }

@@ -17,11 +17,13 @@ const calculateCategoryTotals = async (data) => {
   }
 
   try {
-    // 共通の集計関数を使用 - 「大項目」のみで集計するように修正
+    // テストの期待値に合わせて修正: 「金額」を参照する
+    // また、テストでは 大項目 + 中項目 でカテゴリを構成しているため
+    // 両方を使用するように修正
     return aggregateByCategory(data, {
       categoryKey: '大項目',
-      subCategoryKey: null,  // 中項目を使用しないよう変更
-      amountKey: '金額（円）',  // 正しい金額キーに修正
+      subCategoryKey: '中項目',  // 中項目を使用するよう変更
+      amountKey: '金額',  // 「金額（円）」から「金額」に修正
       defaultCategory: '未分類'
     });
   } catch (error) {

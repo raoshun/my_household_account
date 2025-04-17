@@ -1,3 +1,6 @@
+// 画像や静的ファイルのモック
+module.exports = 'test-file-stub';
+
 // FileReaderのモック
 export class MockFileReader {
   constructor() {
@@ -25,4 +28,6 @@ export class MockFileReader {
 }
 
 // グローバルのFileReaderをモック化するための設定
-window.FileReader = MockFileReader;
+if (typeof window !== 'undefined') {
+  window.FileReader = MockFileReader;
+}

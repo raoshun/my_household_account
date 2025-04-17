@@ -1,0 +1,5 @@
+# Reactアプリケーションのテストを実行する
+cd my-table-app && npm run test:ci || exit 1
+
+# もしPythonプロジェクトのテストも実行したい場合
+cd ../my_household_analysis && python -m pytest || exit 1
