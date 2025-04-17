@@ -115,6 +115,40 @@ describe('CategoryQuadrantView Component', () => {
     expect(screen.getByText('改善アドバイス')).toBeInTheDocument();
   });
 
+  test('4象限の軸ラベルが正しく表示される', async () => {
+    // LocalStorageにあらかじめ保存された分類情報をセット
+    const savedAssignments = {
+      '食費': 'necessary-variable',
+      '光熱費': 'necessary-fixed',
+      '交通費': 'necessary-variable',
+      '趣味': 'entertainment',
+      '外食': 'waste'
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
+    
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
+    
+    // 軸ラベルが存在するか確認
+    expect(container.querySelector('.x-axis-label-low')).toBeInTheDocument();
+    expect(container.querySelector('.x-axis-label-high')).toBeInTheDocument();
+    expect(container.querySelector('.y-axis-label-low')).toBeInTheDocument();
+    expect(container.querySelector('.y-axis-label-high')).toBeInTheDocument();
+    
+    // 軸タイトルが存在するか確認
+    expect(container.querySelector('.x-axis-title')).toBeInTheDocument();
+    expect(container.querySelector('.y-axis-title')).toBeInTheDocument();
+    
+    // 軸ラベルの内容が正しいか確認
+    expect(container.querySelector('.x-axis-label-low').textContent).toBe('必須');
+    expect(container.querySelector('.x-axis-label-high').textContent).toBe('選択的');
+    expect(container.querySelector('.y-axis-label-low').textContent).toBe('変動的');
+    expect(container.querySelector('.y-axis-label-high').textContent).toBe('固定的');
+    
+    // 軸タイトルの内容が正しいか確認
+    expect(container.querySelector('.x-axis-title').textContent).toBe('必要性');
+    expect(container.querySelector('.y-axis-title').textContent).toBe('安定性');
+  });
+
   test('「分類を設定」画面でカテゴリに分類を割り当てるとLocalStorageに保存される', async () => {
     render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
     
@@ -186,5 +220,35 @@ describe('CategoryQuadrantView Component', () => {
     const updatedData = JSON.parse(updatedCall[1]);
     expect(updatedData).not.toHaveProperty('食費');
     expect(updatedData).toHaveProperty('光熱費');
+  });
+
+  test('4象限の表示が正しい順序で表示される', async () => {
+    // LocalStorageにあらかじめ保存された分類情報をセット
+    const savedAssignments = {
+      '食費': 'necessary-variable',
+      '光熱費': 'necessary-fixed',
+      '交通費': 'necessary-variable',
+      '趣味': 'entertainment',
+      '外食': 'waste'
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
+    
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
+    
+    // 象限の順序を取得して正しい順序かチェック
+    const quadrants = container.querySelectorAll('.quadrant');
+    expect(quadrants.length).toBe(4);
+    
+    // 各象限のクラス名と位置を確認
+    expect(quadrants[0].classList.contains('quadrant-1')).toBeTruthy(); // 必需費（固定）は左上
+    expect(quadrants[1].classList.contains('quadrant-2')).toBeTruthy(); // 変動費（必須）は左下
+    expect(quadrants[2].classList.contains('quadrant-3')).toBeTruthy(); // 娯楽費は右上
+    expect(quadrants[3].classList.contains('quadrant-4')).toBeTruthy(); // 浪費は右下
+    
+    // 象限のタイトルを確認
+    expect(quadrants[0].querySelector('.quadrant-title').textContent).toContain('必需費（固定）');
+    expect(quadrants[1].querySelector('.quadrant-title').textContent).toContain('変動費（必須）');
+    expect(quadrants[2].querySelector('.quadrant-title').textContent).toContain('娯楽費');
+    expect(quadrants[3].querySelector('.quadrant-title').textContent).toContain('浪費');
   });
 });

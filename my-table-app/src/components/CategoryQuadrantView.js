@@ -304,7 +304,15 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
             <>
               <div className="quadrant-graph-container">
                 <div className="quadrant-grid">
-                  {/* 象限1: 必需費（固定） */}
+                  {/* 象限軸のラベル */}
+                  <div className="x-axis-label-low">必須</div>
+                  <div className="x-axis-label-high">選択的</div>
+                  <div className="y-axis-label-low">変動的</div>
+                  <div className="y-axis-label-high">固定的</div>
+                  <div className="x-axis-title">必要性</div>
+                  <div className="y-axis-title">安定性</div>
+                  
+                  {/* 象限1: 必需費（固定） - 左上 */}
                   <div className="quadrant quadrant-1">
                     <div className="quadrant-title">
                       <span className="quadrant-icon">🏠</span>
@@ -343,7 +351,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
                     </div>
                   </div>
 
-                  {/* 象限2: 変動費（必須） */}
+                  {/* 象限2: 変動費（必須） - 左下 */}
                   <div className="quadrant quadrant-2">
                     <div className="quadrant-title">
                       <span className="quadrant-icon">🍎</span>
@@ -382,7 +390,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
                     </div>
                   </div>
 
-                  {/* 象限3: 娯楽費 */}
+                  {/* 象限3: 娯楽費 - 右上 */}
                   <div className="quadrant quadrant-3">
                     <div className="quadrant-title">
                       <span className="quadrant-icon">🎮</span>
@@ -421,7 +429,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
                     </div>
                   </div>
 
-                  {/* 象限4: 浪費 */}
+                  {/* 象限4: 浪費 - 右下 */}
                   <div className="quadrant quadrant-4">
                     <div className="quadrant-title">
                       <span className="quadrant-icon">💸</span>
