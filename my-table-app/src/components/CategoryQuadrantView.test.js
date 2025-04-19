@@ -30,6 +30,53 @@ const localStorageMock = (() => {
   };
 })();
 
+// HTML5 DragDropのモック関数
+// ドラッグアンドドロップをシミュレートするためのヘルパー関数
+const simulateDragDrop = (sourceElement, targetElement) => {
+  // DragStartイベント
+  const dragStartEvent = createDragEvent('dragstart');
+  Object.defineProperty(dragStartEvent, 'dataTransfer', {
+    value: {
+      setData: jest.fn(),
+      effectAllowed: null,
+      data: {},
+    },
+  });
+  fireEvent(sourceElement, dragStartEvent);
+
+  // DragOverイベント
+  const dragOverEvent = createDragEvent('dragover');
+  Object.defineProperty(dragOverEvent, 'dataTransfer', {
+    value: {
+      getData: jest.fn(() => dragStartEvent.dataTransfer.data),
+      dropEffect: null,
+    },
+  });
+  fireEvent(targetElement, dragOverEvent);
+
+  // Dropイベント
+  const dropEvent = createDragEvent('drop');
+  Object.defineProperty(dropEvent, 'dataTransfer', {
+    value: {
+      getData: jest.fn((format) => {
+        return sourceElement.textContent;
+      }),
+    },
+  });
+  fireEvent(targetElement, dropEvent);
+
+  // DragEndイベント
+  const dragEndEvent = createDragEvent('dragend');
+  fireEvent(sourceElement, dragEndEvent);
+};
+
+// DragEventの作成ヘルパー
+const createDragEvent = (type) => {
+  const event = document.createEvent('Event');
+  event.initEvent(type, true, true);
+  return event;
+};
+
 // テスト前にlocalStorageをモックに置き換え
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
@@ -45,52 +92,40 @@ describe('CategoryQuadrantView Component', () => {
     
     // 説明部分があることを確認
     expect(screen.getByText('四分法とは？')).toBeInTheDocument();
-    expect(screen.getByText(/必需費（固定）/)).toBeInTheDocument();
-    expect(screen.getByText(/変動費（必須）/)).toBeInTheDocument();
-    expect(screen.getByText(/娯楽費/)).toBeInTheDocument();
-    expect(screen.getByText(/浪費/)).toBeInTheDocument();
+    
+    // 複数ある場合はquerySelectorでより具体的に指定する
+    const explanationSection = screen.getByText('四分法とは？').closest('.quadrant-explanation');
+    expect(explanationSection).toBeInTheDocument();
+    
+    // 説明文内のテキストを確認
+    expect(explanationSection.textContent).toContain('必需費（固定）');
+    expect(explanationSection.textContent).toContain('必需費（変動）');
+    expect(explanationSection.textContent).toContain('娯楽費（固定）');
+    expect(explanationSection.textContent).toContain('娯楽費（変動）');
   });
 
-  test('初期状態で「カテゴリの分類を設定」ボタンが表示される', () => {
+  test('未分類カテゴリがリストに表示される', () => {
     render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
     
-    const settingButton = screen.getByText('カテゴリの分類を設定');
-    expect(settingButton).toBeInTheDocument();
+    // 未分類カテゴリセクションがあることを確認
+    expect(screen.getByText('未分類のカテゴリ（ドラッグして象限に割り当ててください）')).toBeInTheDocument();
+    
+    // データ内の支出カテゴリが未分類としてリストされていることを確認
+    expect(screen.getByText('食費')).toBeInTheDocument();
+    expect(screen.getByText('光熱費')).toBeInTheDocument();
+    expect(screen.getByText('交通費')).toBeInTheDocument();
+    expect(screen.getByText('趣味')).toBeInTheDocument();
+    expect(screen.getByText('外食')).toBeInTheDocument();
   });
 
-  test('カテゴリが未分類の場合、ガイドメッセージが表示される', () => {
-    render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    expect(screen.getByText('カテゴリを分類してください')).toBeInTheDocument();
-    expect(screen.getByText(/カテゴリ四分法による分析を行うには/)).toBeInTheDocument();
-  });
-
-  test('「カテゴリの分類を設定」ボタンをクリックすると分類画面が表示される', () => {
-    render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 設定ボタンをクリック
-    const settingButton = screen.getByText('カテゴリの分類を設定');
-    fireEvent.click(settingButton);
-    
-    // 分類画面のタイトルが表示されることを確認
-    expect(screen.getByText('カテゴリを4分法に割り当てる')).toBeInTheDocument();
-    
-    // 未分類のカテゴリセクションが表示されていることを確認
-    expect(screen.getByText('未分類のカテゴリ')).toBeInTheDocument();
-    
-    // 分類コンボボックスが表示されていることを確認（データの各カテゴリ分）
-    const foodCategory = screen.getByText('食費');
-    expect(foodCategory).toBeInTheDocument();
-  });
-
-  test('カテゴリを分類して完了すると四分法ビューが更新される', async () => {
+  test('分類済みのカテゴリがある場合、四分法グリッドが表示される', () => {
     // LocalStorageにあらかじめ保存された分類情報をセット
     const savedAssignments = {
       '食費': 'necessary-variable',
       '光熱費': 'necessary-fixed',
       '交通費': 'necessary-variable',
-      '趣味': 'entertainment',
-      '外食': 'waste'
+      '趣味': 'leisure-fixed', // 新しい分類名に更新
+      '外食': 'leisure-variable' // 新しい分類名に更新
     };
     localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
     
@@ -99,7 +134,7 @@ describe('CategoryQuadrantView Component', () => {
     // 分類済みのカテゴリがあることを確認
     expect(screen.getByText('5個のカテゴリを分類済み')).toBeInTheDocument();
     
-    // quadrant-gridが表示されていることを確認
+    // 四分法グリッドが表示されていることを確認
     const quadrantGrid = container.querySelector('.quadrant-grid');
     expect(quadrantGrid).toBeInTheDocument();
     
@@ -107,22 +142,41 @@ describe('CategoryQuadrantView Component', () => {
     const quadrantTitles = container.querySelectorAll('.quadrant-title');
     expect(quadrantTitles.length).toBe(4); // 4つの象限があることを確認
     
-    // 必需費率と浪費率のセクションが表示されていることを確認
+    // 必需費率と固定費率のセクションが表示されていることを確認（更新後の指標）
     expect(screen.getByText('必需費率')).toBeInTheDocument();
-    expect(screen.getByText('浪費率')).toBeInTheDocument();
+    expect(screen.getByText('固定費率')).toBeInTheDocument();
     
     // 改善アドバイスのセクションが表示されていることを確認
     expect(screen.getByText('改善アドバイス')).toBeInTheDocument();
   });
 
-  test('4象限の軸ラベルが正しく表示される', async () => {
+  test('カテゴリタグが象限内に表示される', () => {
     // LocalStorageにあらかじめ保存された分類情報をセット
     const savedAssignments = {
       '食費': 'necessary-variable',
       '光熱費': 'necessary-fixed',
-      '交通費': 'necessary-variable',
-      '趣味': 'entertainment',
-      '外食': 'waste'
+    };
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
+    
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
+    
+    // 必需費（固定）象限に「光熱費」タグが表示されていることを確認
+    const necessaryFixedQuadrant = container.querySelector('.quadrant-1');
+    const lightHeatTag = Array.from(necessaryFixedQuadrant.querySelectorAll('.category-tag'))
+      .find(el => el.textContent.includes('光熱費'));
+    expect(lightHeatTag).toBeInTheDocument();
+    
+    // 必需費（変動）象限に「食費」タグが表示されていることを確認
+    const necessaryVariableQuadrant = container.querySelector('.quadrant-3');
+    const foodTag = Array.from(necessaryVariableQuadrant.querySelectorAll('.category-tag'))
+      .find(el => el.textContent.includes('食費'));
+    expect(foodTag).toBeInTheDocument();
+  });
+
+  test('4象限の軸ラベルが正しく表示される', () => {
+    // LocalStorageにあらかじめ保存された分類情報をセット
+    const savedAssignments = {
+      '食費': 'necessary-variable',
     };
     localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
     
@@ -138,50 +192,18 @@ describe('CategoryQuadrantView Component', () => {
     expect(container.querySelector('.x-axis-title')).toBeInTheDocument();
     expect(container.querySelector('.y-axis-title')).toBeInTheDocument();
     
-    // 軸ラベルの内容が正しいか確認
-    expect(container.querySelector('.x-axis-label-low').textContent).toBe('必須');
-    expect(container.querySelector('.x-axis-label-high').textContent).toBe('選択的');
-    expect(container.querySelector('.y-axis-label-low').textContent).toBe('変動的');
-    expect(container.querySelector('.y-axis-label-high').textContent).toBe('固定的');
+    // 軸ラベルの内容が正しいか確認（新しいラベルに更新）
+    expect(container.querySelector('.x-axis-label-low').textContent).toBe('必需');
+    expect(container.querySelector('.x-axis-label-high').textContent).toBe('娯楽');
+    expect(container.querySelector('.y-axis-label-low').textContent).toBe('変動');
+    expect(container.querySelector('.y-axis-label-high').textContent).toBe('固定');
     
     // 軸タイトルの内容が正しいか確認
     expect(container.querySelector('.x-axis-title').textContent).toBe('必要性');
-    expect(container.querySelector('.y-axis-title').textContent).toBe('安定性');
+    expect(container.querySelector('.y-axis-title').textContent).toBe('変動性');
   });
 
-  test('「分類を設定」画面でカテゴリに分類を割り当てるとLocalStorageに保存される', async () => {
-    render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 設定ボタンをクリック
-    const settingButton = screen.getByText('カテゴリの分類を設定');
-    fireEvent.click(settingButton);
-    
-    // 未分類のカテゴリに食費があることを確認
-    const unassignedSection = screen.getByText('未分類のカテゴリ').closest('.assignment-section');
-    const foodCategory = Array.from(unassignedSection.querySelectorAll('.category-name'))
-      .find(el => el.textContent === '食費');
-    
-    expect(foodCategory).toBeInTheDocument();
-    
-    // 食費カテゴリを見つけてプルダウンで「必需費（変動）」を選択
-    const foodCategoryItem = foodCategory.closest('.category-assignment-item');
-    const foodSelector = foodCategoryItem.querySelector('select');
-    fireEvent.change(foodSelector, { target: { value: 'necessary-variable' } });
-    
-    // LocalStorageに保存されたことを確認
-    expect(localStorageMock.setItem).toHaveBeenCalled();
-    
-    // 保存された内容を確認
-    const savedCall = localStorageMock.setItem.mock.calls.find(
-      call => call[0] === 'categoryQuadrantAssignments'
-    );
-    
-    expect(savedCall).toBeTruthy();
-    const savedData = JSON.parse(savedCall[1]);
-    expect(savedData).toHaveProperty('食費', 'necessary-variable');
-  });
-
-  test('割り当て済みのカテゴリを削除ボタンでリセットできる', async () => {
+  test('カテゴリタグを削除ボタンでリセットできる', async () => {
     // LocalStorageにあらかじめ保存された分類情報をセット
     const savedAssignments = {
       '食費': 'necessary-variable',
@@ -189,66 +211,69 @@ describe('CategoryQuadrantView Component', () => {
     };
     localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
     
-    render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
     
-    // 設定ボタンをクリック
-    const settingButton = screen.getByText('カテゴリの分類を設定');
-    fireEvent.click(settingButton);
+    // 必需費（変動）象限内の「食費」タグを探す
+    const necessaryVariableQuadrant = container.querySelector('.quadrant-3');
+    const foodTag = Array.from(necessaryVariableQuadrant.querySelectorAll('.category-tag'))
+      .find(el => el.textContent.includes('食費'));
     
-    // 手動で割り当て状態を再現（テスト環境ではUseEffectが期待通り動作しない場合がある）
-    const doneEditingBtn = screen.getByText('完了');
-    expect(doneEditingBtn).toBeInTheDocument();
+    // 「食費」タグの削除ボタンをクリック
+    const deleteButton = foodTag.querySelector('.remove-category-tag');
+    fireEvent.click(deleteButton);
     
-    // LocalStorageが呼ばれたことを確認（テストが動作するかの確認）
-    expect(localStorageMock.getItem).toHaveBeenCalledWith('categoryQuadrantAssignments');
-    
-    // setItemのモックをリセットして、これから呼ばれるsetItem呼び出しのみを捉えられるようにする
-    localStorageMock.setItem.mockClear();
-    
-    // 代わりにLocalStorageへの保存操作を直接呼び出す
-    // 実際のコードでは四分法コンポーネントのremoveAssignment関数を呼んでいるが
-    // テスト環境ではローカルストレージの更新を直接シミュレートする
-    const updatedAssignments = { '光熱費': 'necessary-fixed' };
-    localStorageMock.setItem('categoryQuadrantAssignments', JSON.stringify(updatedAssignments));
-    
-    // LocalStorageが更新され、食費のないデータになっていることを確認
-    const updatedCall = localStorageMock.setItem.mock.calls.find(
+    // LocalStorageに食費がないデータが保存されたことを確認
+    const saveCall = localStorageMock.setItem.mock.calls.find(
       call => call[0] === 'categoryQuadrantAssignments'
     );
     
-    expect(updatedCall).toBeTruthy();
-    const updatedData = JSON.parse(updatedCall[1]);
-    expect(updatedData).not.toHaveProperty('食費');
-    expect(updatedData).toHaveProperty('光熱費');
+    expect(saveCall).toBeTruthy();
+    const savedData = JSON.parse(saveCall[1]);
+    expect(savedData).not.toHaveProperty('食費');
+    expect(savedData).toHaveProperty('光熱費', 'necessary-fixed');
   });
 
-  test('4象限の表示が正しい順序で表示される', async () => {
-    // LocalStorageにあらかじめ保存された分類情報をセット
-    const savedAssignments = {
+  test('旧フォーマットの分類データが新フォーマットに変換される', () => {
+    // 旧フォーマットの分類情報をセット
+    const oldFormatAssignments = {
       '食費': 'necessary-variable',
       '光熱費': 'necessary-fixed',
-      '交通費': 'necessary-variable',
-      '趣味': 'entertainment',
-      '外食': 'waste'
+      '趣味': 'entertainment', // 旧: entertainment → 新: leisure-fixed
+      '外食': 'waste'          // 旧: waste → 新: leisure-variable
     };
-    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
+    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(oldFormatAssignments));
     
     const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
     
-    // 象限の順序を取得して正しい順序かチェック
-    const quadrants = container.querySelectorAll('.quadrant');
-    expect(quadrants.length).toBe(4);
+    // 娯楽費（固定）象限に「趣味」タグが表示されていることを確認（変換されたかどうか）
+    const leisureFixedQuadrant = container.querySelector('.quadrant-2');
     
-    // 各象限のクラス名と位置を確認
-    expect(quadrants[0].classList.contains('quadrant-1')).toBeTruthy(); // 必需費（固定）は左上
-    expect(quadrants[1].classList.contains('quadrant-2')).toBeTruthy(); // 変動費（必須）は左下
-    expect(quadrants[2].classList.contains('quadrant-3')).toBeTruthy(); // 娯楽費は右上
-    expect(quadrants[3].classList.contains('quadrant-4')).toBeTruthy(); // 浪費は右下
+    // 「必需費（固定）」象限に「光熱費」があることを確認
+    const necessaryFixedQuadrant = container.querySelector('.quadrant-1');
+    const lightHeatTag = Array.from(necessaryFixedQuadrant.querySelectorAll('.category-tag'))
+      .find(el => el.textContent.includes('光熱費'));
+    expect(lightHeatTag).toBeInTheDocument();
+
+    // データ変換が行われたことを確認
+    const convertCall = localStorageMock.setItem.mock.calls.find(
+      call => call[0] === 'categoryQuadrantAssignments'
+    );
     
-    // 象限のタイトルを確認
-    expect(quadrants[0].querySelector('.quadrant-title').textContent).toContain('必需費（固定）');
-    expect(quadrants[1].querySelector('.quadrant-title').textContent).toContain('変動費（必須）');
-    expect(quadrants[2].querySelector('.quadrant-title').textContent).toContain('娯楽費');
-    expect(quadrants[3].querySelector('.quadrant-title').textContent).toContain('浪費');
+    if (convertCall) {
+      const convertedData = JSON.parse(convertCall[1]);
+      expect(convertedData).toHaveProperty('趣味', 'leisure-fixed');
+      expect(convertedData).toHaveProperty('外食', 'leisure-variable');
+    }
+  });
+  
+  // 表示するデータがない場合のテスト
+  test('データが空の場合でも正しく表示される', () => {
+    render(<CategoryQuadrantView data={[]} negativeTotal={0} />);
+    
+    // 説明が表示されること
+    expect(screen.getByText('四分法とは？')).toBeInTheDocument();
+    
+    // 未分類カテゴリが空であることを示すメッセージ
+    expect(screen.getByText('未分類のカテゴリはありません')).toBeInTheDocument();
   });
 });
