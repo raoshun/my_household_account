@@ -20,5 +20,29 @@
   "terminal.integrated.defaultProfile.linux": "bash",
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.fontSize": 16,
-  "editor.lineHeight": 1.5
+  "editor.lineHeight": 1.5,
+  
+  // npm と Node.js の依存関係チェック
+  "npm.autoDetect": "on",
+  "npm.packageManager": "npm",
+  "js/ts.implicitProjectConfig.checkJs": true,
+  
+  // ファイル検証設定
+  "javascript.validate.enable": true,
+  "js/ts.implicitProjectConfig.experimentalDecorators": true,
+  
+  // プロジェクト特有の設定
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/build": true,
+    "**/.git": true
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/build": false
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }
