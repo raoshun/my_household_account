@@ -11,17 +11,20 @@ import './MonthlyTrendTable.css';
  * @param {Array} props.trendData.labels - 月のラベル配列
  * @param {Array} props.trendData.datasets - カテゴリごとのデータセット配列
  * @param {boolean} props.showPrediction - 予測データを表示するかどうか
+ * @param {boolean} props.showSavingsRate - 貯蓄率を表示するかどうか
  * @returns {JSX.Element} - 月次推移テーブル
  */
 const MonthlyTrendTable = ({ 
   trendData = { labels: [], datasets: [] },
-  showPrediction = false
+  showPrediction = false,
+  showSavingsRate = true
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: '', direction: '' });
   const [selectedRow, setSelectedRow] = useState(null);
   const [tableData, setTableData] = useState([]);
   const [predictionData, setPredictionData] = useState(null);
   const [isPredicting, setIsPredicting] = useState(false);
+  const [savingsRateData, setSavingsRateData] = useState(null);
 
   // 予測データの取得
   useEffect(() => {
@@ -62,6 +65,7 @@ const MonthlyTrendTable = ({
     if (!trendData || !trendData.labels || !trendData.datasets || 
         trendData.labels.length === 0 || trendData.datasets.length === 0) {
       setTableData([]);
+      setSavingsRateData(null);
       return;
     }
 
@@ -125,12 +129,73 @@ const MonthlyTrendTable = ({
         rows.push(totalRow);
       }
 
+      // 貯蓄率を計算する
+      if (showSavingsRate) {
+        const incomeRows = rows.filter(row => 
+          row.category.includes('収入') || 
+          row.category === '給与' || 
+          row.category === '賞与' || 
+          row.category === 'その他収入'
+        );
+        
+        const expenseRows = rows.filter(row => 
+          !row.category.includes('収入') && 
+          row.category !== '合計' &&
+          row.category !== '給与' && 
+          row.category !== '賞与' && 
+          row.category !== 'その他収入'
+        );
+        
+        if (incomeRows.length > 0) {
+          const savingsRateRow = {
+            category: '貯蓄率',
+            total: 0,
+          };
+          
+          // 各月の貯蓄率を計算
+          displayLabels.forEach(month => {
+            const monthlyIncome = incomeRows.reduce((sum, row) => sum + (row[month] || 0), 0);
+            const monthlyExpense = expenseRows.reduce((sum, row) => sum + (row[month] || 0), 0);
+            
+            // 収入がある場合のみ貯蓄率を計算
+            if (monthlyIncome > 0) {
+              const savingsAmount = monthlyIncome - monthlyExpense;
+              const savingsRate = (savingsAmount / monthlyIncome) * 100;
+              savingsRateRow[month] = savingsRate;
+              
+              // 予測月のフラグも引き継ぐ
+              if (month === nextMonth) {
+                savingsRateRow[`${month}_isPrediction`] = true;
+              }
+            } else {
+              savingsRateRow[month] = null;
+            }
+          });
+          
+          // 全期間の平均貯蓄率を計算
+          const totalIncome = incomeRows.reduce((sum, row) => sum + row.total, 0);
+          const totalExpense = expenseRows.reduce((sum, row) => sum + row.total, 0);
+          
+          if (totalIncome > 0) {
+            const totalSavingsRate = ((totalIncome - totalExpense) / totalIncome) * 100;
+            savingsRateRow.total = totalSavingsRate;
+          }
+          
+          setSavingsRateData(savingsRateRow);
+        } else {
+          setSavingsRateData(null);
+        }
+      } else {
+        setSavingsRateData(null);
+      }
+
       setTableData(rows);
     } catch (error) {
       console.error('MonthlyTrendTable: データ変換エラー', error);
       setTableData([]);
+      setSavingsRateData(null);
     }
-  }, [trendData, predictionData, showPrediction]);
+  }, [trendData, predictionData, showPrediction, showSavingsRate]);
 
   // テーブルのソート処理
   const sortBy = (key) => {
@@ -165,6 +230,13 @@ const MonthlyTrendTable = ({
     if (amount === undefined || amount === null) return '-';
     const formattedAmount = `¥${amount.toLocaleString()}`;
     return isPrediction ? <span className="predicted-value">{formattedAmount}</span> : formattedAmount;
+  };
+
+  // 貯蓄率のフォーマット
+  const formatSavingsRate = (rate, isPrediction) => {
+    if (rate === undefined || rate === null) return '-';
+    const formattedRate = `${rate.toFixed(1)}%`;
+    return isPrediction ? <span className="predicted-value">{formattedRate}</span> : formattedRate;
   };
 
   // 行のクリックハンドラ
@@ -263,6 +335,27 @@ const MonthlyTrendTable = ({
               <td className="total-cell">{formatAmount(row.total)}</td>
             </tr>
           ))}
+          
+          {/* 貯蓄率行を追加 */}
+          {showSavingsRate && savingsRateData && (
+            <tr className="savings-rate-row">
+              <td className="category-cell">{savingsRateData.category}</td>
+              {displayLabels.map((month) => {
+                const isPrediction = savingsRateData[`${month}_isPrediction`];
+                return (
+                  <td 
+                    key={month} 
+                    className={`savings-rate-cell ${isPrediction ? 'prediction-cell' : ''}`}
+                  >
+                    {formatSavingsRate(savingsRateData[month], isPrediction)}
+                  </td>
+                );
+              })}
+              <td className="savings-rate-total-cell">
+                {formatSavingsRate(savingsRateData.total)}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
 
@@ -288,7 +381,8 @@ MonthlyTrendTable.propTypes = {
       backgroundColor: PropTypes.string
     }))
   }),
-  showPrediction: PropTypes.bool
+  showPrediction: PropTypes.bool,
+  showSavingsRate: PropTypes.bool
 };
 
 export default MonthlyTrendTable;

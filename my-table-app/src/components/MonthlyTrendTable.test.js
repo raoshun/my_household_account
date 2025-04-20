@@ -25,11 +25,44 @@ describe('MonthlyTrendTable コンポーネント', () => {
     ]
   };
 
+  // 収入と支出を含むデータ（貯蓄率テスト用）
+  const mockTrendDataWithIncome = {
+    labels: ['2025年1月', '2025年2月', '2025年3月'],
+    datasets: [
+      {
+        label: '収入',
+        data: [300000, 300000, 320000],
+        borderColor: '#4CAF50',
+        backgroundColor: 'rgba(76, 175, 80, 0.1)'
+      },
+      {
+        label: '食費',
+        data: [30000, 32000, 31000],
+        borderColor: '#FF6384',
+        backgroundColor: 'rgba(255, 99, 132, 0.1)'
+      },
+      {
+        label: '交通費',
+        data: [5000, 4800, 5200],
+        borderColor: '#36A2EB',
+        backgroundColor: 'rgba(54, 162, 235, 0.1)'
+      },
+      {
+        label: '住居費',
+        data: [80000, 80000, 80000],
+        borderColor: '#FFCE56',
+        backgroundColor: 'rgba(255, 206, 86, 0.1)'
+      }
+    ]
+  };
+
   const mockPredictionData = {
     nextMonth: '2025年4月',
     predictions: {
+      '収入': 310000,
       '食費': 31500,
-      '交通費': 5100
+      '交通費': 5100,
+      '住居費': 80000
     }
   };
 
@@ -166,6 +199,96 @@ describe('MonthlyTrendTable コンポーネント', () => {
       
       // 金額表示には単位記号やカンマが含まれるため、含有テストで検証
       expect(grandTotalCell.textContent).toContain('144,600');
+    });
+  });
+
+  describe('貯蓄率機能のテスト', () => {
+    test('収入データがある場合、貯蓄率行が表示される', async () => {
+      const { container } = render(
+        <MonthlyTrendTable
+          trendData={mockTrendDataWithIncome}
+          showSavingsRate={true}
+        />
+      );
+
+      // 貯蓄率行が存在することを確認
+      expect(screen.getByText('貯蓄率')).toBeInTheDocument();
+
+      // 貯蓄率の数値が計算されていることを確認
+      const savingsRateRow = container.querySelector('.savings-rate-row');
+      expect(savingsRateRow).toBeInTheDocument();
+
+      // 2025年1月の貯蓄率を計算して検証 (300000 - 115000) / 300000 * 100 = 61.7%
+      const jan2025Rate = Array.from(savingsRateRow.querySelectorAll('td')).find(
+        td => td.className.includes('savings-rate-cell') && !td.className.includes('total')
+      );
+      expect(jan2025Rate.textContent).toContain('61.7%');
+    });
+
+    test('showSavingsRate=false の場合、貯蓄率行は表示されない', () => {
+      render(
+        <MonthlyTrendTable
+          trendData={mockTrendDataWithIncome}
+          showSavingsRate={false}
+        />
+      );
+
+      // 貯蓄率行が表示されないことを確認
+      expect(screen.queryByText('貯蓄率')).not.toBeInTheDocument();
+    });
+
+    test('収入データがない場合、貯蓄率行は表示されない', () => {
+      render(
+        <MonthlyTrendTable
+          trendData={mockTrendData} // 収入データが含まれていないデータ
+          showSavingsRate={true}
+        />
+      );
+
+      // 貯蓄率行が表示されないことを確認
+      expect(screen.queryByText('貯蓄率')).not.toBeInTheDocument();
+    });
+
+    test('予測データがある場合、貯蓄率の予測も表示される', async () => {
+      const { container } = render(
+        <MonthlyTrendTable
+          trendData={mockTrendDataWithIncome}
+          showSavingsRate={true}
+          showPrediction={true}
+        />
+      );
+
+      // 予測月のデータがロードされるのを待つ
+      await waitFor(() => {
+        expect(screen.getAllByText(/2025年4月/)[0]).toBeInTheDocument();
+      });
+
+      // 貯蓄率行を取得
+      const savingsRateRow = container.querySelector('.savings-rate-row');
+      expect(savingsRateRow).toBeInTheDocument();
+
+      // 予測月の貯蓄率セルを取得
+      const predictionCells = savingsRateRow.querySelectorAll('.prediction-cell');
+      expect(predictionCells.length).toBe(1);
+
+      // 予測月の貯蓄率値を検証 (310000 - 116600) / 310000 * 100 = 62.4%
+      expect(predictionCells[0].textContent).toContain('62.4%');
+    });
+
+    test('合計の貯蓄率も正しく計算される', async () => {
+      const { container } = render(
+        <MonthlyTrendTable
+          trendData={mockTrendDataWithIncome}
+          showSavingsRate={true}
+        />
+      );
+
+      // 貯蓄率行の合計セルを取得
+      const savingsRateRow = container.querySelector('.savings-rate-row');
+      const totalCell = savingsRateRow.querySelector('.savings-rate-total-cell');
+
+      // 全期間の貯蓄率を検証（実際の計算結果に合わせる）
+      expect(totalCell.textContent).toContain('62.2%');
     });
   });
 });
