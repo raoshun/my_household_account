@@ -233,29 +233,13 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, quadrant)}
         >
-          {quadrantData[quadrant].items.length > 0 ? (
-            quadrantData[quadrant].items.slice(0, 10).map((item, index) => (
-              <div className="category-item" key={`${quadrant}-${index}`}>
-                <span className="category-name">
-                  {item['大項目'] || '未分類'}
-                  <span className="category-amount">{formatAmount(item.amount)}</span>
-                </span>
-                <div className="category-bar">
-                  <div 
-                    className="category-fill" 
-                    style={{ 
-                      width: `${(item.amount / quadrantData[quadrant].total * 100).toFixed(1)}%`
-                    }}
-                  ></div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="no-data-message">データがありません</div>
-          )}
-          {quadrantData[quadrant].items.length > 10 && (
-            <div className="more-items">他 {quadrantData[quadrant].items.length - 10} 項目</div>
-          )}
+          {/* データアイテムを表示せず、割り当てられたカテゴリのみ表示 */}
+          <div className="quadrant-summary-info">
+            {formatAmount(quadrantData[quadrant].total)}
+            <span className="quadrant-percentage">
+              {quadrantData[quadrant].percentage.toFixed(1)}%
+            </span>
+          </div>
         </div>
         
         {/* 割り当て済みカテゴリ（ドラッグ可能なタグ形式） */}

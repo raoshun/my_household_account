@@ -6,6 +6,26 @@ import * as trendPredictionApi from '../api/trendPredictionApi';
 // trendPredictionApi のモック
 jest.mock('../api/trendPredictionApi');
 
+// localStorage のモック
+const localStorageMock = (() => {
+  let store = {};
+  return {
+    getItem: jest.fn(key => store[key] || null),
+    setItem: jest.fn((key, value) => {
+      store[key] = value.toString();
+    }),
+    clear: jest.fn(() => {
+      store = {};
+    }),
+    removeItem: jest.fn(key => {
+      delete store[key];
+    }),
+  };
+})();
+
+// テスト前にlocalStorageをモックに置き換え
+Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+
 describe('MonthlyTrendTable コンポーネント', () => {
   const mockTrendData = {
     labels: ['2025年1月', '2025年2月', '2025年3月'],
@@ -289,6 +309,137 @@ describe('MonthlyTrendTable コンポーネント', () => {
 
       // 全期間の貯蓄率を検証（実際の計算結果に合わせる）
       expect(totalCell.textContent).toContain('62.2%');
+    });
+  });
+
+  describe('四分法（クワドラント）集計機能のテスト', () => {
+    // テスト用のモックカテゴリ分類データ
+    const mockCategoryAssignments = {
+      '食費': 'necessary-variable',
+      '住居費': 'necessary-fixed',
+      '交通費': 'necessary-variable',
+      '娯楽費': 'leisure-variable',
+      'サブスク': 'leisure-fixed'
+    };
+
+    // より明確なモックデータ（四分法テスト用）
+    const mockQuadrantTrendData = {
+      labels: ['2025年1月', '2025年2月', '2025年3月'],
+      datasets: [
+        {
+          label: '食費',
+          data: [30000, 32000, 31000],
+          borderColor: '#FF6384',
+          backgroundColor: 'rgba(255, 99, 132, 0.1)'
+        },
+        {
+          label: '住居費',
+          data: [80000, 80000, 80000],
+          borderColor: '#FFCE56',
+          backgroundColor: 'rgba(255, 206, 86, 0.1)'
+        },
+        {
+          label: '交通費',
+          data: [5000, 4800, 5200],
+          borderColor: '#36A2EB',
+          backgroundColor: 'rgba(54, 162, 235, 0.1)'
+        },
+        {
+          label: '娯楽費',
+          data: [20000, 18000, 22000],
+          borderColor: '#4BC0C0',
+          backgroundColor: 'rgba(75, 192, 192, 0.1)'
+        },
+        {
+          label: 'サブスク',
+          data: [10000, 10000, 10000],
+          borderColor: '#9966FF',
+          backgroundColor: 'rgba(153, 102, 255, 0.1)'
+        }
+      ]
+    };
+
+    beforeEach(() => {
+      // テスト前にLocalStorageをクリアしてモックデータをセット
+      localStorageMock.clear();
+      localStorageMock.getItem.mockClear();
+      localStorageMock.getItem.mockReturnValue(JSON.stringify(mockCategoryAssignments));
+    });
+
+    test('showQuadrantSummary=true の場合、四分法の集計行が表示される', () => {
+      const { container } = render(
+        <MonthlyTrendTable
+          trendData={mockQuadrantTrendData}
+          showQuadrantSummary={true}
+        />
+      );
+
+      // 四分法の集計行が表示されることを確認
+      const quadrantRows = container.querySelectorAll('.quadrant-summary-row');
+      expect(quadrantRows.length).toBeGreaterThan(0);
+
+      // 必需費（固定）の行が表示されることを確認
+      expect(screen.getByText('必需費（固定）')).toBeInTheDocument();
+    });
+
+    test('showQuadrantSummary=false の場合、四分法の集計行は表示されない', () => {
+      render(
+        <MonthlyTrendTable
+          trendData={mockQuadrantTrendData}
+          showQuadrantSummary={false}
+        />
+      );
+
+      // 四分法の集計行が表示されないことを確認
+      expect(screen.queryByText('必需費（固定）')).not.toBeInTheDocument();
+      expect(screen.queryByText('必需費（変動）')).not.toBeInTheDocument();
+      expect(screen.queryByText('娯楽費（固定）')).not.toBeInTheDocument();
+      expect(screen.queryByText('娯楽費（変動）')).not.toBeInTheDocument();
+    });
+
+    test('showQuadrantSummary="only" の場合、カテゴリ行が非表示で集計行のみ表示される', () => {
+      const { container } = render(
+        <MonthlyTrendTable
+          trendData={mockQuadrantTrendData}
+          showQuadrantSummary="only"
+        />
+      );
+
+      // 各カテゴリの行が表示されないことを確認（合計行は除く）
+      expect(screen.queryByText('食費')).not.toBeInTheDocument();
+      expect(screen.queryByText('交通費')).not.toBeInTheDocument();
+
+      // 四分法の集計行が表示されることを確認
+      const quadrantRows = container.querySelectorAll('.quadrant-summary-row');
+      expect(quadrantRows.length).toBeGreaterThan(0);
+
+      // 必需費（固定）の行が表示されることを確認（最初に見つかる要素でテスト）
+      expect(screen.getAllByText('必需費（固定）')[0]).toBeInTheDocument();
+    });
+
+    test('四分法集計の合計が正しく計算される', () => {
+      const { container } = render(
+        <MonthlyTrendTable
+          trendData={mockQuadrantTrendData}
+          showQuadrantSummary={true}
+        />
+      );
+
+      // 必需費（変動）行を取得
+      const rows = container.querySelectorAll('.quadrant-summary-row');
+      const variableRow = Array.from(rows).find(
+        row => row.textContent.includes('必需費（変動）')
+      );
+      
+      expect(variableRow).toBeTruthy();
+
+      // 必需費（変動）行に食費と交通費の合計が表示されていることを確認
+      // （合計列は右から1番目）
+      const cells = variableRow.querySelectorAll('td');
+      const totalCell = cells[cells.length - 1];
+      
+      // 食費(93000) + 交通費(15000) = 108000
+      expect(totalCell.textContent).toContain('108,000');
     });
   });
 });

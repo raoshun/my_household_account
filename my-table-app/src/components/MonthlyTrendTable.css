@@ -291,3 +291,17 @@ th.sorted {
   display: flex;
   align-items: center;
 }
+
+/* 四分法集計行のスタイル */
+.quadrant-summary-row {
+  background-color: rgba(230, 240, 255, 0.3);
+  font-weight: 500;
+}
+
+.quadrant-summary-row td {
+  border-top: 1px dashed #ccc;
+}
+
+.quadrant-summary-row:hover {
+  background-color: rgba(230, 240, 255, 0.5);
+}
