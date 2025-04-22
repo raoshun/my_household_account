@@ -7,6 +7,10 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "test:ci": "react-scripts test --watchAll=false --ci",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:watch": "react-scripts test --coverage",
+    "test:update": "react-scripts test --updateSnapshot",
+    "test:find-non-covered": "react-scripts test --coverage --watchAll=false --coverageReporters=\"json-summary\" && node ./scripts/find-non-covered.js",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -26,5 +30,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "msw": "^2.7.5"
   }
 }
