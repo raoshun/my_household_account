@@ -7,12 +7,13 @@ import MonthlyTrendChart from './components/MonthlyTrendChart';
 import MonthlyTrendTable from './components/MonthlyTrendTable';
 import BalanceView from './components/BalanceView';
 import CategoryQuadrantView from './components/CategoryQuadrantView'; // カテゴリ四分法ビューをインポート
+import CategoryPieChart from './components/CategoryPieChart'; // 大項目・中項目表示用ドーナツグラフ
 import { handleFiles } from './components/fileHandlers';
 import { chartOptions } from './config/chartOptions';
 import { createMonthlyTrendData } from './utils/monthlyTrendUtils';
 import calculateCategoryTotals from './utils/calculateCategoryTotals';
 import { filterData } from './utils/sortData';
-import { splitDataBySign } from './utils';
+import { splitDataBySign, formatCategoryData } from './utils';
 import PropTypes from 'prop-types';
 import CategoryDetailsTable from './components/CategoryDetailsTable';
 import './App.css';
@@ -286,16 +287,69 @@ const App = ({ initialData = [] }) => {
                 <>
                   <div className="dashboard-charts">
                     <h2 className="section-title">収支の可視化</h2>
-                    <Charts
-                      key={chartKey}
-                      positiveChartData={positiveChartData}
-                      negativeChartData={negativeChartData}
-                      positiveTotal={positiveTotal}
-                      negativeTotal={negativeTotal}
-                      options={chartOptions}
-                      onHover={handleHover}
-                      onClick={handleClick}
-                    />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%', padding: '16px' }}>
+                      {/* 収入ドーナツグラフ（大項目と中項目） */}
+                      <div style={{
+                        backgroundColor: '#fff',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        padding: '20px',
+                        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center'
+                      }}>
+                        <h2 style={{
+                          fontSize: '1.5rem',
+                          fontWeight: 600,
+                          color: '#333',
+                          margin: '0 0 16px 0',
+                          padding: '0 0 12px 0',
+                          borderBottom: '1px solid #f0f0f0',
+                          width: '100%',
+                          textAlign: 'center'
+                        }}>
+                          収入: <span style={{ fontWeight: 'bold', color: '#4CAF50' }}>¥{positiveTotal.toLocaleString()}</span>
+                        </h2>
+                        <div style={{ width: '100%', height: '400px', position: 'relative' }}>
+                          <CategoryPieChart 
+                            data={formatCategoryData(filteredData, true)} 
+                            key={`positive-categories-${chartKey}`}
+                          />
+                        </div>
+                      </div>
+
+                      {/* 支出ドーナツグラフ（大項目と中項目） */}
+                      <div style={{
+                        backgroundColor: '#fff',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                        padding: '20px',
+                        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center'
+                      }}>
+                        <h2 style={{
+                          fontSize: '1.5rem',
+                          fontWeight: 600,
+                          color: '#333',
+                          margin: '0 0 16px 0',
+                          padding: '0 0 12px 0',
+                          borderBottom: '1px solid #f0f0f0',
+                          width: '100%',
+                          textAlign: 'center'
+                        }}>
+                          支出: <span style={{ fontWeight: 'bold', color: '#F44336' }}>¥{negativeTotal.toLocaleString()}</span>
+                        </h2>
+                        <div style={{ width: '100%', height: '400px', position: 'relative' }}>
+                          <CategoryPieChart 
+                            data={formatCategoryData(filteredData, false)} 
+                            key={`negative-categories-${chartKey}`}
+                          />
+                        </div>
+                      </div>
+                    </div>
 
                     {hoverInfo && hoverInfo.subtotal !== undefined && (
                       <div className="hover-info-card">

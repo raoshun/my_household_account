@@ -58,6 +58,40 @@ export const aggregateDataByCategory = (data, categoryKey = '大項目', amountK
   };
 };
 
+/**
+ * データを「大項目 - 中項目」の形式にフォーマットしてCategoryPieChart用に加工する
+ * @param {Array} data フィルタリングされたデータ配列
+ * @param {boolean} isPositive 収入データかどうか
+ * @returns {Object} 「大項目 - 中項目」をキー、合計金額を値とするオブジェクト
+ */
+export const formatCategoryData = (data, isPositive = false) => {
+  const result = {};
+  
+  if (!data || !Array.isArray(data) || data.length === 0) {
+    return result;
+  }
+  
+  // 収入か支出かに応じてフィルタリング
+  const filteredData = isPositive 
+    ? data.filter(item => item['金額（円）'] > 0) 
+    : data.filter(item => item['金額（円）'] < 0);
+  
+  // 大項目と中項目で集計
+  filteredData.forEach(item => {
+    const mainCategory = item['大項目'] || '未分類';
+    const subCategory = item['中項目'] || '未分類';
+    const key = `${mainCategory} - ${subCategory}`;
+    const amount = Math.abs(item['金額（円）']);
+    
+    if (!result[key]) {
+      result[key] = 0;
+    }
+    result[key] += amount;
+  });
+  
+  return result;
+};
+
 // テスト関数のみこのファイルに残す
 export const testAggregateDataByCategory = () => {
     const testData = [

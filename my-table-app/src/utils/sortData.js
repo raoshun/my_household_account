@@ -46,26 +46,34 @@ export function sortAndAggregateData(data) {
     return {};
   }
 
-  // 共通の集計関数を使って合計金額を計算
+  // 大分類＋中分類で集計
   const categoryTotals = aggregateByCategory(data, {
     categoryKey: '大項目',
+    subCategoryKey: '中項目',
     amountKey: '金額（円）',
-    defaultCategory: '未分類'
+    defaultCategory: '未分類',
+    defaultSubCategory: '未分類',
+    includeZero: false,
+    absolute: false
   });
-  
+
   // 結果オブジェクトを初期化
   const result = {};
-  
-  // カテゴリごとにアイテムをグループ化
+
+  // 大分類・中分類ごとにアイテムをグループ化
   data.forEach(item => {
-    const category = item['大項目'] || '未分類';
-    if (!result[category]) {
-      result[category] = {
-        total: categoryTotals[category] || 0,
+    const main = item['大項目'] || '未分類';
+    const sub = item['中項目'] || '未分類';
+    const key = `${main} - ${sub}`;
+    if (!result[key]) {
+      result[key] = {
+        mainCategory: main,
+        subCategory: sub,
+        total: categoryTotals[key] || 0,
         items: []
       };
     }
-    result[category].items.push(item);
+    result[key].items.push(item);
   });
 
   return result;
@@ -118,7 +126,7 @@ export const filterData = (data, filters) => {
         } else if (itemDateStr.includes('-')) {
           const [year, month, day] = itemDateStr.split('-').map(Number);
           itemDate = new Date(year, month - 1, day);
-        } else if (!isNaN(itemDateStr)) {
+        } else if (!isNaN(Number(itemDateStr))) {
           // 数値形式の場合（Excelの日付など）
           const excelEpoch = new Date(1900, 0, 1);
           const millisPerDay = 24 * 60 * 60 * 1000;

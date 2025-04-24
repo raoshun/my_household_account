@@ -82,6 +82,12 @@ const emptyChartData = {
   }]
 };
 
+// ドーナツチャートの設定
+const doughnutOptions = {
+  cutout: '60%', // ドーナツの中心の穴のサイズ
+  radius: '90%'  // チャート全体のサイズ
+};
+
 // defaultPropsの代わりにデフォルトパラメータを使用
 const Charts = ({ 
   positiveChartData = emptyChartData, 
@@ -140,10 +146,11 @@ const Charts = ({
           const ctx = positiveChartRef.current.getContext('2d');
           if (ctx) {
             positiveChartInstance.current = new Chart(ctx, {
-              type: 'pie',
+              type: 'doughnut', // pieからdoughnutに変更
               data: safePositiveData,
               options: {
                 ...options,
+                ...doughnutOptions, // ドーナツチャート用の設定を追加
                 events: ['click'], // マウス移動ではなく、クリック時のみイベントを発火
                 hover: {
                   mode: null, // ホバーモードを無効化
@@ -197,14 +204,15 @@ const Charts = ({
                 const centerX = rect.width / 2;
                 const centerY = rect.height / 2;
                 const radius = Math.min(centerX, centerY) * 0.8; // 円グラフの推定サイズ
+                const innerRadius = radius * 0.6; // 内側の穴のサイズ (cutoutの60%に対応)
                 
                 // マウス位置と中心点の距離を計算
                 const dx = x - centerX;
                 const dy = y - centerY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                // 円グラフ内にあるか判定
-                if (distance <= radius) {
+                // ドーナツグラフ内にあるか判定（内側と外側の間）
+                if (distance <= radius && distance >= innerRadius) {
                   // マウス位置の角度を計算（ラジアン）
                   let angle = Math.atan2(dy, dx);
                   if (angle < 0) angle += Math.PI * 2; // 0～2πの範囲に正規化
@@ -252,7 +260,7 @@ const Charts = ({
                     resetHighlight(chart);
                   }
                 } else {
-                  // 円グラフの外側
+                  // ドーナツグラフの外側または内側の穴
                   this.style.cursor = 'default';
                   resetHighlight(chart);
                 }
@@ -284,10 +292,11 @@ const Charts = ({
           const ctx = negativeChartRef.current.getContext('2d');
           if (ctx) {
             negativeChartInstance.current = new Chart(ctx, {
-              type: 'pie',
+              type: 'doughnut', // pieからdoughnutに変更
               data: safeNegativeData,
               options: {
                 ...options,
+                ...doughnutOptions, // ドーナツチャート用の設定を追加
                 events: ['click'], // マウス移動ではなく、クリック時のみイベントを発火
                 hover: {
                   mode: null, // ホバーモードを無効化
@@ -341,14 +350,15 @@ const Charts = ({
                 const centerX = rect.width / 2;
                 const centerY = rect.height / 2;
                 const radius = Math.min(centerX, centerY) * 0.8; // 円グラフの推定サイズ
+                const innerRadius = radius * 0.6; // 内側の穴のサイズ (cutoutの60%に対応)
                 
                 // マウス位置と中心点の距離を計算
                 const dx = x - centerX;
                 const dy = y - centerY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                // 円グラフ内にあるか判定
-                if (distance <= radius) {
+                // ドーナツグラフ内にあるか判定（内側と外側の間）
+                if (distance <= radius && distance >= innerRadius) {
                   // マウス位置の角度を計算（ラジアン）
                   let angle = Math.atan2(dy, dx);
                   if (angle < 0) angle += Math.PI * 2; // 0～2πの範囲に正規化
@@ -396,7 +406,7 @@ const Charts = ({
                     resetHighlight(chart);
                   }
                 } else {
-                  // 円グラフの外側
+                  // ドーナツグラフの外側または内側の穴
                   this.style.cursor = 'default';
                   resetHighlight(chart);
                 }
