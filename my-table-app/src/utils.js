@@ -92,6 +92,22 @@ export const formatCategoryData = (data, isPositive = false) => {
   return result;
 };
 
+/**
+ * 指定した配列から空行（全ての値がnull/undefined/空文字/空白のみ）を除去する
+ * @param {Array<Object>} data
+ * @returns {Array<Object>} 空行を除去した配列
+ */
+export function filterEmptyRows(data) {
+  return Array.isArray(data)
+    ? data.filter(row => {
+        if (!row || typeof row !== 'object') return false;
+        return Object.values(row).some(
+          v => v !== null && v !== undefined && String(v).trim() !== ''
+        );
+      })
+    : [];
+}
+
 // テスト関数のみこのファイルに残す
 export const testAggregateDataByCategory = () => {
     const testData = [

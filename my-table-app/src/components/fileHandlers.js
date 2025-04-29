@@ -2,7 +2,7 @@ import { parse } from 'papaparse';
 import { sortAndAggregateData } from '../utils/sortData';
 import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 import iconv from 'iconv-lite';
-import { splitDataBySign } from '../utils';
+import { splitDataBySign, filterEmptyRows } from '../utils';
 import { prepareMonthlyTrendData } from '../utils/chartDataUtils';
 
 /**
@@ -130,32 +130,9 @@ const parseCSVFile = (file, onComplete, onError) => {
         header: true,
         complete: (result) => {
           if (result && result.data) {
-            // 空行をフィルタリング
-            // 空行とは、全てのフィールドが空（undefined、null、空文字列、または空白文字のみ）である行
-            const filteredData = result.data.filter(row => {
-              // オブジェクトが空（キーがない）場合はスキップ
-              if (!row || Object.keys(row).length === 0) return false;
-              
-              // すべてのフィールドが空かどうかをチェック
-              const allEmpty = Object.values(row).every(
-                value => {
-                  // null、undefined、空文字列の場合は空とみなす
-                  if (value === undefined || value === null || value === '') return true;
-                  
-                  // 文字列の場合、空白文字のみかチェック
-                  if (typeof value === 'string' && value.trim() === '') return true;
-                  
-                  // それ以外の場合は空ではない
-                  return false;
-                }
-              );
-              
-              // 空でない行だけを残す
-              return !allEmpty;
-            });
-            
+            // 空行を共通関数でフィルタリング
+            const filteredData = filterEmptyRows(result.data);
             console.log(`CSVデータの行数: ${result.data.length}, フィルタリング後: ${filteredData.length}`);
-            
             onComplete(filteredData);
           } else {
             onError(new Error('CSV解析結果にデータがありません'));

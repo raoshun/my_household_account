@@ -9,23 +9,6 @@ import '../test-utils/errorEventMock';
 window.__JEST_TEST_ENV__ = true;
 
 // モジュールのモックを改善
-jest.mock('../utils', () => {
-  return {
-    splitDataBySign: () => ({
-      positiveData: {
-        labels: ['食費', '交通費'],
-        datasets: [{ data: [3000, 1000] }]
-      },
-      negativeData: {
-        labels: ['収入'],
-        datasets: [{ data: [-5000] }]
-      },
-      positiveTotal: 4000,
-      negativeTotal: -5000
-    })
-  };
-});
-
 jest.mock('../utils/sortData', () => {
   return {
     sortAndAggregateData: () => ({
@@ -43,7 +26,7 @@ jest.mock('../utils/calculateCategoryTotals', () => {
 });
 
 // 必要なモック関数のインポート
-import { splitDataBySign } from '../utils';
+import * as actualUtils from '../utils';
 import { sortAndAggregateData } from '../utils/sortData';
 import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 
@@ -123,8 +106,18 @@ afterAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  
-  // モックの基本実装
+  jest.spyOn(actualUtils, 'splitDataBySign').mockImplementation(() => ({
+    positiveData: {
+      labels: ['食費', '交通費'],
+      datasets: [{ data: [3000, 1000] }]
+    },
+    negativeData: {
+      labels: ['収入'],
+      datasets: [{ data: [-5000] }]
+    },
+    positiveTotal: 4000,
+    negativeTotal: -5000
+  }));
   parse.mockImplementation((text, options) => {
     options.complete({
       data: [
