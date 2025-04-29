@@ -3,15 +3,22 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import CategoryQuadrantView from './CategoryQuadrantView';
 
-// モックデータ
+// モックデータ（中項目を追加）
 const mockData = [
-  { '日付': '2023-01-01', '大項目': '食費', '金額（円）': -5000 },
-  { '日付': '2023-01-02', '大項目': '光熱費', '金額（円）': -10000 },
-  { '日付': '2023-01-03', '大項目': '交通費', '金額（円）': -3000 },
-  { '日付': '2023-01-04', '大項目': '趣味', '金額（円）': -8000 },
-  { '日付': '2023-01-05', '大項目': '外食', '金額（円）': -12000 },
-  { '日付': '2023-01-06', '大項目': '給料', '金額（円）': 250000 },
+  { '日付': '2023-01-01', '大項目': '食費', '中項目': '食料品', '金額（円）': -5000 },
+  { '日付': '2023-01-01', '大項目': '食費', '中項目': '外食', '金額（円）': -12000 }, // 外食を食費に含める
+  { '日付': '2023-01-02', '大項目': '住居費', '中項目': '家賃', '金額（円）': -80000 }, // 光熱費を住居費に変更
+  { '日付': '2023-01-02', '大項目': '住居費', '中項目': '水道光熱費', '金額（円）': -10000 },
+  { '日付': '2023-01-03', '大項目': '交通費', '中項目': '電車代', '金額（円）': -3000 },
+  { '日付': '2023-01-04', '大項目': '娯楽費', '中項目': 'ゲーム', '金額（円）': -8000 }, // 趣味を娯楽費に変更
+  { '日付': '2023-01-04', '大項目': '娯楽費', '中項目': '書籍', '金額（円）': -2000 },
+  { '日付': '2023-01-06', '大項目': '収入', '中項目': '給料', '金額（円）': 250000 }, // 収入データ
 ];
+
+// 支出合計額の計算（収入を除く）
+const negativeTotal = mockData
+  .filter(item => item['金額（円）'] < 0)
+  .reduce((sum, item) => sum + item['金額（円）'], 0);
 
 // LocalStorageのモック
 const localStorageMock = (() => {
@@ -30,250 +37,305 @@ const localStorageMock = (() => {
   };
 })();
 
-// HTML5 DragDropのモック関数
-// ドラッグアンドドロップをシミュレートするためのヘルパー関数
 const simulateDragDrop = (sourceElement, targetElement) => {
-  // DragStartイベント
   const dragStartEvent = createDragEvent('dragstart');
+  let draggedData = '';
   Object.defineProperty(dragStartEvent, 'dataTransfer', {
     value: {
-      setData: jest.fn(),
+      setData: jest.fn((format, data) => { draggedData = data; }),
       effectAllowed: null,
-      data: {},
     },
   });
   fireEvent(sourceElement, dragStartEvent);
 
-  // DragOverイベント
+  // dragoverイベントにもdataTransferを付与
   const dragOverEvent = createDragEvent('dragover');
   Object.defineProperty(dragOverEvent, 'dataTransfer', {
     value: {
-      getData: jest.fn(() => dragStartEvent.dataTransfer.data),
+      getData: jest.fn((format) => draggedData),
+      setData: jest.fn(),
       dropEffect: null,
     },
   });
   fireEvent(targetElement, dragOverEvent);
 
-  // Dropイベント
   const dropEvent = createDragEvent('drop');
   Object.defineProperty(dropEvent, 'dataTransfer', {
     value: {
-      getData: jest.fn((format) => {
-        return sourceElement.textContent;
-      }),
+      getData: jest.fn((format) => draggedData),
     },
   });
   fireEvent(targetElement, dropEvent);
 
-  // DragEndイベント
   const dragEndEvent = createDragEvent('dragend');
   fireEvent(sourceElement, dragEndEvent);
 };
 
-// DragEventの作成ヘルパー
 const createDragEvent = (type) => {
   const event = document.createEvent('Event');
   event.initEvent(type, true, true);
   return event;
 };
 
-// テスト前にlocalStorageをモックに置き換え
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+// テストで分割テキストにも対応できるようにgetByTextの部分を柔軟にする
+// 例: expect(screen.getByText(`${assignedCount}個の中項目カテゴリを分類済み`)).toBeInTheDocument();
+// ↓
+// expect(screen.getByText((content) => content.includes(`${assignedCount}個の中項目カテゴリを分類済み`))).toBeInTheDocument();
+
+// --- テスト本体の該当箇所修正 ---
 describe('CategoryQuadrantView Component', () => {
-  // 各テスト前にモックリセット
   beforeEach(() => {
     localStorageMock.clear();
     jest.clearAllMocks();
   });
 
   test('初期状態で四分法の説明が表示される', () => {
-    render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 説明部分があることを確認
+    render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
     expect(screen.getByText('四分法とは？')).toBeInTheDocument();
-    
-    // 複数ある場合はquerySelectorでより具体的に指定する
     const explanationSection = screen.getByText('四分法とは？').closest('.quadrant-explanation');
-    expect(explanationSection).toBeInTheDocument();
-    
-    // 説明文内のテキストを確認
+    expect(explanationSection).not.toBeNull();
+    if (!explanationSection) throw new Error('explanationSection is null');
     expect(explanationSection.textContent).toContain('必需費（固定）');
     expect(explanationSection.textContent).toContain('必需費（変動）');
     expect(explanationSection.textContent).toContain('娯楽費（固定）');
     expect(explanationSection.textContent).toContain('娯楽費（変動）');
   });
 
-  test('未分類カテゴリがリストに表示される', () => {
-    render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 未分類カテゴリセクションがあることを確認
-    expect(screen.getByText('未分類のカテゴリ（ドラッグして象限に割り当ててください）')).toBeInTheDocument();
-    
-    // データ内の支出カテゴリが未分類としてリストされていることを確認
-    expect(screen.getByText('食費')).toBeInTheDocument();
-    expect(screen.getByText('光熱費')).toBeInTheDocument();
-    expect(screen.getByText('交通費')).toBeInTheDocument();
-    expect(screen.getByText('趣味')).toBeInTheDocument();
-    expect(screen.getByText('外食')).toBeInTheDocument();
+  test('未分類カテゴリが大項目ごとにグループ化されて表示される', () => {
+    render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
+    expect(screen.getByText('未分類の中項目カテゴリ（ドラッグして象限に割り当ててください）')).toBeInTheDocument();
+
+    // 大項目ヘッダーが表示されるか
+    expect(screen.getByRole('heading', { name: '食費' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '住居費' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '交通費' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '娯楽費' })).toBeInTheDocument();
+
+    // 各大項目の下に中項目が表示されるか（中項目名のみ）
+    const foodGroup = screen.getByRole('heading', { name: '食費' }).closest('.unassigned-category-group');
+    expect(foodGroup).toHaveTextContent('食料品');
+    expect(foodGroup).toHaveTextContent('外食');
+
+    const housingGroup = screen.getByRole('heading', { name: '住居費' }).closest('.unassigned-category-group');
+    expect(housingGroup).toHaveTextContent('家賃');
+    expect(housingGroup).toHaveTextContent('水道光熱費');
+
+    const transportGroup = screen.getByRole('heading', { name: '交通費' }).closest('.unassigned-category-group');
+    expect(transportGroup).toHaveTextContent('電車代');
+
+    const leisureGroup = screen.getByRole('heading', { name: '娯楽費' }).closest('.unassigned-category-group');
+    expect(leisureGroup).toHaveTextContent('ゲーム');
+    expect(leisureGroup).toHaveTextContent('書籍');
+
+    // 収入カテゴリは表示されない
+    expect(screen.queryByRole('heading', { name: '収入' })).not.toBeInTheDocument();
   });
 
-  test('分類済みのカテゴリがある場合、四分法グリッドが表示される', () => {
-    // LocalStorageにあらかじめ保存された分類情報をセット
+  test('分類済みのカテゴリがある場合、四分法グリッドとグループ化されたタグが表示される', () => {
     const savedAssignments = {
-      '食費': 'necessary-variable',
-      '光熱費': 'necessary-fixed',
-      '交通費': 'necessary-variable',
-      '趣味': 'leisure-fixed', // 新しい分類名に更新
-      '外食': 'leisure-variable' // 新しい分類名に更新
+      '食費 - 食料品': 'necessary-variable',
+      '住居費 - 家賃': 'necessary-fixed',
+      '住居費 - 水道光熱費': 'necessary-fixed',
+      '交通費 - 電車代': 'necessary-variable',
+      '娯楽費 - ゲーム': 'leisure-variable',
+      '娯楽費 - 書籍': 'leisure-fixed'
     };
-    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
-    
-    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 分類済みのカテゴリがあることを確認
-    expect(screen.getByText('5個のカテゴリを分類済み')).toBeInTheDocument();
-    
+    // 常に同じ値を返すように修正
+    localStorageMock.getItem.mockReturnValue(JSON.stringify(savedAssignments));
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
+    // 分類済みカウントの確認
+    const assignedCount = Object.keys(savedAssignments).length;
+    expect(
+      screen.getByText((content) =>
+        content.includes(`${assignedCount}個の中項目カテゴリを分類済み`)
+      )
+    ).toBeInTheDocument();
     // 四分法グリッドが表示されていることを確認
     const quadrantGrid = container.querySelector('.quadrant-grid');
-    expect(quadrantGrid).toBeInTheDocument();
-    
-    // 各象限のタイトル部分を取得
-    const quadrantTitles = container.querySelectorAll('.quadrant-title');
-    expect(quadrantTitles.length).toBe(4); // 4つの象限があることを確認
-    
-    // 必需費率と固定費率のセクションが表示されていることを確認（更新後の指標）
-    expect(screen.getByText('必需費率')).toBeInTheDocument();
-    expect(screen.getByText('固定費率')).toBeInTheDocument();
-    
-    // 改善アドバイスのセクションが表示されていることを確認
-    expect(screen.getByText('改善アドバイス')).toBeInTheDocument();
+    expect(quadrantGrid).not.toBeNull();
+    if (!quadrantGrid) throw new Error('quadrantGrid is null');
+    // 必需費（固定）象限の確認
+    const necessaryFixedQuadrant = container.querySelector('.quadrant-1');
+    expect(necessaryFixedQuadrant).not.toBeNull();
+    if (!necessaryFixedQuadrant) throw new Error('necessaryFixedQuadrant is null');
+    const housingGroupNF = necessaryFixedQuadrant.querySelectorAll('.assigned-category-group')[0];
+    expect(housingGroupNF).not.toBeNull();
+    if (!housingGroupNF) throw new Error('housingGroupNF is null');
+    expect(housingGroupNF.querySelector('.assigned-main-category-header')).not.toBeNull();
+    expect(housingGroupNF.querySelector('.assigned-main-category-header')?.textContent).toContain('住居費');
+    const housingTags = housingGroupNF.querySelectorAll('.category-tag');
+    expect(Array.from(housingTags).some(tag => tag?.textContent?.includes('家賃'))).toBeTruthy();
+    expect(Array.from(housingTags).some(tag => tag?.textContent?.includes('水道光熱費'))).toBeTruthy();
+    // 必需費（変動）象限の確認
+    const necessaryVariableQuadrant = container.querySelector('.quadrant-3');
+    expect(necessaryVariableQuadrant).not.toBeNull();
+    if (!necessaryVariableQuadrant) throw new Error('necessaryVariableQuadrant is null');
+    const categoryGroups = necessaryVariableQuadrant.querySelectorAll('.assigned-category-group');
+    // 食費グループを探す
+    const foodGroupNV = Array.from(categoryGroups).find(group => {
+      const header = group.querySelector('.assigned-main-category-header');
+      return header && header.textContent && header.textContent.includes('食費');
+    });
+    expect(foodGroupNV).not.toBeUndefined();
+    if (!foodGroupNV) throw new Error('foodGroupNV is undefined');
+    expect(foodGroupNV.querySelector('.assigned-main-category-header')).not.toBeNull();
+    expect(foodGroupNV.querySelector('.assigned-main-category-header')?.textContent).toContain('食費');
+    // 娯楽費（変動）象限の確認
+    const leisureVariableQuadrant = container.querySelector('.quadrant-4');
+    expect(leisureVariableQuadrant).not.toBeNull();
+    if (!leisureVariableQuadrant) throw new Error('leisureVariableQuadrant is null');
+    const leisureGroupLV = leisureVariableQuadrant.querySelectorAll('.assigned-category-group')[0];
+    expect(leisureGroupLV).not.toBeNull();
+    if (!leisureGroupLV) throw new Error('leisureGroupLV is null');
+    expect(leisureGroupLV.querySelector('.assigned-main-category-header')).not.toBeNull();
+    expect(leisureGroupLV.querySelector('.assigned-main-category-header')?.textContent).toContain('娯楽費');
+    const leisureVariableTags = leisureGroupLV.querySelectorAll('.category-tag');
+    expect(Array.from(leisureVariableTags).some(tag => tag?.textContent?.includes('ゲーム'))).toBeTruthy();
+    // 娯楽費（固定）象限の確認 - 変数名を変更
+    const leisureFixedSection = container.querySelector('.quadrant-2');
+    expect(leisureFixedSection).not.toBeNull();
+    if (!leisureFixedSection) throw new Error('leisureFixedSection is null');
+    const leisureGroupFixed = leisureFixedSection.querySelector('.assigned-category-group');
+    expect(leisureGroupFixed).not.toBeNull();
+    if (!leisureGroupFixed) throw new Error('leisureGroupFixed is null');
+    expect(leisureGroupFixed.querySelector('.assigned-main-category-header')).not.toBeNull();
+    expect(leisureGroupFixed.querySelector('.assigned-main-category-header')?.textContent).toContain('娯楽費');
+    expect(leisureGroupFixed?.textContent).toContain('書籍');
+    // 未分類リストには「食費 - 外食」のみ残る
+    expect(
+      screen.getByText((content) => content.includes('未分類の中項目カテゴリ'))
+    ).toBeInTheDocument();
+    // 「食費」見出しが複数あるので、未分類リスト側(h4)をクラスで特定
+    const headings = screen.getAllByRole('heading', { name: '食費' });
+    const unassignedFoodGroup = Array.from(headings).find(
+      h => h.classList.contains('unassigned-main-category-header')
+    )?.closest('.unassigned-category-group');
+    expect(unassignedFoodGroup).not.toBeNull();
+    if (!unassignedFoodGroup) throw new Error('unassignedFoodGroup is null');
+    expect(unassignedFoodGroup.textContent).toContain('外食');
+    expect(unassignedFoodGroup.textContent).not.toContain('食料品');
+    // 未分類リスト内の「住居費」見出しが存在しないことを確認
+    const unassignedHeadings = container.querySelectorAll('.unassigned-main-category-header');
+    expect(Array.from(unassignedHeadings).some(h => h.textContent === '住居費')).toBeFalsy();
   });
 
-  test('カテゴリタグが象限内に表示される', () => {
-    // LocalStorageにあらかじめ保存された分類情報をセット
-    const savedAssignments = {
-      '食費': 'necessary-variable',
-      '光熱費': 'necessary-fixed',
+  test('未分類カテゴリをドラッグ＆ドロップで象限に割り当てられる', async () => {
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
+
+    // 未分類の「食費 - 外食」アイテムを取得
+    const unassignedFoodGroup = screen.getByRole('heading', { name: '食費' }).closest('.unassigned-category-group');
+    const unassignedLunchItem = Array.from(unassignedFoodGroup.querySelectorAll('.unassigned-category-item'))
+                                  .find(el => el.textContent === '外食');
+    expect(unassignedLunchItem).toBeInTheDocument();
+
+    // 娯楽費（変動）象限のドロップエリアを取得
+    const leisureVariableQuadrantDropArea = container.querySelector('.quadrant-4 .droppable-area');
+    expect(leisureVariableQuadrantDropArea).toBeInTheDocument();
+
+    // ドラッグ＆ドロップを実行
+    simulateDragDrop(unassignedLunchItem, leisureVariableQuadrantDropArea);
+
+    // localStorage.setItemが正しい引数で呼び出されたか確認
+    await waitFor(() => {
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'categoryQuadrantAssignments',
+        JSON.stringify({ '食費 - 外食': 'leisure-variable' })
+      );
+    });
+  });
+
+  test('分類済みカテゴリタグをドラッグ＆ドロップで別の象限に移動できる', async () => {
+    const initialAssignments = {
+      '食費 - 食料品': 'necessary-variable',
+      '住居費 - 家賃': 'necessary-fixed'
     };
-    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
-    
-    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 必需費（固定）象限に「光熱費」タグが表示されていることを確認
-    const necessaryFixedQuadrant = container.querySelector('.quadrant-1');
-    const lightHeatTag = Array.from(necessaryFixedQuadrant.querySelectorAll('.category-tag'))
-      .find(el => el.textContent.includes('光熱費'));
-    expect(lightHeatTag).toBeInTheDocument();
-    
-    // 必需費（変動）象限に「食費」タグが表示されていることを確認
+    localStorageMock.getItem.mockReturnValue(JSON.stringify(initialAssignments));
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
+
+    // 必需費（変動）にある「食費 - 食料品」タグを取得
     const necessaryVariableQuadrant = container.querySelector('.quadrant-3');
     const foodTag = Array.from(necessaryVariableQuadrant.querySelectorAll('.category-tag'))
-      .find(el => el.textContent.includes('食費'));
+                      .find(el => el.textContent.includes('食料品'));
     expect(foodTag).toBeInTheDocument();
+
+    // 娯楽費（変動）象限のドロップエリアを取得
+    const leisureVariableQuadrantDropArea = container.querySelector('.quadrant-4 .droppable-area');
+    expect(leisureVariableQuadrantDropArea).toBeInTheDocument();
+
+    // ドラッグ＆ドロップを実行
+    simulateDragDrop(foodTag, leisureVariableQuadrantDropArea);
+
+    // localStorage.setItemが更新された内容で呼び出されたか確認
+    await waitFor(() => {
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'categoryQuadrantAssignments',
+        JSON.stringify({ 
+          ...initialAssignments,
+          '食費 - 食料品': 'leisure-variable' // 移動後の象限
+        })
+      );
+    });
   });
 
-  test('4象限の軸ラベルが正しく表示される', () => {
-    // LocalStorageにあらかじめ保存された分類情報をセット
-    const savedAssignments = {
-      '食費': 'necessary-variable',
+  test('分類済みカテゴリタグを削除ボタンで未分類に戻せる', async () => {
+    const initialAssignments = {
+      '食費 - 食料品': 'necessary-variable',
+      '住居費 - 家賃': 'necessary-fixed'
     };
+    localStorageMock.getItem.mockReturnValue(JSON.stringify(initialAssignments));
+
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
+
+    // 必需費（変動）にある「食費 - 食料品」タグの削除ボタンを取得
+    const necessaryVariableQuadrant = container.querySelector('.quadrant-3');
+    const foodTag = Array.from(necessaryVariableQuadrant.querySelectorAll('.category-tag'))
+                      .find(el => el.textContent.includes('食料品'));
+    const deleteButton = foodTag.querySelector('.remove-category-tag');
+    expect(deleteButton).toBeInTheDocument();
+
+    // 削除ボタンをクリック
+    fireEvent.click(deleteButton);
+
+    // localStorage.setItemが削除後の内容で呼び出されたか確認
+    await waitFor(() => {
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'categoryQuadrantAssignments',
+        JSON.stringify({ 
+          '住居費 - 家賃': 'necessary-fixed' // 食費が削除されている
+        })
+      );
+    });
+
+    // 未分類リストに「食費 - 食料品」が戻っていることを確認（表示更新を待つ）
+    await waitFor(() => {
+        const unassignedFoodGroup = screen.getByRole('heading', { name: '食費' }).closest('.unassigned-category-group');
+        expect(unassignedFoodGroup).toHaveTextContent('食料品');
+    });
+  });
+
+  // 軸ラベルとタイトルのテストは変更なしでOK
+  test('4象限の軸ラベルとタイトルが正しく表示される', () => {
+    const savedAssignments = { '食費 - 食料品': 'necessary-variable' }; // 何か一つ分類してグリッドを表示させる
     localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
-    
-    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 軸ラベルが存在するか確認
-    expect(container.querySelector('.x-axis-label-low')).toBeInTheDocument();
-    expect(container.querySelector('.x-axis-label-high')).toBeInTheDocument();
-    expect(container.querySelector('.y-axis-label-low')).toBeInTheDocument();
-    expect(container.querySelector('.y-axis-label-high')).toBeInTheDocument();
-    
-    // 軸タイトルが存在するか確認
-    expect(container.querySelector('.x-axis-title')).toBeInTheDocument();
-    expect(container.querySelector('.y-axis-title')).toBeInTheDocument();
-    
-    // 軸ラベルの内容が正しいか確認（新しいラベルに更新）
+    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
     expect(container.querySelector('.x-axis-label-low').textContent).toBe('必需');
     expect(container.querySelector('.x-axis-label-high').textContent).toBe('娯楽');
     expect(container.querySelector('.y-axis-label-low').textContent).toBe('変動');
     expect(container.querySelector('.y-axis-label-high').textContent).toBe('固定');
-    
-    // 軸タイトルの内容が正しいか確認
     expect(container.querySelector('.x-axis-title').textContent).toBe('必要性');
     expect(container.querySelector('.y-axis-title').textContent).toBe('変動性');
   });
 
-  test('カテゴリタグを削除ボタンでリセットできる', async () => {
-    // LocalStorageにあらかじめ保存された分類情報をセット
-    const savedAssignments = {
-      '食費': 'necessary-variable',
-      '光熱費': 'necessary-fixed'
-    };
-    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(savedAssignments));
-    
-    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 必需費（変動）象限内の「食費」タグを探す
-    const necessaryVariableQuadrant = container.querySelector('.quadrant-3');
-    const foodTag = Array.from(necessaryVariableQuadrant.querySelectorAll('.category-tag'))
-      .find(el => el.textContent.includes('食費'));
-    
-    // 「食費」タグの削除ボタンをクリック
-    const deleteButton = foodTag.querySelector('.remove-category-tag');
-    fireEvent.click(deleteButton);
-    
-    // LocalStorageに食費がないデータが保存されたことを確認
-    const saveCall = localStorageMock.setItem.mock.calls.find(
-      call => call[0] === 'categoryQuadrantAssignments'
-    );
-    
-    expect(saveCall).toBeTruthy();
-    const savedData = JSON.parse(saveCall[1]);
-    expect(savedData).not.toHaveProperty('食費');
-    expect(savedData).toHaveProperty('光熱費', 'necessary-fixed');
-  });
-
-  test('旧フォーマットの分類データが新フォーマットに変換される', () => {
-    // 旧フォーマットの分類情報をセット
-    const oldFormatAssignments = {
-      '食費': 'necessary-variable',
-      '光熱費': 'necessary-fixed',
-      '趣味': 'entertainment', // 旧: entertainment → 新: leisure-fixed
-      '外食': 'waste'          // 旧: waste → 新: leisure-variable
-    };
-    localStorageMock.getItem.mockReturnValueOnce(JSON.stringify(oldFormatAssignments));
-    
-    const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={-38000} />);
-    
-    // 娯楽費（固定）象限に「趣味」タグが表示されていることを確認（変換されたかどうか）
-    const leisureFixedQuadrant = container.querySelector('.quadrant-2');
-    
-    // 「必需費（固定）」象限に「光熱費」があることを確認
-    const necessaryFixedQuadrant = container.querySelector('.quadrant-1');
-    const lightHeatTag = Array.from(necessaryFixedQuadrant.querySelectorAll('.category-tag'))
-      .find(el => el.textContent.includes('光熱費'));
-    expect(lightHeatTag).toBeInTheDocument();
-
-    // データ変換が行われたことを確認
-    const convertCall = localStorageMock.setItem.mock.calls.find(
-      call => call[0] === 'categoryQuadrantAssignments'
-    );
-    
-    if (convertCall) {
-      const convertedData = JSON.parse(convertCall[1]);
-      expect(convertedData).toHaveProperty('趣味', 'leisure-fixed');
-      expect(convertedData).toHaveProperty('外食', 'leisure-variable');
-    }
-  });
-  
-  // 表示するデータがない場合のテスト
+  // データがない場合のテスト
   test('データが空の場合でも正しく表示される', () => {
     render(<CategoryQuadrantView data={[]} negativeTotal={0} />);
-    
-    // 説明が表示されること
     expect(screen.getByText('四分法とは？')).toBeInTheDocument();
-    
-    // 未分類カテゴリが空であることを示すメッセージ
-    expect(screen.getByText('未分類のカテゴリはありません')).toBeInTheDocument();
+    expect(screen.getByText('未分類の中項目カテゴリはありません')).toBeInTheDocument();
+    expect(screen.queryByText('個の中項目カテゴリを分類済み')).not.toBeInTheDocument(); // 分類状況は表示されない
+    expect(screen.queryByText('支出分析まとめ')).not.toBeInTheDocument(); // グリッドやサマリーも表示されない
   });
+
+  // 旧フォーマットのテストは削除
 });

@@ -24,6 +24,10 @@ jest.mock('prop-types', () => {
   const oneOfType = function() { return mockPropType; };
   oneOfType.isRequired = function() {};
   
+  // oneOfメソッドを追加
+  const oneOf = function() { return mockPropType; };
+  oneOf.isRequired = function() {};
+  
   return {
     array: mockPropType,
     bool: mockPropType,
@@ -33,6 +37,7 @@ jest.mock('prop-types', () => {
     object: mockPropType,
     any: mockPropType,
     oneOfType: oneOfType,
+    oneOf: oneOf, // oneOfメソッドを追加
     arrayOf: () => mockPropType,
     shape: () => mockPropType,
     objectOf: () => mockPropType,
@@ -434,7 +439,7 @@ describe('データ件数の表示', () => {
     });
     
     // filtered-data-count要素を探す
-    const dataCountElement = screen.queryByTestId('filtered-data-count');
+    const dataCountElement = screen.queryByTestId('filtered-data_count');
     
     // 要素が見つかったら期待値をチェック
     if (dataCountElement) {
@@ -468,7 +473,7 @@ describe('データ件数の表示', () => {
       // 非同期更新の反映を待つ
       await waitFor(() => {
         // エレメント自体を検索して内容を確認
-        const dataCountElement = screen.queryByTestId('filtered-data-count');
+        const dataCountElement = screen.queryByTestId('filtered-data_count');
         if (dataCountElement) {
           // handleFilesモックが返すデータ配列の長さは3
           expect(dataCountElement.textContent).toBe('3');

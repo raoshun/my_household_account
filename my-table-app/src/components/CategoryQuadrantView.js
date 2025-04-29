@@ -5,7 +5,7 @@ import './CategoryQuadrantView.css';
 
 /**
  * 支出を4分類（必需固定・必需変動・娯楽固定・娯楽変動）で表示するコンポーネント
- * カテゴリの手動割り当て機能付き（ドラッグアンドドロップ対応）
+ * カテゴリ（中項目単位）の手動割り当て機能付き（ドラッグアンドドロップ対応）
  * 
  * @param {Object} props
  * @param {Array} props.data - 分析対象データ配列
@@ -16,12 +16,12 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
   // 支出の絶対値（正の値）
   const expenseTotal = Math.abs(negativeTotal);
   
-  // カテゴリの分類状態を保持
+  // カテゴリの分類状態を保持 (キーは「大項目 - 中項目」)
   const [categoryAssignments, setCategoryAssignments] = useState({});
-  // 未分類のカテゴリリスト
-  /** @type {string[]} */
-  const [unassignedCategories, setUnassignedCategories] = useState([]);
-  // ドラッグ中のカテゴリ
+  // 未分類のカテゴリリスト (要素は「大項目 - 中項目」) -> グループ化された構造に変更
+  /** @type {{ [mainCategory: string]: string[] }} */
+  const [groupedUnassignedCategories, setGroupedUnassignedCategories] = useState({});
+  // ドラッグ中のカテゴリ (「大項目 - 中項目」)
   const [draggedCategory, setDraggedCategory] = useState(null);
   
   // 四分法データの初期化
@@ -61,50 +61,75 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
 
   // 初期化時にローカルストレージから分類設定を読み込み
   useEffect(() => {
+    console.log('localStorage(categoryQuadrantAssignments):', localStorage.getItem('categoryQuadrantAssignments'));
     try {
       const savedAssignments = localStorage.getItem('categoryQuadrantAssignments');
       if (savedAssignments) {
-        // 旧フォーマットの変換（互換性のため）
+        // 新しいフォーマット（キーが「大項目 - 中項目」）のみを読み込む
         const parsedAssignments = JSON.parse(savedAssignments);
-        const convertedAssignments = {};
-        
-        Object.entries(parsedAssignments).forEach(([category, quadrant]) => {
-          // 旧フォーマットから新フォーマットへの変換マッピング
-          const conversionMap = {
-            'necessary-fixed': 'necessary-fixed',
-            'necessary-variable': 'necessary-variable',
-            'entertainment': 'leisure-fixed',
-            'waste': 'leisure-variable'
-          };
-          
-          convertedAssignments[category] = conversionMap[quadrant] || quadrant;
-        });
-        
-        setCategoryAssignments(convertedAssignments);
+        // 簡単なバリデーション（オブジェクトであることを確認）
+        if (typeof parsedAssignments === 'object' && parsedAssignments !== null) {
+          setCategoryAssignments(parsedAssignments);
+        } else {
+          console.warn('ローカルストレージの分類データ形式が不正です。');
+          // 不正なデータはクリアする
+          localStorage.removeItem('categoryQuadrantAssignments');
+        }
       }
     } catch (error) {
       console.error('保存された分類情報の読み込みに失敗しました:', error);
+      // エラー時もクリアする
+      localStorage.removeItem('categoryQuadrantAssignments');
     }
   }, []);
   
-  // 全カテゴリを抽出して、未割り当てのカテゴリを特定
+  // 全カテゴリ（中項目単位）を抽出して、未割り当てのカテゴリを特定し、グループ化
   useEffect(() => {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0) {
+      setGroupedUnassignedCategories({}); // データがない場合は空にする
+      return;
+    }
     
-    // すべての支出カテゴリを取得（重複排除）
+    // すべての支出カテゴリ（「大項目 - 中項目」）を取得（重複排除）
     const allExpenseCategories = [...new Set(
       data
-        .filter(item => item['金額（円）'] < 0)
-        .map(item => item['大項目'])
-        .filter(Boolean)
+        .filter(item => item['金額（円）'] < 0 && item['大項目'] && item['中項目']) // 中項目が存在する支出データのみ対象
+        .map(item => `${item['大項目']} - ${item['中項目']}`) // 「大項目 - 中項目」形式のキーを作成
+        .filter(Boolean) // 空文字などを除外
     )];
     
-    // 未割り当てのカテゴリを特定
-    const unassigned = allExpenseCategories.filter(
-      category => !categoryAssignments[category]
+    // 未割り当てのカテゴリキーを特定
+    const unassignedCategoryKeys = allExpenseCategories.filter(
+      categoryKey => !categoryAssignments[categoryKey] // キーで存在確認
     );
+
+    // 未割り当てカテゴリを大項目ごとにグループ化
+    const grouped = unassignedCategoryKeys.reduce((acc, categoryKey) => {
+      const parts = categoryKey.split(' - ');
+      if (parts.length === 2) {
+        const [mainCategory, subCategory] = parts;
+        if (!acc[mainCategory]) {
+          acc[mainCategory] = [];
+        }
+        // 重複を避けて追加（念のため）
+        if (!acc[mainCategory].includes(subCategory)) {
+          acc[mainCategory].push(subCategory);
+        }
+      }
+      return acc;
+    }, {});
+
+    // 大項目名でソート
+    const sortedGrouped = Object.keys(grouped)
+      .sort()
+      .reduce((acc, key) => {
+        // 中項目もソート
+        acc[key] = grouped[key].sort();
+        return acc;
+      }, {});
+
+    setGroupedUnassignedCategories(sortedGrouped);
     
-    setUnassignedCategories(unassigned);
   }, [data, categoryAssignments]);
 
   // 分類情報を保存する関数
@@ -148,15 +173,33 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
   // ドラッグオーバー時の処理
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
   };
 
-  // ドロップ時の処理
+  // ドロップ時の処理 (修正案)
   const handleDrop = (e, quadrant) => {
     e.preventDefault();
-    const category = e.dataTransfer.getData('text/plain');
+    let category;
+    try {
+      // テストでモックされている dataTransfer.getData を優先的に試す
+      category = e.dataTransfer.getData('text/plain');
+      console.log('Using dataTransfer.getData:', category);
+    } catch (error) {
+      console.warn('e.dataTransfer.getData failed:', error);
+      // dataTransfer が失敗した場合のみ state をフォールバックとして使用
+      if (draggedCategory) {
+        console.log('Using draggedCategory state as fallback:', draggedCategory);
+        category = draggedCategory;
+      }
+    }
+
     if (category) {
+      console.log(`Assigning category ${category} to quadrant ${quadrant}`);
       assignCategory(category, quadrant);
+    } else {
+      console.warn('ドロップされたカテゴリが特定できませんでした');
     }
   };
 
@@ -173,22 +216,23 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
     
     // データを手動割り当てに基づいて分類
     data.forEach(item => {
-      // 収入や金額のないデータはスキップ
-      if (item['金額（円）'] >= 0 || !item['大項目']) return;
+      // 収入や金額のないデータ、大項目・中項目がないデータはスキップ
+      if (item['金額（円）'] >= 0 || !item['大項目'] || !item['中項目']) return;
       
-      const category = item['大項目'];
-      const quadrant = categoryAssignments[category];
+      const categoryKey = `${item['大項目']} - ${item['中項目']}`; // 「大項目 - 中項目」キー
+      const quadrant = categoryAssignments[categoryKey]; // キーで分類を取得
       
       // 分類されていないカテゴリはスキップ
       if (!quadrant) return;
       
       const amount = Math.abs(Number(item['金額（円）']) || 0);
       
-      // 金額と項目を該当するquadrantに追加
+      // 金額と項目を該当quadrantに追加
       quadrants[quadrant].total += amount;
       quadrants[quadrant].items.push({
         ...item,
-        amount
+        amount,
+        categoryKey // デバッグ用にキーも追加
       });
     });
     
@@ -220,20 +264,49 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
   };
 
   // カテゴリの分類状況の要約を計算
-  const totalCategories = unassignedCategories.length + Object.keys(categoryAssignments).length;
-  const assignedCount = Object.keys(categoryAssignments).length;
-  const assignmentProgress = totalCategories > 0 ? (assignedCount / totalCategories) * 100 : 0;
+  // totalCategoriesの計算方法をgroupedUnassignedCategoriesに合わせて変更
+  const totalAssignedCount = Object.keys(categoryAssignments).length;
+  const totalUnassignedCount = Object.values(groupedUnassignedCategories).reduce((sum, arr) => sum + arr.length, 0);
+  const totalCategories = totalAssignedCount + totalUnassignedCount;
+  const assignmentProgress = totalCategories > 0 ? (totalAssignedCount / totalCategories) * 100 : 0;
 
   // 象限内のカテゴリ表示をレンダリングする関数
   const renderQuadrantCategories = (quadrant) => {
+    // 該当象限に割り当てられたカテゴリキーを取得
+    const assignedKeysInQuadrant = Object.entries(categoryAssignments)
+      .filter(([_, assignedQuadrant]) => assignedQuadrant === quadrant)
+      .map(([categoryKey]) => categoryKey);
+
+    // 割り当てられたカテゴリを大項目ごとにグループ化
+    const groupedAssigned = assignedKeysInQuadrant.reduce((acc, categoryKey) => {
+      const parts = categoryKey.split(' - ');
+      if (parts.length === 2) {
+        const [mainCategory, subCategory] = parts;
+        if (!acc[mainCategory]) {
+          acc[mainCategory] = [];
+        }
+        if (!acc[mainCategory].includes(subCategory)) {
+          acc[mainCategory].push(subCategory);
+        }
+      }
+      return acc;
+    }, {});
+
+    // 大項目名でソート
+    const sortedGroupArray = Object.entries(groupedAssigned).sort(([a], [b]) => a.localeCompare(b));
+    // 各グループ内も中項目でソート
+    sortedGroupArray.forEach(([mainCategory, subCategories], idx) => {
+      sortedGroupArray[idx][1] = subCategories.slice().sort();
+    });
+
     return (
       <div className="quadrant-categories-container">
+        {/* ドロップ可能なエリアと合計金額表示 */}
         <div 
           className="quadrant-categories droppable-area"
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, quadrant)}
         >
-          {/* データアイテムを表示せず、割り当てられたカテゴリのみ表示 */}
           <div className="quadrant-summary-info">
             {formatAmount(quadrantData[quadrant].total)}
             <span className="quadrant-percentage">
@@ -242,27 +315,38 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
           </div>
         </div>
         
-        {/* 割り当て済みカテゴリ（ドラッグ可能なタグ形式） */}
+        {/* 割り当て済みカテゴリ（グループ化して表示） */}
         <div className="assigned-category-tags">
-          {Object.entries(categoryAssignments)
-            .filter(([_, assignedQuadrant]) => assignedQuadrant === quadrant)
-            .map(([category]) => (
-              <div 
-                key={`tag-${category}`}
-                className={`category-tag ${draggedCategory === category ? 'dragging' : ''}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, category)}
-                onDragEnd={handleDragEnd}
-              >
-                {category}
-                <button 
-                  className="remove-category-tag"
-                  onClick={() => removeAssignment(category)}
-                  title="削除"
-                >×</button>
+          {sortedGroupArray.length > 0 ? (
+            sortedGroupArray.map(([mainCategory, subCategories]) => (
+              <div key={`assigned-group-${quadrant}-${mainCategory}`} className="assigned-category-group">
+                <h5 className="assigned-main-category-header">{mainCategory}</h5>
+                <div className="assigned-subcategory-tags">
+                  {subCategories.map(subCategory => {
+                    const categoryKey = `${mainCategory} - ${subCategory}`;
+                    return (
+                      <div 
+                        key={`tag-${categoryKey}`}
+                        className={`category-tag ${draggedCategory === categoryKey ? 'dragging' : ''}`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, categoryKey)}
+                        onDragEnd={handleDragEnd}
+                      >
+                        {subCategory}
+                        <button 
+                          className="remove-category-tag"
+                          onClick={() => removeAssignment(categoryKey)}
+                          title="削除"
+                        >×</button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             ))
-          }
+          ) : (
+            <div className="no-assigned-categories">カテゴリ未割り当て</div>
+          )}
         </div>
       </div>
     );
@@ -270,8 +354,8 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
 
   return (
     <div className="category-quadrant-container">
+      {console.log('CategoryQuadrantView rendered')}
       <h2 className="category-quadrant-title">支出カテゴリ四分法</h2>
-      
       <div className="quadrant-explanation">
         <h3>四分法とは？</h3>
         <p>支出を「必要性」と「変動性」の2軸で4つのカテゴリに分類して可視化します：</p>
@@ -284,9 +368,9 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
       {/* 分類状況の表示 */}
       <div className="assignment-status-container">
         <div className="assignment-status">
-          {assignedCount > 0 ? (
+          {totalAssignedCount > 0 ? ( // assignedCount を totalAssignedCount に変更
             <>
-              <span>{assignedCount}個のカテゴリを分類済み</span>
+              <span>{totalAssignedCount}個の中項目カテゴリを分類済み</span>
               <div className="progress-bar">
                 <div 
                   className="progress-fill" 
@@ -295,35 +379,37 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
               </div>
             </>
           ) : (
-            <span className="no-assignments">カテゴリが未分類です</span>
+            <span className="no-assignments">中項目カテゴリが未分類です</span>
           )}
         </div>
       </div>
       
       {/* 未分類カテゴリセクション */}
       <div className="unassigned-categories-section">
-        <h3>未分類のカテゴリ（ドラッグして象限に割り当ててください）</h3>
+        <h3>未分類の中項目カテゴリ（ドラッグして象限に割り当ててください）</h3>
         <div className="unassigned-categories-list">
-          {unassignedCategories.length > 0 ? (
-            unassignedCategories.map(category => (
-              <div 
-                key={`unassigned-${category}`}
-                className={`unassigned-category-item ${draggedCategory === category ? 'dragging' : ''}`}
-                draggable
-                onDragStart={(e) => handleDragStart(e, category)}
-                onDragEnd={handleDragEnd}
-              >
-                {category}
+          {Object.keys(groupedUnassignedCategories).length > 0 ? (
+            Object.entries(groupedUnassignedCategories).map(([mainCategory, subCategories]) => (
+              <div key={`unassigned-group-${mainCategory}`} className="unassigned-category-group">
+                <h4 className="unassigned-main-category-header">{mainCategory}</h4>
+                <div className="unassigned-subcategory-list">
+                  {subCategories.map(subCategory => {
+                    const categoryKey = `${mainCategory} - ${subCategory}`;
+                    return (
+                      <div key={`unassigned-${categoryKey}`} className={`unassigned-category-item ${draggedCategory === categoryKey ? 'dragging' : ''}`} draggable onDragStart={(e) => handleDragStart(e, categoryKey)} onDragEnd={handleDragEnd}>{subCategory}</div>
+                    );
+                  })}
+                </div>
               </div>
             ))
           ) : (
-            <p className="no-categories-message">未分類のカテゴリはありません</p>
+            <p className="no-categories-message">未分類の中項目カテゴリはありません</p>
           )}
         </div>
       </div>
       
       {/* メインの四分法表示（ドラッグアンドドロップ可能） */}
-      {totalCategories > 0 && (
+      {totalCategories > 0 && ( // totalCategories を使用
         <>
           <div className="quadrant-graph-container">
             <div className="quadrant-grid">
@@ -345,7 +431,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
                   <span className="quadrant-icon">{quadrantIcons['necessary-fixed']}</span>
                   {quadrantNames['necessary-fixed']}
                 </div>
-                {renderQuadrantCategories('necessary-fixed')}
+                {renderQuadrantCategories('necessary-fixed')} 
                 <div className="quadrant-total">
                   {formatAmount(quadrantData['necessary-fixed'].total)}
                   <span className="quadrant-percentage">
@@ -364,7 +450,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
                   <span className="quadrant-icon">{quadrantIcons['leisure-fixed']}</span>
                   {quadrantNames['leisure-fixed']}
                 </div>
-                {renderQuadrantCategories('leisure-fixed')}
+                {renderQuadrantCategories('leisure-fixed')} 
                 <div className="quadrant-total">
                   {formatAmount(quadrantData['leisure-fixed'].total)}
                   <span className="quadrant-percentage">
@@ -383,7 +469,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
                   <span className="quadrant-icon">{quadrantIcons['necessary-variable']}</span>
                   {quadrantNames['necessary-variable']}
                 </div>
-                {renderQuadrantCategories('necessary-variable')}
+                {renderQuadrantCategories('necessary-variable')} 
                 <div className="quadrant-total">
                   {formatAmount(quadrantData['necessary-variable'].total)}
                   <span className="quadrant-percentage">
@@ -402,7 +488,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
                   <span className="quadrant-icon">{quadrantIcons['leisure-variable']}</span>
                   {quadrantNames['leisure-variable']}
                 </div>
-                {renderQuadrantCategories('leisure-variable')}
+                {renderQuadrantCategories('leisure-variable')} 
                 <div className="quadrant-total">
                   {formatAmount(quadrantData['leisure-variable'].total)}
                   <span className="quadrant-percentage">

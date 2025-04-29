@@ -46,36 +46,19 @@ export function sortAndAggregateData(data) {
     return {};
   }
 
-  // 大分類＋中分類で集計
-  const categoryTotals = aggregateByCategory(data, {
-    categoryKey: '大項目',
-    subCategoryKey: '中項目',
-    amountKey: '金額（円）',
-    defaultCategory: '未分類',
-    defaultSubCategory: '未分類',
-    includeZero: false,
-    absolute: false
-  });
-
-  // 結果オブジェクトを初期化
+  // 大項目ごとに集計
   const result = {};
-
-  // 大分類・中分類ごとにアイテムをグループ化
   data.forEach(item => {
     const main = item['大項目'] || '未分類';
-    const sub = item['中項目'] || '未分類';
-    const key = `${main} - ${sub}`;
-    if (!result[key]) {
-      result[key] = {
-        mainCategory: main,
-        subCategory: sub,
-        total: categoryTotals[key] || 0,
-        items: []
+    if (!result[main]) {
+      result[main] = {
+        items: [],
+        total: 0
       };
     }
-    result[key].items.push(item);
+    result[main].items.push(item);
+    result[main].total += Number(item['金額（円）']) || 0;
   });
-
   return result;
 }
 

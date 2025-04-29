@@ -17,8 +17,7 @@ const AggregatedTable = ({ aggregatedData }) => {
       <table className="modern-table">
         <thead>
           <tr>
-            <th>大分類</th>
-            <th>中分類</th>
+            <th>カテゴリ</th>
             <th>項目</th>
             <th>合計金額（円）</th>
           </tr>
@@ -31,9 +30,8 @@ const AggregatedTable = ({ aggregatedData }) => {
               ? categoryData.items.length 
               : 0;
             return (
-              <tr key={key} className={categoryData.mainCategory === '未分類' ? 'uncategorized-row' : ''}>
-                <td>{categoryData.mainCategory}</td>
-                <td>{categoryData.subCategory}</td>
+              <tr key={key} className={key === '未分類' ? 'uncategorized-row' : ''}>
+                <td>{key}</td>
                 <td>{itemsCount}件</td>
                 <td className={total >= 0 ? 'positive-amount' : 'negative-amount'}>
                   ¥{total.toLocaleString()}
