@@ -97,6 +97,19 @@ beforeEach(() => {
   }
 });
 
+// DRY: 共通のセッター関数モック生成
+function createAllSetters() {
+  return {
+    setData: jest.fn(),
+    setPositiveChartData: jest.fn(),
+    setNegativeChartData: jest.fn(),
+    setPositiveTotal: jest.fn(),
+    setNegativeTotal: jest.fn(),
+    setIsLoading: jest.fn(),
+    setError: jest.fn(),
+  };
+}
+
 // 共通ヘルパー: セッター関数とファイル生成、非同期待機
 function setupFileTest({ fileContents = ['dummy csv content'], fileNames = ['test.csv'], setters = null } = {}) {
   const files = fileContents.map((content, i) => new File([content], fileNames[i] || `file${i}.csv`, { type: 'text/csv' }));
@@ -190,15 +203,11 @@ describe('fileHandlers ファイル処理テスト', () => {
       options.complete({ data: [] });
     });
     const { files } = setupFileTest({ fileContents: ['invalid csv'], fileNames: ['error.csv'] });
-    const setData = jest.fn();
-    const setPositiveChartData = jest.fn();
-    const setNegativeChartData = jest.fn();
-    const setIsLoading = jest.fn();
-    const setError = jest.fn();
-    handleFiles(files, { setData, setPositiveChartData, setNegativeChartData, setIsLoading, setError });
+    const setters = createAllSetters();
+    handleFiles(files, setters);
     await waitForAsync();
-    expect(setError).toHaveBeenCalled();
-    expect(setIsLoading).toHaveBeenCalledWith(false);
+    expect(setters.setError).toHaveBeenCalled();
+    expect(setters.setIsLoading).toHaveBeenCalledWith(false);
   });
 });
 
