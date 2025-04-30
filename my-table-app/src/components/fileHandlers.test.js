@@ -97,6 +97,17 @@ beforeEach(() => {
   }
 });
 
+// 共通ヘルパー: セッター関数とファイル生成、非同期待機
+function setupFileTest({ fileContents = ['dummy csv content'], fileNames = ['test.csv'], setters = null } = {}) {
+  const files = fileContents.map((content, i) => new File([content], fileNames[i] || `file${i}.csv`, { type: 'text/csv' }));
+  const s = setters || createMockSetters();
+  return { files, setters: s };
+}
+
+async function waitForAsync(ms = 100) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // 基本的なテスト
 describe('fileHandlers 基本機能テスト', () => {
   test('processFile should return a formatted string', () => {
@@ -147,11 +158,9 @@ describe('fileHandlers 基本機能テスト', () => {
 // ファイル処理のテスト例: 共通セッター関数を利用
 describe('fileHandlers ファイル処理テスト', () => {
   test('handleFiles correctly processes CSV data', async () => {
-    const mockFile = new File(['dummy csv content'], 'test.csv', { type: 'text/csv' });
-    const mockFiles = [mockFile];
-    const setters = createMockSetters();
-    handleFiles(mockFiles, setters);
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const { files, setters } = setupFileTest();
+    handleFiles(files, setters);
+    await waitForAsync();
     expect(setters.setIsLoading).toHaveBeenCalledWith(true);
     expect(setters.setData).toHaveBeenCalled();
     expect(setters.setPositiveChartData).toHaveBeenCalled();
@@ -163,93 +172,31 @@ describe('fileHandlers ファイル処理テスト', () => {
   });
 
   test('handleFiles correctly handles multiple files', async () => {
-    // 複数ファイルのモック
-    const mockFiles = [
-      new File(['content1'], 'file1.csv', { type: 'text/csv' }),
-      new File(['content2'], 'file2.csv', { type: 'text/csv' })
-    ];
-    
-    // パーサーのモックを複数ファイル用に設定
-    parse
-      .mockImplementationOnce((text, options) => {
-        options.complete({
-          data: [
-            { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
-            { '大項目': '食費', '中項目': '外食', '金額（円）': 2000 }
-          ]
-        });
-      })
-      .mockImplementationOnce((text, options) => {
-        options.complete({
-          data: [
-            { '大項目': '交通費', '中項目': '電車', '金額（円）': 500 }
-          ]
-        });
-      });
-    
-    // セッター関数をモック
-    const setData = jest.fn();
-    const setPositiveChartData = jest.fn();
-    const setNegativeChartData = jest.fn();
-    const setPositiveTotal = jest.fn();
-    const setNegativeTotal = jest.fn();
-    const setAggregatedData = jest.fn();
-    const setCategoryTotals = jest.fn();
-    const setIsLoading = jest.fn();
-    
-    // handleFiles関数を実行
-    handleFiles(mockFiles, {
-      setData,
-      setPositiveChartData,
-      setNegativeChartData,
-      setPositiveTotal,
-      setNegativeTotal,
-      setAggregatedData,
-      setCategoryTotals,
-      setIsLoading
+    const { files, setters } = setupFileTest({
+      fileContents: ['content1', 'content2'],
+      fileNames: ['file1.csv', 'file2.csv']
     });
-    
-    // 非同期処理の完了を待つ（複数ファイルの処理に時間がかかる場合）
-    await new Promise(resolve => setTimeout(resolve, 150));
-    
-    // setIsLoadingが適切に呼ばれていることを検証
-    expect(setIsLoading).toHaveBeenCalledWith(true);
-    expect(setIsLoading).toHaveBeenCalledWith(false);
+    handleFiles(files, setters);
+    await waitForAsync(150);
+    expect(setters.setIsLoading).toHaveBeenCalledWith(true);
+    expect(setters.setIsLoading).toHaveBeenCalledWith(false);
   });
-  
+
   test('handleFiles correctly handles errors', async () => {
-    // エラーを発生させるためのモック
     parse.mockImplementationOnce((text, options) => {
       if (options.error) {
         options.error(new Error('CSV parsing failed'));
       }
       options.complete({ data: [] });
     });
-    
-    // エラーを発生させるファイル
-    const mockFile = new File(['invalid csv'], 'error.csv', { type: 'text/csv' });
-    const mockFiles = [mockFile];
-    
-    // セッター関数をモック
+    const { files } = setupFileTest({ fileContents: ['invalid csv'], fileNames: ['error.csv'] });
     const setData = jest.fn();
     const setPositiveChartData = jest.fn();
     const setNegativeChartData = jest.fn();
     const setIsLoading = jest.fn();
     const setError = jest.fn();
-    
-    // handleFiles関数を実行
-    handleFiles(mockFiles, {
-      setData,
-      setPositiveChartData,
-      setNegativeChartData,
-      setIsLoading,
-      setError
-    });
-    
-    // 非同期処理の完了を待つ
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // エラーハンドリングが行われていることを検証
+    handleFiles(files, { setData, setPositiveChartData, setNegativeChartData, setIsLoading, setError });
+    await waitForAsync();
     expect(setError).toHaveBeenCalled();
     expect(setIsLoading).toHaveBeenCalledWith(false);
   });
