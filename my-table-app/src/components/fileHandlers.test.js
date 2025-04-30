@@ -46,6 +46,7 @@ globalThis.URL = {
 
 import MockFileReader from '../test-utils/fileReaderMock';
 import { setupTestEnvironment, cleanupTestEnvironment } from '../test-utils/testSetup';
+import { createMockSetters, createMockCSVData } from '../test-utils/mockHelpers';
 
 // テスト前の設定
 beforeAll(() => {
@@ -103,19 +104,20 @@ describe('fileHandlers 基本機能テスト', () => {
   });
 
   test('handleFiles should return error message when no files provided', () => {
-    const result = handleFiles(null);
+    const { setData, setPositiveChartData } = createMockSetters();
+    const result = handleFiles(null, { setData, setPositiveChartData });
     expect(result.success).toBe(false);
     expect(result.message).toBe('No files provided');
   });
 
   test('handleFiles should handle empty files array', () => {
-    const result = handleFiles([]);
+    const { setData, setPositiveChartData } = createMockSetters();
+    const result = handleFiles([], { setData, setPositiveChartData });
     expect(result.success).toBe(false);
     expect(result.message).toBe('No files provided');
   });
 
   test('handleFiles should detect test environment when callbacks not provided', () => {
-    // テスト環境検出のテスト
     const mockFile = new File(['test data'], 'test.csv', { type: 'text/csv' });
     const result = handleFiles([mockFile]);
     expect(result.success).toBe(true);
@@ -142,51 +144,22 @@ describe('fileHandlers 基本機能テスト', () => {
   });
 });
 
-// ファイル処理のテスト
+// ファイル処理のテスト例: 共通セッター関数を利用
 describe('fileHandlers ファイル処理テスト', () => {
   test('handleFiles correctly processes CSV data', async () => {
-    // モックのCSVファイル
     const mockFile = new File(['dummy csv content'], 'test.csv', { type: 'text/csv' });
     const mockFiles = [mockFile];
-    
-    // セッター関数をモック
-    const setData = jest.fn();
-    const setPositiveChartData = jest.fn();
-    const setNegativeChartData = jest.fn();
-    const setPositiveTotal = jest.fn();
-    const setNegativeTotal = jest.fn();
-    const setAggregatedData = jest.fn();
-    const setCategoryTotals = jest.fn();
-    const setIsLoading = jest.fn();
-    const setError = jest.fn();
-    
-    // handleFiles関数を実行
-    handleFiles(mockFiles, {
-      setData,
-      setPositiveChartData,
-      setNegativeChartData,
-      setPositiveTotal,
-      setNegativeTotal,
-      setAggregatedData,
-      setCategoryTotals,
-      setIsLoading,
-      setError
-    });
-    
-    // 非同期処理の完了を待つ
+    const setters = createMockSetters();
+    handleFiles(mockFiles, setters);
     await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // 検証
-    expect(setIsLoading).toHaveBeenCalledWith(true);
-    expect(setData).toHaveBeenCalled();
-    expect(setPositiveChartData).toHaveBeenCalled();
-    expect(setNegativeChartData).toHaveBeenCalled();
-    expect(setIsLoading).toHaveBeenCalledWith(false);
-    
-    // setDataに渡されたデータを検証
-    const passedData = setData.mock.calls[0][0];
+    expect(setters.setIsLoading).toHaveBeenCalledWith(true);
+    expect(setters.setData).toHaveBeenCalled();
+    expect(setters.setPositiveChartData).toHaveBeenCalled();
+    expect(setters.setNegativeChartData).toHaveBeenCalled();
+    expect(setters.setIsLoading).toHaveBeenCalledWith(false);
+    const passedData = setters.setData.mock.calls[0][0];
     expect(Array.isArray(passedData)).toBe(true);
-    expect(passedData.length).toBe(3); // 3件のレコードを期待
+    expect(passedData.length).toBe(3);
   });
 
   test('handleFiles correctly handles multiple files', async () => {

@@ -4,6 +4,7 @@ import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 import iconv from 'iconv-lite';
 import { splitDataBySign, filterEmptyRows } from '../utils';
 import { prepareMonthlyTrendData } from '../utils/chartDataUtils';
+import { DATE_KEY, MAIN_CATEGORY_KEY, SUB_CATEGORY_KEY, AMOUNT_KEY } from '../config/constants';
 
 /**
  * CSVデータから日付の範囲を検出する関数
@@ -11,7 +12,7 @@ import { prepareMonthlyTrendData } from '../utils/chartDataUtils';
  * @param {string} dateKey - 日付が格納されているキー（デフォルト: '日付'）
  * @returns {Object} - 開始日と終了日を含むオブジェクト { startDate, endDate } - ISO形式（YYYY-MM-DD）
  */
-export const detectDateRange = (data, dateKey = '日付') => {
+export const detectDateRange = (data, dateKey = DATE_KEY) => {
   if (!data || !Array.isArray(data) || data.length === 0) {
     return { startDate: '', endDate: '' };
   }
@@ -132,7 +133,9 @@ const parseCSVFile = (file, onComplete, onError) => {
           if (result && result.data) {
             // 空行を共通関数でフィルタリング
             const filteredData = filterEmptyRows(result.data);
-            console.log(`CSVデータの行数: ${result.data.length}, フィルタリング後: ${filteredData.length}`);
+            if (process.env.NODE_ENV === 'development' || window.__TEST_DEBUG__) {
+              console.log(`CSVデータの行数: ${result.data.length}, フィルタリング後: ${filteredData.length}`);
+            }
             onComplete(filteredData);
           } else {
             onError(new Error('CSV解析結果にデータがありません'));
@@ -206,7 +209,9 @@ export const handleFiles = (files, setters = {}) => {
   let filesProcessed = 0;
   
   Array.from(files).forEach(file => {
-    console.log('Processing file:', file.name);
+    if (process.env.NODE_ENV === 'development' || window.__TEST_DEBUG__) {
+      console.log('Processing file:', file.name);
+    }
     
     parseCSVFile(
       file,
@@ -224,7 +229,9 @@ export const handleFiles = (files, setters = {}) => {
             // 日付範囲を検出して設定（追加）
             if (setDateRange) {
               const dateRange = detectDateRange(allData);
-              console.log('検出された日付範囲:', dateRange);
+              if (process.env.NODE_ENV === 'development' || window.__TEST_DEBUG__) {
+                console.log('検出された日付範囲:', dateRange);
+              }
               setDateRange(dateRange);
             }
             
@@ -260,9 +267,9 @@ export const handleFiles = (files, setters = {}) => {
               try {
                 const trendData = prepareMonthlyTrendData(
                   allData,
-                  '日付', // 日付キー
-                  '大項目', // カテゴリキー
-                  '金額（円）', // 金額キー
+                  DATE_KEY, // 日付キー
+                  MAIN_CATEGORY_KEY, // カテゴリキー
+                  AMOUNT_KEY, // 金額キー
                   5 // 表示する最大カテゴリ数
                 );
                 setMonthlyTrendData(trendData);
