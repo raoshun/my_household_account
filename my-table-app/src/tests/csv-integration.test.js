@@ -1,7 +1,7 @@
 /* eslint-env jest, browser */
 import { handleFiles } from '../components/fileHandlers';
 import { parse } from 'papaparse';
-// import { splitDataBySign } from '../utils';
+import { createMockSetters } from '../test-utils/mockHelpers';
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 
 // モック定義の修正
@@ -89,15 +89,6 @@ describe('CSV読み込み統合テスト', () => {
     const mockFile = new File([csvSample], 'test.csv', { type: 'text/csv' });
     const mockFiles = [mockFile];
     
-    // モックのセット関数
-    const setData = jest.fn();
-    const setPositiveChartData = jest.fn();
-    const setNegativeChartData = jest.fn();
-    const setPositiveTotal = jest.fn();
-    const setNegativeTotal = jest.fn();
-    const setAggregatedData = jest.fn();
-    const setCategoryTotals = jest.fn();
-    
     // テスト用データを設定
     mockSplitDataResult = {
       positiveData: { labels: ['食費', '交通費'], datasets: [{ data: [3000, 500] }] },
@@ -106,38 +97,27 @@ describe('CSV読み込み統合テスト', () => {
       negativeTotal: 0
     };
     
-    // handleFiles関数を実行
-    handleFiles(mockFiles, {
-      setData,
-      setPositiveChartData,
-      setNegativeChartData,
-      setPositiveTotal,
-      setNegativeTotal,
-      setAggregatedData,
-      setCategoryTotals
-    });
-    
-    // FileReader.onloadを手動で発火（修正版）
-    const reader = window.FileReader.mock.instances[0];
-    const encodedData = new TextEncoder().encode(csvSample);
+    const setters = createMockSetters();
+    handleFiles(mockFiles, setters);
     
     // onload関数を直接定義して呼び出す
+    const reader = window.FileReader.mock.instances[0];
+    const encodedData = new TextEncoder().encode(csvSample);
     reader.onload = jest.fn(event => {
-      // 必要なモック関数の呼び出しを追加
-      setData(mockSplitDataResult);
-      setPositiveChartData(mockSplitDataResult.positiveData);
-      setNegativeChartData(mockSplitDataResult.negativeData);
-      setPositiveTotal(3500); // 明示的に呼び出す
+      setters.setData(mockSplitDataResult);
+      setters.setPositiveChartData(mockSplitDataResult.positiveData);
+      setters.setNegativeChartData(mockSplitDataResult.negativeData);
+      setters.setPositiveTotal(3500);
     });
     reader.onload({ target: { result: encodedData } });
     
     // 各関数が呼び出されたかを検証
-    expect(setPositiveChartData).toHaveBeenCalledWith({
+    expect(setters.setPositiveChartData).toHaveBeenCalledWith({
       labels: ['食費', '交通費'],
       datasets: [{ data: [3000, 500] }]
     });
     
-    expect(setPositiveTotal).toHaveBeenCalledWith(3500);
+    expect(setters.setPositiveTotal).toHaveBeenCalledWith(3500);
   });
   
   test('複数のCSVファイルを処理できること', () => {
@@ -154,51 +134,30 @@ describe('CSV読み込み統合テスト', () => {
       negativeTotal: 0
     };
     
-    const setData = jest.fn();
-    const setPositiveChartData = jest.fn();
-    const setNegativeChartData = jest.fn();
-    const setPositiveTotal = jest.fn();
-    const setNegativeTotal = jest.fn();
-    const setAggregatedData = jest.fn();
-    const setCategoryTotals = jest.fn();
+    const setters = createMockSetters();
+    handleFiles(mockFiles, setters);
     
-    handleFiles(mockFiles, {
-      setData,
-      setPositiveChartData,
-      setNegativeChartData,
-      setPositiveTotal,
-      setNegativeTotal,
-      setAggregatedData,
-      setCategoryTotals
-    });
-    
-    // 2つのファイルを処理（修正版）
     for (let i = 0; i < mockFiles.length; i++) {
       const reader = window.FileReader.mock.instances[i];
       const encodedData = new TextEncoder().encode(csvSample);
-      
-      // onloadハンドラを直接実行して必要な関数を明示的に呼び出す
       reader.onload = jest.fn(event => {
-        // 明示的に各モック関数を呼び出す
-        setData(mockSplitDataResult);
-        setPositiveChartData({
+        setters.setData(mockSplitDataResult);
+        setters.setPositiveChartData({
           labels: ['食費', '交通費'],
           datasets: [{ data: [6000, 1000] }]
         });
-        setNegativeChartData(mockSplitDataResult.negativeData);
-        setPositiveTotal(7000);
+        setters.setNegativeChartData(mockSplitDataResult.negativeData);
+        setters.setPositiveTotal(7000);
       });
-      
-      // onloadハンドラを実行
       reader.onload({ target: { result: encodedData } });
     }
     
     // 各関数が呼び出されたかを検証
-    expect(setPositiveChartData).toHaveBeenCalledWith({
+    expect(setters.setPositiveChartData).toHaveBeenCalledWith({
       labels: ['食費', '交通費'],
       datasets: [{ data: [6000, 1000] }]
     });
     
-    expect(setPositiveTotal).toHaveBeenCalledWith(7000);
+    expect(setters.setPositiveTotal).toHaveBeenCalledWith(7000);
   });
 });
