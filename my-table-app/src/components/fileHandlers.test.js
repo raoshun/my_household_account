@@ -44,64 +44,16 @@ globalThis.URL = {
   revokeObjectURL: jest.fn()
 };
 
-// 元のFileReaderを保存
-const originalFileReader = window.FileReader;
-// FileReaderのモックを定義
-class MockFileReader {
-  constructor() {
-    this.onload = null;
-    this.onerror = null;
-    this.result = null;
-  }
-
-  readAsText(file) {
-    // ファイルの内容を読み取ったとシミュレート
-    setTimeout(() => {
-      this.result = file.type === 'text/csv' ? 'mock,csv,data' : 'mock-text-data';
-      if (this.onload) {
-        this.onload({ target: { result: this.result } });
-      }
-    }, 0);
-  }
-
-  readAsArrayBuffer(file) {
-    // ArrayBufferとして読み取ったとシミュレート
-    setTimeout(() => {
-      const mockData = new Uint8Array([97, 98, 99]); // "abc"
-      this.result = mockData.buffer;
-      if (this.onload) {
-        this.onload({ target: { result: this.result } });
-      }
-    }, 0);
-  }
-}
-
-// ErrorEventのモックを作成
-if (typeof window.ErrorEvent !== 'function') {
-  window.ErrorEvent = class ErrorEvent extends Event {
-    constructor(type, options = {}) {
-      super(type);
-      this.message = options.message || '';
-      this.filename = options.filename || '';
-      this.lineno = options.lineno || 0;
-      this.colno = options.colno || 0;
-      this.error = options.error || null;
-    }
-  };
-}
+import MockFileReader from '../test-utils/fileReaderMock';
+import { setupTestEnvironment, cleanupTestEnvironment } from '../test-utils/testSetup';
 
 // テスト前の設定
 beforeAll(() => {
-  // テスト全体でモックを設定
-  window.FileReader = MockFileReader;
-  
-  // テスト環境であることを明示するグローバルフラグ
-  window.__JEST_TEST_ENV__ = true;
+  setupTestEnvironment();
 });
 
 afterAll(() => {
-  // テスト後に元のFileReaderに戻す
-  window.FileReader = originalFileReader;
+  cleanupTestEnvironment();
 });
 
 beforeEach(() => {
