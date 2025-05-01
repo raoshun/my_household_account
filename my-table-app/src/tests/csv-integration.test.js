@@ -46,6 +46,10 @@ function createMockFileList(files) {
 }
 // --- ここまで ---
 
+// 型アサーション式（as any など）は TypeScript ファイルでのみ有効です。JSファイルでは使えません。
+// そのため、型アサーションを削除し、通常の配列や値として記述してください。
+// 例: const arr = [];
+
 // モック定義の修正
 jest.mock('papaparse');
 

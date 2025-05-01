@@ -16,7 +16,17 @@ import { filterData } from './utils/sortData';
 import { splitDataBySign, formatCategoryData } from './utils';
 import PropTypes from 'prop-types';
 import CategoryDetailsTable from './components/CategoryDetailsTable';
+import InvestmentView from './components/InvestmentView'; // 投資分析ビューをインポート
 import './App.css';
+
+// 型定義
+interface HoverInfo {
+  label: string;
+  subtotal: number;
+}
+interface CategoryInfo {
+  label: string;
+}
 
 // 安全な月次データの初期状態
 const EMPTY_MONTHLY_DATA = {
@@ -25,7 +35,7 @@ const EMPTY_MONTHLY_DATA = {
 };
 
 const App = ({ initialData = [] }) => {
-  const [data, setData] = useState(initialData);
+  const [data, setData] = useState([]);
   const [positiveChartData, setPositiveChartData] = useState({
     labels: [],
     datasets: [{
@@ -213,7 +223,8 @@ const App = ({ initialData = [] }) => {
           dateKey: '日付',
           categoryKey: '大項目',
           amountKey: '金額（円）',
-          maxCategories: 5
+          maxCategories: 5,
+          debug: true
         });
         
         // 有効なデータかチェック
@@ -227,11 +238,6 @@ const App = ({ initialData = [] }) => {
         console.error('初期月次推移データ生成中にエラーが発生しました:', error);
         setMonthlyTrendData(EMPTY_MONTHLY_DATA);
       }
-    }
-
-    // テスト環境でグローバル変数を確認（別のアプローチ）
-    if (window.__TEST_DATA__) {
-      setData(window.__TEST_DATA__);
     }
   }, [initialData]);
 
@@ -285,6 +291,18 @@ const App = ({ initialData = [] }) => {
             <div className="dashboard-section" data-testid="dashboard-view">
               {data.length ? (
                 <>
+                  {/* 収支バランス（B/S）可視化 */}
+                  <div className="dashboard-bs-section" style={{ marginBottom: 32 }}>
+                    <h2 className="section-title">B/S（バランスシート）</h2>
+                    <BalanceView 
+                      positiveTotal={positiveTotal}
+                      negativeTotal={negativeTotal}
+                      positiveData={positiveChartData}
+                      negativeData={negativeChartData}
+                    />
+                  </div>
+
+                  {/* 収支の可視化（既存） */}
                   <div className="dashboard-charts">
                     <h2 className="section-title">収支の可視化</h2>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', width: '100%', padding: '16px' }}>
@@ -360,7 +378,16 @@ const App = ({ initialData = [] }) => {
                       </div>
                     )}
                   </div>
-                  
+
+                  {/* P/L（損益計算書的な支出構造）可視化 */}
+                  <div className="dashboard-pl-section" style={{ marginTop: 32 }}>
+                    <h2 className="section-title">P/L（支出構造の四分法）</h2>
+                    <CategoryQuadrantView 
+                      data={filteredData}
+                      negativeTotal={negativeTotal}
+                    />
+                  </div>
+
                   <div className="dashboard-tables">
                     <h2 className="section-title">カテゴリ別集計</h2>
                     <AggregatedTable aggregatedData={aggregatedData} />
@@ -371,8 +398,8 @@ const App = ({ initialData = [] }) => {
                     <div className="dashboard-category-details">
                       <CategoryDetailsTable 
                         data={categoryFilteredData}
-                        category={selectedCategory.label}
-                        title={`「${selectedCategory.label}」の明細`}
+                        category={selectedCategory ? selectedCategory.label : ''}
+                        title={`「${selectedCategory ? selectedCategory.label : ''}」の明細`}
                       />
                     </div>
                   )}
@@ -514,12 +541,15 @@ const App = ({ initialData = [] }) => {
                             showPrediction={showPrediction}
                             forecastPeriods={forecastPeriods}
                             predictionMethod={predictionMethod}
+                            showSavingsRate={false}
                           />
                         ) : (
                           <MonthlyTrendTable 
                             key={`trend-table-${chartKey}-${showPrediction ? 'with-prediction' : 'no-prediction'}`}
                             trendData={monthlyTrendData}
                             showPrediction={showPrediction}
+                            showSavingsRate={false}
+                            showQuadrantSummary={false}
                           />
                         )}
                       </>
@@ -575,13 +605,29 @@ const App = ({ initialData = [] }) => {
                 <div>
                   <CategoryQuadrantView 
                     data={filteredData}
-                    positiveTotal={positiveTotal}
                     negativeTotal={negativeTotal}
                   />
                 </div>
               ) : (
                 <div className="empty-state">
                   <div className="empty-state-icon">📊</div>
+                  <p>データがありません</p>
+                  <p className="empty-state-hint">CSVファイルをアップロードしてください</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {view === 'investment' && (
+            <div className="investment-section" data-testid="investment-view">
+              {data.length ? (
+                <div>
+                  <h2 className="section-title">投資分析（株式・投資信託・不動産）</h2>
+                  <InvestmentView data={filteredData} />
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <div className="empty-state-icon">💰</div>
                   <p>データがありません</p>
                   <p className="empty-state-hint">CSVファイルをアップロードしてください</p>
                 </div>

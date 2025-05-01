@@ -86,6 +86,14 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
                     <span className="sidebar-button-icon">🧩</span>
                     カテゴリ四分法
                 </button>
+                <button 
+                    className={`sidebar-button ${currentView === 'investment' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('investment')}
+                    data-testid="investment-button"
+                >
+                    <span className="sidebar-button-icon">💰</span>
+                    投資
+                </button>
                 
                 <h3 className="sidebar-section-title">フィルター</h3>
                 <div className="sidebar-filter-option">
