@@ -1,161 +1,96 @@
-/**
- * テストデバッグ用のユーティリティ関数
- */
+// テスト用のデバッグユーティリティ
+import { prettyDOM } from '@testing-library/react';
 
 /**
- * コンポーネントのレンダリング結果をコンソールに出力する
- * @param {Object} screen - @testing-library/react の screen オブジェクト
+ * DOMツリーを整形して表示する
+ * @param {Object} screen - テスト用スクリーンオブジェクト
  */
-export function dumpDOM(screen) {
-  console.log('=== コンポーネントレンダリング結果 ===');
-  if (screen && typeof screen.debug === 'function') {
-    console.log(screen.debug());
-  } else {
-    console.log('screen.debugが利用できません');
-  }
-}
+export const dumpDOM = (screen) => {
+  console.log('=== DOM TREE ===');
+  console.log(prettyDOM(screen.container, 10000, { highlight: false }));
+  console.log('=== END DOM TREE ===');
+};
 
 /**
- * 利用可能なすべてのロールを表示
- * @param {Object} screen - @testing-library/react の screen オブジェクト
+ * 画面に表示されている全てのロールを表示
+ * @param {Object} screen - テスト用スクリーンオブジェクト
  */
-export function logAllRoles(screen) {
-  console.log('=== 利用可能なすべてのロール ===');
-  if (screen && typeof screen.logRoles === 'function') {
-    console.log(screen.logRoles());
-  } else if (screen && typeof screen.debug === 'function') {
-    // ロール別に要素を集める
-    const roles = {};
-    
-    document.querySelectorAll('[role]').forEach(el => {
-      const role = el.getAttribute('role');
-      if (!roles[role]) roles[role] = [];
-      roles[role].push({
-        element: el,
-        name: el.textContent
-      });
-    });
-    
-    document.querySelectorAll('button').forEach(el => {
-      if (!roles['button']) roles['button'] = [];
-      roles['button'].push({
-        element: el,
-        name: el.textContent
-      });
-    });
-    
-    ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].forEach(tag => {
-      document.querySelectorAll(tag).forEach(el => {
-        if (!roles['heading']) roles['heading'] = [];
-        roles['heading'].push({
-          element: el,
-          name: el.textContent
-        });
-      });
-    });
-    
-    Object.keys(roles).forEach(role => {
-      console.log(`--- Role: ${role} ---`);
-      roles[role].forEach((item, i) => {
-        console.log(`[${i}] "${item.name}" (${item.element.tagName})`);
-      });
-    });
-  } else {
-    console.log('screen.logRolesが利用できません');
-  }
-}
+export const logAllRoles = (screen) => {
+  console.log('=== ALL ROLES ===');
+  console.log(prettyDOM(screen.container, undefined, { highlight: false }));
+  console.log('=== END ALL ROLES ===');
+};
 
 /**
- * テキスト要素の検索結果を詳細出力
- * @param {Object} screen - @testing-library/react の screen オブジェクト
- * @param {string} text - 検索するテキスト
+ * 画面上のすべてのボタンを表示
+ * @param {Object} screen - テスト用スクリーンオブジェクト
  */
-export function debugTextElements(screen, text) {
-  console.log(`=== テキスト "${text}" を含む要素の検索 ===`);
-  
-  try {
-    // 完全一致
-    const exactMatches = screen.getAllByText(text, { exact: true });
-    console.log(`完全一致: ${exactMatches.length}件`);
-    exactMatches.forEach((el, i) => {
-      console.log(`[${i}] ${el.tagName}: ${el.textContent}`);
-    });
-  } catch {
-    // エラー変数を使用しない
-    console.log('完全一致なし');
-  }
-  
-  try {
-    // 部分一致
-    const partialMatches = screen.getAllByText(new RegExp(text, 'i'));
-    console.log(`部分一致: ${partialMatches.length}件`);
-    partialMatches.forEach((el, i) => {
-      console.log(`[${i}] ${el.tagName}: ${el.textContent}`);
-    });
-  } catch {
-    // エラー変数を使用しない
-    console.log('部分一致なし');
-  }
-}
-
-/**
- * ボタン要素の検索結果を詳細出力
- * @param {Object} screen - @testing-library/react の screen オブジェクト
- */
-export function debugButtons(screen) {
-  console.log('=== ボタン要素の検索 ===');
-  
+export const debugButtons = (screen) => {
+  console.log('=== BUTTONS ===');
   try {
     const buttons = screen.getAllByRole('button');
-    console.log(`ボタン: ${buttons.length}件`);
-    buttons.forEach((el, i) => {
-      console.log(`[${i}] "${el.textContent}" class="${el.className}" data-testid="${el.getAttribute('data-testid') || ''}"`);
+    buttons.forEach((button, index) => {
+      console.log(`Button ${index + 1}:`, button.textContent);
     });
-  } catch {
-    // エラー変数を使用しない
-    console.log('ボタン要素なし');
+  } catch (error) {
+    console.log('No buttons found');
   }
-}
+  console.log('=== END BUTTONS ===');
+};
 
 /**
- * テスト対象の属性付きの要素を検索
- * @param {Object} screen - @testing-library/react の screen オブジェクト
- * @param {string} attribute - 検索する属性名
- * @param {string} value - 属性の値（オプション）
+ * 特定のテキストを含む要素を探してデバッグ表示する
+ * @param {Object} screen - テスト用スクリーンオブジェクト
+ * @param {string} text - 検索するテキスト
  */
-export function findElementsByAttribute(screen, attribute, value = null) {
-  console.log(`=== 属性 "${attribute}" を持つ要素の検索 ===`);
-  
-  const container = screen.queryByRole('document') || document.body;
-  const selector = value ? 
-    `[${attribute}="${value}"]` : 
-    `[${attribute}]`;
-  
-  const elements = container.querySelectorAll(selector);
-  
-  console.log(`見つかった要素数: ${elements.length}件`);
-  elements.forEach((el, i) => {
-    console.log(`[${i}] ${el.tagName}: ${el.textContent.slice(0, 50)}${el.textContent.length > 50 ? '...' : ''}`);
-  });
-}
+export const debugTextElements = (screen, text) => {
+  console.log(`=== ELEMENTS WITH TEXT: "${text}" ===`);
+  try {
+    const elements = screen.getAllByText((content, element) => {
+      return content.includes(text);
+    });
+    elements.forEach((element, index) => {
+      console.log(`Element ${index + 1}:`, {
+        tagName: element.tagName,
+        textContent: element.textContent,
+        role: element.getAttribute('role'),
+        className: element.className
+      });
+    });
+  } catch (error) {
+    console.log(`No elements found with text containing "${text}"`);
+    // DOM全体をダンプしてテキストを探す
+    console.log('Full DOM for reference:');
+    console.log(prettyDOM(screen.container, 500));
+  }
+  console.log(`=== END ELEMENTS WITH TEXT: "${text}" ===`);
+};
 
 /**
- * テスト実行時のデバッグヘルパー
- * @param {Function} testFn - テスト関数
- * @returns {Function} - デバッグ出力付きのテスト関数
+ * 特定の属性を持つすべての要素を見つける
+ * @param {Object} screen - テスト用スクリーンオブジェクト
+ * @param {string} attribute - 検索する属性（例: 'data-testid'）
  */
-export function withDebug(testFn) {
-  return async (...args) => {
-    console.log('=== テスト開始 ===');
-    try {
-      const result = await testFn(...args);
-      console.log('=== テスト成功 ===');
-      return result;
-    } catch (error) {
-      console.error('=== テスト失敗 ===');
-      console.error(`エラー: ${error.message}`);
-      console.error(error.stack);
-      throw error;
-    }
-  };
-}
+export const findElementsByAttribute = (screen, attribute) => {
+  console.log(`=== ELEMENTS WITH ${attribute} ===`);
+  if (!screen || !screen.container) {
+    console.log(`Error: screen or screen.container is undefined`);
+    console.log(`=== END ELEMENTS WITH ${attribute} ===`);
+    return;
+  }
+  
+  const elements = screen.container.querySelectorAll(`[${attribute}]`);
+  if (elements.length === 0) {
+    console.log(`No elements with ${attribute} attribute found`);
+  } else {
+    elements.forEach((el, index) => {
+      const attributeValue = el.getAttribute(attribute);
+      console.log(`Element ${index + 1}:`, {
+        attribute: `${attribute}="${attributeValue}"`,
+        tagName: el.tagName,
+        textContent: el.textContent.substring(0, 50) + (el.textContent.length > 50 ? '...' : '')
+      });
+    });
+  }
+  console.log(`=== END ELEMENTS WITH ${attribute} ===`);
+};

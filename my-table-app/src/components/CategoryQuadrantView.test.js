@@ -339,3 +339,123 @@ describe('CategoryQuadrantView Component', () => {
 
   // 旧フォーマットのテストは削除
 });
+
+describe('エクスポート・インポート機能', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+    jest.clearAllMocks();
+  });
+
+  test('エクスポート時にネスト構造のJSONが生成される', () => {
+    const savedAssignments = {
+      '食費 - 食料品': 'necessary-variable',
+      '住居費 - 家賃': 'necessary-fixed',
+      '住居費 - 水道光熱費': 'necessary-fixed',
+      '娯楽費 - ゲーム': 'leisure-variable'
+    };
+    localStorageMock.getItem.mockReturnValue(JSON.stringify(savedAssignments));
+    render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
+    const exportBtn = screen.getByRole('button', { name: '設定をエクスポート' });
+
+    // Blob, URL.createObjectURL, a.click, appendChild, removeChild をモック
+    const mockClick = jest.fn();
+    const mockRemoveChild = jest.fn();
+    const mockAppendChild = jest.fn();
+    const mockCreateObjectURL = jest.fn(() => 'blob:url');
+    const mockRevokeObjectURL = jest.fn();
+
+    // document.createElement のモックを修正
+    const mockLink = {
+      href: '',
+      download: '',
+      click: mockClick,
+      style: {},
+    };
+    const originalCreateElement = document.createElement; // 元の関数を保存
+    document.createElement = jest.fn((tagName) => {
+        if (tagName === 'a') {
+            return mockLink;
+        }
+        // 他の要素が必要な場合は元の関数を呼ぶ
+        return originalCreateElement.call(document, tagName);
+    });
+    // document.body の appendChild と removeChild をモック
+    const originalAppendChild = document.body.appendChild;
+    const originalRemoveChild = document.body.removeChild;
+    document.body.appendChild = mockAppendChild;
+    document.body.removeChild = mockRemoveChild;
+
+    const originalCreateObjectURL = window.URL.createObjectURL;
+    const originalRevokeObjectURL = window.URL.revokeObjectURL;
+    window.URL.createObjectURL = mockCreateObjectURL;
+    window.URL.revokeObjectURL = mockRevokeObjectURL;
+
+    fireEvent.click(exportBtn);
+
+    expect(mockCreateObjectURL).toHaveBeenCalled();
+    expect(mockAppendChild).toHaveBeenCalledWith(mockLink); // appendChildが呼ばれたか
+    expect(mockClick).toHaveBeenCalled(); // clickが呼ばれたか
+    expect(mockRemoveChild).toHaveBeenCalledWith(mockLink); // removeChildが呼ばれたか
+
+    // Blob内容の検証 - FileReaderを使用して読み取る
+    const blobArg = mockCreateObjectURL.mock.calls[0][0];
+    
+    // FileReaderを使ってBlobを読み取る
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = reader.result;
+        const json = JSON.parse(text);
+        expect(json).toEqual({
+          '食費': { '食料品': 'necessary-variable' },
+          '住居費': { '家賃': 'necessary-fixed', '水道光熱費': 'necessary-fixed' },
+          '娯楽費': { 'ゲーム': 'leisure-variable' }
+        });
+        resolve();
+      };
+      reader.readAsText(blobArg);
+      
+      // モックを元に戻す
+      document.createElement = originalCreateElement;
+      document.body.appendChild = originalAppendChild;
+      document.body.removeChild = originalRemoveChild;
+      window.URL.createObjectURL = originalCreateObjectURL;
+      window.URL.revokeObjectURL = originalRevokeObjectURL;
+    });
+  });
+
+  test('インポート時にネスト構造JSONを正しく読み込む', async () => {
+    render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
+    const importBtn = screen.getByText('設定をインポート');
+    // input[type=file]を取得
+    const fileInput = importBtn.closest('label').querySelector('input[type="file"]');
+    // ネスト構造のJSON
+    const nestedJson = {
+      '食費': { '食料品': 'necessary-variable' },
+      '住居費': { '家賃': 'necessary-fixed', '水道光熱費': 'necessary-fixed' },
+      '娯楽費': { 'ゲーム': 'leisure-variable' }
+    };
+    const file = new File([JSON.stringify(nestedJson)], 'categoryQuadrantAssignments.json', { type: 'application/json' });
+    // window.alertをモック
+    window.alert = jest.fn();
+    fireEvent.change(fileInput, { target: { files: [file] } });
+    await waitFor(() => {
+      expect(localStorageMock.setItem).toHaveBeenCalledWith(
+        'categoryQuadrantAssignments',
+        JSON.stringify({
+          '食費 - 食料品': 'necessary-variable',
+          '住居費 - 家賃': 'necessary-fixed',
+          '住居費 - 水道光熱費': 'necessary-fixed',
+          '娯楽費 - ゲーム': 'leisure-variable'
+        })
+      );
+      expect(window.alert).toHaveBeenCalledWith('設定をインポートしました');
+    });
+  });
+
+  test('エクスポート・インポートボタンが表示されている', () => {
+    render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
+    expect(screen.getByRole('button', { name: '設定をエクスポート' })).toBeInTheDocument();
+    expect(screen.getByText('設定をインポート')).toBeInTheDocument();
+  });
+});

@@ -424,7 +424,7 @@ const MonthlyTrendChart = ({
   };
 
   return (
-    <div className="monthly-trend-chart-container">
+    <div className="monthly-trend-chart-container" data-testid="monthly-trend-chart">
       {isLoading && (
         <div className="monthly-trend-chart-loading">
           <div className="spinner"></div>
@@ -463,7 +463,7 @@ const MonthlyTrendChart = ({
       )}
       
       {showSavingsRate && savingsRateData && (
-        <div className="savings-rate-info">
+        <div className="savings-rate-info" data-testid="savings-rate-info">
           <div className="savings-rate-badge">貯蓄率</div>
           <p>
             貯蓄率 = (収入 - 支出) / 収入 × 100%

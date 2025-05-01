@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './CategoryQuadrantView.css';
@@ -57,6 +56,30 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
     'necessary-variable': '🍎',
     'leisure-fixed': '🎮',
     'leisure-variable': '💸'
+  };
+
+  // --- ネスト構造⇔フラット構造変換 ---
+  // フラット→ネスト
+  const toNestedAssignments = (flat) => {
+    const nested = {};
+    Object.entries(flat).forEach(([key, value]) => {
+      const [main, sub] = key.split(' - ');
+      if (!main || !sub) return;
+      if (!nested[main]) nested[main] = {};
+      nested[main][sub] = value;
+    });
+    return nested;
+  };
+  // ネスト→フラット
+  const toFlatAssignments = (nested) => {
+    const flat = {};
+    Object.entries(nested).forEach(([main, subs]) => {
+      if (typeof subs !== 'object' || subs === null) return;
+      Object.entries(subs).forEach(([sub, value]) => {
+        flat[`${main} - ${sub}`] = value;
+      });
+    });
+    return flat;
   };
 
   // 初期化時にローカルストレージから分類設定を読み込み
@@ -203,6 +226,50 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
     }
   };
 
+  // --- 設定エクスポート・インポート機能 ---
+  // エクスポート処理
+  const handleExportAssignments = () => {
+    const nested = toNestedAssignments(categoryAssignments);
+    const dataStr = JSON.stringify(nested, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'categoryQuadrantAssignments.json';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+  };
+
+  // インポート処理
+  const handleImportAssignments = (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const result = e.target?.result;
+        if (typeof result !== 'string') {
+          throw new Error('File content is not a string');
+        }
+        const imported = JSON.parse(result);
+        if (typeof imported === 'object' && imported !== null) {
+          const flat = toFlatAssignments(imported);
+          saveAssignments(flat);
+          alert('設定をインポートしました');
+        } else {
+          alert('不正なファイル形式です');
+        }
+      } catch (error) {
+        alert('ファイルの読み込みに失敗しました');
+        console.error('Import failed:', error);
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  };
+
   // データを手動分類に基づいて四分法に分類
   useEffect(() => {
     if (!data || data.length === 0) return;
@@ -243,7 +310,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
         // 項目を金額の降順でソート
         quadrants[key].items.sort((a, b) => b.amount - a.amount);
       });
-    }
+    };
     
     setQuadrantData(quadrants);
   }, [data, categoryAssignments, expenseTotal]);
@@ -258,7 +325,8 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
   const formatAmount = (amount) => {
     try {
       return `¥${amount.toLocaleString()}`;
-    } catch (e) {
+    } catch (error) {
+      console.error('Formatting amount failed:', error);
       return `¥${amount}`;
     }
   };
@@ -274,7 +342,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
   const renderQuadrantCategories = (quadrant) => {
     // 該当象限に割り当てられたカテゴリキーを取得
     const assignedKeysInQuadrant = Object.entries(categoryAssignments)
-      .filter(([_, assignedQuadrant]) => assignedQuadrant === quadrant)
+      .filter(([_categoryKey, assignedQuadrant]) => assignedQuadrant === quadrant)
       .map(([categoryKey]) => categoryKey);
 
     // 割り当てられたカテゴリを大項目ごとにグループ化
@@ -295,7 +363,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
     // 大項目名でソート
     const sortedGroupArray = Object.entries(groupedAssigned).sort(([a], [b]) => a.localeCompare(b));
     // 各グループ内も中項目でソート
-    sortedGroupArray.forEach(([mainCategory, subCategories], idx) => {
+    sortedGroupArray.forEach(([_mainCategory, subCategories], idx) => {
       sortedGroupArray[idx][1] = subCategories.slice().sort();
     });
 
@@ -356,6 +424,16 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
     <div className="category-quadrant-container">
       {console.log('CategoryQuadrantView rendered')}
       <h2 className="category-quadrant-title">支出カテゴリ四分法</h2>
+
+      {/* 設定エクスポート・インポートボタン */}
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: 8 }}>
+        <button onClick={handleExportAssignments} type="button">設定をエクスポート</button>
+        <label style={{ display: 'inline-block', cursor: 'pointer', margin: 0 }}>
+          <input type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImportAssignments} />
+          <span style={{ border: '1px solid #ccc', padding: '6px 12px', borderRadius: 4, background: '#f7f7f7' }}>設定をインポート</span>
+        </label>
+      </div>
+
       <div className="quadrant-explanation">
         <h3>四分法とは？</h3>
         <p>支出を「必要性」と「変動性」の2軸で4つのカテゴリに分類して可視化します：</p>

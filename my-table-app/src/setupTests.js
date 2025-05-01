@@ -1,8 +1,18 @@
 /* eslint-disable */
 import '@testing-library/jest-dom';
+import { configure } from '@testing-library/react';
 
 // テスト環境変数を設定
 process.env.NODE_ENV = 'test';
+
+// React 18のcreateRootに関するエラー対策
+// Testing Libraryの設定
+configure({
+  // マウント先のDOM要素が確実に存在するようにする
+  defaultContainerReset: true,
+  // React 18の機能を使用するかどうか
+  reactStrictMode: true
+});
 
 // グローバルテストフラグを追加（デバッグ用）
 globalThis.__TEST_DEBUG__ = process.env.TEST_DEBUG === 'true';
@@ -48,6 +58,30 @@ if (typeof window !== 'undefined' && window.HTMLCanvasElement) {
     writable: true,
     value: mockGetContext
   });
+}
+
+// React 18のcreateRootに必要なモック
+if (typeof document !== 'undefined') {
+  // document.createElementでdiv要素を作成したときに、常に有効なDOM要素とみなされるようにする
+  const originalCreateElement = document.createElement.bind(document);
+  document.createElement = (tagName, options) => {
+    const element = originalCreateElement(tagName, options);
+    // ReactDOM.createRootでディブを作成するとき、常に有効なDOMとみなされるよう特別な処理
+    if (tagName.toLowerCase() === 'div') {
+      Object.defineProperty(element, 'getBoundingClientRect', {
+        value: () => ({
+          width: 500,
+          height: 500,
+          top: 0,
+          left: 0,
+          right: 500,
+          bottom: 500
+        }),
+        configurable: true,
+      });
+    }
+    return element;
+  };
 }
 
 // Chart.jsのモック

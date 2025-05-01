@@ -12,7 +12,7 @@ describe.skip('家計簿予測APIクライアント（MSWの問題によりス�
   });
 });
 
-// 代わりにfeatchのモックを使ってテストを実行する
+// 代わりにfetchのモックを使ってテストを実行する
 describe('家計簿予測API（フォールバック）', () => {
   // モックの実装
   const mockFetch = jest.fn();
