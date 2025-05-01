@@ -26,6 +26,7 @@ module.exports = {
   
   // テストのセットアップファイル
   setupFilesAfterEnv: [
+    '<rootDir>/src/jest.setup.js',
     '<rootDir>/src/setupTests.js',
     '<rootDir>/src/jest.setup.msw.js'
   ],

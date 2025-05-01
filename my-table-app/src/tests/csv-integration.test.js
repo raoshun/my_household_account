@@ -4,15 +4,59 @@ import { parse } from 'papaparse';
 import { createMockSetters } from '../test-utils/mockHelpers';
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
 
+// --- 型エラー解消用のグローバルモック ---
+// TextEncoderの型エラー対策
+class MockTextEncoder {
+  encoding = 'utf-8';
+  encode(str) {
+    return new Uint8Array([...str].map(c => c.charCodeAt(0)));
+  }
+  encodeInto(src, dest) {
+    const arr = this.encode(src);
+    dest.set(arr);
+    return { read: arr.length, written: arr.length };
+  }
+}
+globalThis.TextEncoder = MockTextEncoder;
+
+// FileReaderの型エラー対策
+const MockFileReader = jest.fn().mockImplementation(() => {
+  return {
+    readAsText: jest.fn(),
+    readAsArrayBuffer: jest.fn(),
+    onload: null
+  };
+});
+MockFileReader.prototype.EMPTY = 0;
+MockFileReader.prototype.LOADING = 1;
+MockFileReader.prototype.DONE = 2;
+MockFileReader.prototype = Object.create(Object.prototype);
+window.FileReader = MockFileReader;
+
+// FileListの型エラー対策
+function createMockFileList(files) {
+  const fileList = {
+    length: files.length,
+    item: (i) => files[i] || null
+  };
+  for (let i = 0; i < files.length; i++) {
+    fileList[i] = files[i];
+  }
+  return fileList;
+}
+// --- ここまで ---
+
 // モック定義の修正
 jest.mock('papaparse');
 
 // splitDataBySignのモック結果を保持する変数
 let mockSplitDataResult = {
-  positiveData: { labels: [], datasets: [{ data: [] }] },
-  negativeData: { labels: [], datasets: [{ data: [] }] },
+  positive: [],
+  negative: [],
   positiveTotal: 0,
-  negativeTotal: 0
+  negativeTotal: 0,
+  positiveData: { labels: [], datasets: [{ data: [] }] },
+  negativeData: { labels: [], datasets: [{ data: [] }] }
 };
 
 jest.mock('../utils', () => {
@@ -32,13 +76,6 @@ jest.mock('iconv-lite', () => {
     decode: () => 'テスト,データ,123\nテスト2,データ2,456'
   };
 });
-
-// グローバルにTextEncoderを定義
-globalThis.TextEncoder = class {
-  encode(str) {
-    return new Uint8Array([...str].map(c => c.charCodeAt(0)));
-  }
-};
 
 describe('CSV読み込み統合テスト', () => {
   // テスト用のサンプルCSVデータ
@@ -71,10 +108,12 @@ describe('CSV読み込み統合テスト', () => {
     
     // テスト前にモックの戻り値を初期化
     mockSplitDataResult = {
-      positiveData: { labels: [], datasets: [{ data: [] }] },
-      negativeData: { labels: [], datasets: [{ data: [] }] },
+      positive: [],
+      negative: [],
       positiveTotal: 0,
-      negativeTotal: 0
+      negativeTotal: 0,
+      positiveData: { labels: [], datasets: [{ data: [] }] },
+      negativeData: { labels: [], datasets: [{ data: [] }] }
     };
   });
 
@@ -91,14 +130,25 @@ describe('CSV読み込み統合テスト', () => {
     
     // テスト用データを設定
     mockSplitDataResult = {
-      positiveData: { labels: ['食費', '交通費'], datasets: [{ data: [3000, 500] }] },
-      negativeData: { labels: [], datasets: [{ data: [] }] },
+      positive: [],
+      negative: [],
       positiveTotal: 3500,
-      negativeTotal: 0
+      negativeTotal: 0,
+      positiveData: { labels: ['食費', '交通費'], datasets: [{ data: [3000, 500] }] },
+      negativeData: { labels: [], datasets: [{ data: [] }] }
     };
     
-    const setters = createMockSetters();
-    handleFiles(mockFiles, setters);
+    // handleFilesが期待する全てのセッター関数をモック
+    const setters = {
+      setData: jest.fn(),
+      setPositiveChartData: jest.fn(),
+      setNegativeChartData: jest.fn(),
+      setPositiveTotal: jest.fn(),
+      setNegativeTotal: jest.fn(),
+      setIsLoading: jest.fn(),
+      setError: jest.fn()
+    };
+    handleFiles(createMockFileList(mockFiles), setters);
     
     // onload関数を直接定義して呼び出す
     const reader = window.FileReader.mock.instances[0];
@@ -109,7 +159,11 @@ describe('CSV読み込み統合テスト', () => {
       setters.setNegativeChartData(mockSplitDataResult.negativeData);
       setters.setPositiveTotal(3500);
     });
-    reader.onload({ target: { result: encodedData } });
+    // 非同期でonloadを呼び出し、handleFilesの内部カウントを進める
+    await new Promise(resolve => setTimeout(() => {
+      reader.onload({ target: { result: encodedData } });
+      resolve();
+    }, 0));
     
     // 各関数が呼び出されたかを検証
     expect(setters.setPositiveChartData).toHaveBeenCalledWith({
@@ -120,7 +174,7 @@ describe('CSV読み込み統合テスト', () => {
     expect(setters.setPositiveTotal).toHaveBeenCalledWith(3500);
   });
   
-  test('複数のCSVファイルを処理できること', () => {
+  test('複数のCSVファイルを処理できること', async () => {
     // モックの複数ファイル
     const mockFile1 = new File([csvSample], 'test1.csv', { type: 'text/csv' });
     const mockFile2 = new File([csvSample], 'test2.csv', { type: 'text/csv' });
@@ -128,29 +182,41 @@ describe('CSV読み込み統合テスト', () => {
     
     // テスト用データを設定
     mockSplitDataResult = {
-      positiveData: { labels: ['食費', '交通費'], datasets: [{ data: [6000, 1000] }] },
-      negativeData: { labels: [], datasets: [{ data: [] }] },
+      positive: [],
+      negative: [],
       positiveTotal: 7000,
-      negativeTotal: 0
+      negativeTotal: 0,
+      positiveData: { labels: ['食費', '交通費'], datasets: [{ data: [6000, 1000] }] },
+      negativeData: { labels: [], datasets: [{ data: [] }] }
     };
     
-    const setters = createMockSetters();
-    handleFiles(mockFiles, setters);
+    // handleFilesが期待する全てのセッター関数をモック
+    const setters = {
+      setData: jest.fn(),
+      setPositiveChartData: jest.fn(),
+      setNegativeChartData: jest.fn(),
+      setPositiveTotal: jest.fn(),
+      setNegativeTotal: jest.fn(),
+      setIsLoading: jest.fn(),
+      setError: jest.fn()
+    };
+    handleFiles(createMockFileList(mockFiles), setters);
     
-    for (let i = 0; i < mockFiles.length; i++) {
-      const reader = window.FileReader.mock.instances[i];
-      const encodedData = new TextEncoder().encode(csvSample);
-      reader.onload = jest.fn(event => {
-        setters.setData(mockSplitDataResult);
-        setters.setPositiveChartData({
-          labels: ['食費', '交通費'],
-          datasets: [{ data: [6000, 1000] }]
+    // 全ファイル分のonloadを非同期で呼び出す
+    await Promise.all(mockFiles.map((_, i) => {
+      return new Promise(resolve => setTimeout(() => {
+        const reader = window.FileReader.mock.instances[i];
+        const encodedData = new TextEncoder().encode(csvSample);
+        reader.onload = jest.fn(event => {
+          setters.setData(mockSplitDataResult);
+          setters.setPositiveChartData(mockSplitDataResult.positiveData);
+          setters.setNegativeChartData(mockSplitDataResult.negativeData);
+          setters.setPositiveTotal(7000);
         });
-        setters.setNegativeChartData(mockSplitDataResult.negativeData);
-        setters.setPositiveTotal(7000);
-      });
-      reader.onload({ target: { result: encodedData } });
-    }
+        reader.onload({ target: { result: encodedData } });
+        resolve();
+      }, 0));
+    }));
     
     // 各関数が呼び出されたかを検証
     expect(setters.setPositiveChartData).toHaveBeenCalledWith({

@@ -38,6 +38,19 @@ jest.mock('chart.js/auto', () => {
 // テストのタイムアウト時間を延長（ミリ秒）
 jest.setTimeout(10000);
 
+// Node.js環境でfetch/Response/Request/Headersをグローバル定義
+if (typeof global !== 'undefined') {
+  try {
+    const fetch = require('node-fetch');
+    global.fetch = fetch;
+    global.Headers = fetch.Headers;
+    global.Request = fetch.Request;
+    global.Response = fetch.Response;
+  } catch (e) {
+    // node-fetchがない場合は何もしない
+  }
+}
+
 // テストのデバッグヘルパー関数をグローバルに追加
 if (globalThis.__TEST_DEBUG__) {
   // デバッグが有効な場合、コンソール出力を強化
