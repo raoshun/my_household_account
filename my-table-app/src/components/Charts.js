@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useEffect, useRef, useMemo, memo } from 'react';
 import PropTypes from 'prop-types';
 import { 
@@ -689,6 +690,9 @@ const Charts = memo(({
   // イベントハンドラをシンプルに比較（参照の変化で再レンダリングされるが、実際にはuseCallbackで最適化が必要）
   return positiveDataEqual && negativeDataEqual && totalsEqual;
 });
+
+// React.memoでラップしたコンポーネントにdisplayNameを追加
+Charts.displayName = 'Charts';
 
 Charts.propTypes = {
   positiveChartData: PropTypes.shape({

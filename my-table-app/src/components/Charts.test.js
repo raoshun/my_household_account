@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Charts from './Charts';
 
@@ -54,6 +54,11 @@ describe('Charts Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
+
+  afterEach(() => {
+    cleanup();
+    delete window.__JEST_TEST_ENV__;
+  });
   
   test('renders chart components with proper data', () => {
     render(
@@ -84,5 +89,20 @@ describe('Charts Component', () => {
     const negativeChart = screen.getByTestId('mock-negative-chart') || screen.getByTestId('negative-chart');
     expect(positiveChart).toBeInTheDocument();
     expect(negativeChart).toBeInTheDocument();
+  });
+
+  test('should have displayName set to "Charts"', () => {
+    expect(Charts.displayName).toBe('Charts');
+  });
+
+  test('renders mock UI when test environment flag is enabled', () => {
+    // テストフラグをセット
+    window.__JEST_TEST_ENV__ = true;
+    render(<Charts />);
+    // mock-charts が描画されること
+    const mockContainer = screen.getByTestId('mock-charts');
+    expect(mockContainer).toBeInTheDocument();
+    // data-charts-key 属性が存在すること
+    expect(mockContainer).toHaveAttribute('data-charts-key');
   });
 });

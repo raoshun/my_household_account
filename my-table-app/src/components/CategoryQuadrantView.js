@@ -307,11 +307,9 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
     if (expenseTotal > 0) {
       Object.keys(quadrants).forEach(key => {
         quadrants[key].percentage = (quadrants[key].total / expenseTotal) * 100;
-        // 項目を金額の降順でソート
         quadrants[key].items.sort((a, b) => b.amount - a.amount);
       });
-    };
-    
+    }
     setQuadrantData(quadrants);
   }, [data, categoryAssignments, expenseTotal]);
   
