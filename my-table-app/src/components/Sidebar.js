@@ -1,17 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import ReactFileReader from 'react-file-reader';
 import './Sidebar.css';
 
-const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, onFilterChange, initialDateRange = {} }) => {
+const Sidebar = ({ 
+    onViewChange = () => {}, 
+    onFileUpload = () => {}, 
+    activeView = 'dashboard', 
+    filters = {}, 
+    onFilterChange, 
+    initialDateRange = {},
+    dataProcessing = false
+}) => {
     const [expanded, setExpanded] = useState(false);
+    
+    // initialDateRangeが更新されたらフィルターを更新するためのeffect
+    useEffect(() => {
+        if (initialDateRange && initialDateRange.startDate && initialDateRange.endDate) {
+            // 日付フィルターを初期値で設定
+            if (!filters.startDate) {
+                onFilterChange && onFilterChange('startDate', initialDateRange.startDate);
+            }
+            if (!filters.endDate) {
+                onFilterChange && onFilterChange('endDate', initialDateRange.endDate);
+            }
+        }
+    }, [initialDateRange, filters, onFilterChange]);
     
     const toggleSidebar = () => {
         setExpanded(!expanded);
     };
     
     const handleViewChange = (view) => {
-        setView(view);
+        onViewChange(view);
         if (window.innerWidth <= 768) {
             setExpanded(false);
         }
@@ -47,7 +68,7 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
             <div className="sidebar-menu">
                 <h3 className="sidebar-section-title">表示</h3>
                 <button 
-                    className={`sidebar-button ${currentView === 'dashboard' ? 'active' : ''}`}
+                    className={`sidebar-button ${activeView === 'dashboard' ? 'active' : ''}`}
                     onClick={() => handleViewChange('dashboard')}
                     data-testid="dashboard-button"
                 >
@@ -55,23 +76,23 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
                     ダッシュボード
                 </button>
                 <button 
-                    className={`sidebar-button ${currentView === 'rawdata' ? 'active' : ''}`}
-                    onClick={() => handleViewChange('rawdata')}
+                    className={`sidebar-button ${activeView === 'data' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('data')}
                     data-testid="rawdata-button"
                 >
                     <span className="sidebar-button-icon">📄</span>
                     生データ
                 </button>
                 <button 
-                    className={`sidebar-button ${currentView === 'monthlytrend' ? 'active' : ''}`}
-                    onClick={() => handleViewChange('monthlytrend')}
+                    className={`sidebar-button ${activeView === 'monthly' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('monthly')}
                     data-testid="monthlytrend-button"
                 >
                     <span className="sidebar-button-icon">📈</span>
                     月次推移
                 </button>
                 <button 
-                    className={`sidebar-button ${currentView === 'balance' ? 'active' : ''}`}
+                    className={`sidebar-button ${activeView === 'balance' ? 'active' : ''}`}
                     onClick={() => handleViewChange('balance')}
                     data-testid="balance-button"
                 >
@@ -79,15 +100,15 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
                     収支バランス
                 </button>
                 <button 
-                    className={`sidebar-button ${currentView === 'categoryQuadrant' ? 'active' : ''}`}
-                    onClick={() => handleViewChange('categoryQuadrant')}
+                    className={`sidebar-button ${activeView === 'quadrant' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('quadrant')}
                     data-testid="category-quadrant-button"
                 >
                     <span className="sidebar-button-icon">🧩</span>
                     カテゴリ四分法
                 </button>
                 <button 
-                    className={`sidebar-button ${currentView === 'investment' ? 'active' : ''}`}
+                    className={`sidebar-button ${activeView === 'investment' ? 'active' : ''}`}
                     onClick={() => handleViewChange('investment')}
                     data-testid="investment-button"
                 >
@@ -148,13 +169,18 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
                 
                 <h3 className="sidebar-section-title">データ</h3>
                 <ReactFileReader
-                    handleFiles={handleFiles}
+                    handleFiles={onFileUpload}
                     fileTypes={'.csv'}
                     multipleFiles={true}
+                    disabled={dataProcessing}
                 >
-                    <button className="sidebar-button primary-button">
+                    <button 
+                      className={`sidebar-button primary-button ${dataProcessing ? 'disabled' : ''}`}
+                      data-testid="upload-csv-button"
+                      disabled={dataProcessing}
+                    >
                         <span className="sidebar-button-icon">📂</span>
-                        CSVをアップロード
+                        {dataProcessing ? 'データ処理中...' : 'CSVをアップロード'}
                     </button>
                 </ReactFileReader>
             </div>
@@ -167,12 +193,13 @@ const Sidebar = ({ setView, handleFiles, currentView = 'chart', filters = {}, on
 };
 
 Sidebar.propTypes = {
-    setView: PropTypes.func.isRequired,
-    handleFiles: PropTypes.func.isRequired,
-    currentView: PropTypes.string,
+    onViewChange: PropTypes.func,
+    onFileUpload: PropTypes.func,
+    activeView: PropTypes.string,
     filters: PropTypes.object,
     onFilterChange: PropTypes.func,
-    initialDateRange: PropTypes.object
+    initialDateRange: PropTypes.object,
+    dataProcessing: PropTypes.bool
 };
 
 export default Sidebar;
