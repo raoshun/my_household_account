@@ -47,6 +47,11 @@ jest.mock('chart.js', () => {
 });
 
 // window拡張: テスト用プロパティを型安全に追加
+declare global {
+  interface Window {
+    __JEST_TEST_ENV__?: boolean;
+  }
+}
 
 describe('Charts Component', () => {
   // テスト用のモック関数

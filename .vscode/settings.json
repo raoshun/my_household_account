@@ -21,16 +21,13 @@
   "diffEditor.ignoreTrimWhitespace": false,
   "editor.fontSize": 16,
   "editor.lineHeight": 1.5,
-  
   // npm と Node.js の依存関係チェック
   "npm.autoDetect": "on",
   "npm.packageManager": "npm",
   "js/ts.implicitProjectConfig.checkJs": true,
-  
   // ファイル検証設定
   "javascript.validate.enable": true,
   "js/ts.implicitProjectConfig.experimentalDecorators": true,
-  
   // プロジェクト特有の設定
   "search.exclude": {
     "**/node_modules": true,
@@ -44,5 +41,13 @@
   },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  },
+  "cSpell.words": [
+    "chartjs",
+    "millis",
+    "papaparse",
+    "rawdata",
+    "registerables",
+    "reits"
+  ]
 }

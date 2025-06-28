@@ -1,7 +1,7 @@
 /* eslint-disable */
 import React from 'react';
 import { render, screen, act, fireEvent } from '@testing-library/react';
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/extend-expect';
 import userEvent from '@testing-library/user-event';
 import { describe, test, expect } from '@jest/globals';
 import App from './App';

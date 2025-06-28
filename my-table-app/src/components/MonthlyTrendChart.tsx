@@ -362,7 +362,7 @@ const MonthlyTrendChart: React.FC<MonthlyTrendChartProps> = ({
         const newChartInstance = new Chart(ctx, {
           type: 'line',
           data: displayData,
-          options: chartOptions
+          options: chartOptions as import('chart.js').ChartOptions<'line'>
         });
 
         setChartInstance(newChartInstance);

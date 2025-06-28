@@ -1,10 +1,15 @@
 // TextEncoder/TextDecoderのポリフィル
-const { TextEncoder, TextDecoder } = require('util');
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+import { TextEncoder, TextDecoder } from 'util';
+
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = TextEncoder;
+}
+if (typeof global.TextDecoder === 'undefined') {
+  global.TextDecoder = TextDecoder;
+}
 
 // MSWサーバーのインポート
-const { server } = require('./mocks/server');
+import { server } from './mocks/server';
 
 // MSWサーバーのセットアップ
 beforeAll(() => {

@@ -246,8 +246,8 @@ const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
           const index = elements[0].index;
           const label = chart.data.labels[index];
           const subtotal = chart.data.datasets[0].data[index];
-          onHover && void onHover({ label, subtotal });
-          onClick && void onClick({
+          onHover && onHover({ label, subtotal });
+          onClick && onClick({
             label,
             subtotal,
             category: label,
@@ -264,8 +264,8 @@ const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
           const index = elements[0].index;
           const label = chart.data.labels[index];
           const subtotal = chart.data.datasets[0].data[index];
-          onHover && void onHover({ label, subtotal });
-          onClick && void onClick({
+          onHover && onHover({ label, subtotal });
+          onClick && onClick({
             label,
             subtotal,
             category: label,

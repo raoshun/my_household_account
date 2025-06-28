@@ -1,3 +1,5 @@
+/// <reference types="@testing-library/jest-dom" />
+
 // 家計簿データ1件
 export interface HouseholdRecord {
   [key: string]: unknown;
