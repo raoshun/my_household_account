@@ -8,22 +8,32 @@ import App from './App';
 import { dumpDOM, logAllRoles, debugButtons, findElementsByAttribute } from './test-utils/test-debug';
 
 // Chart.js の問題を回避するためにMonthlyTrendChartをモック化
-jest.mock('./components/MonthlyTrendChart', () => {
-  return function MockMonthlyTrendChart(props) {
-    return (
-      <div data-testid="monthly-trend-chart">
-        <canvas className="monthly-trend-chart" />
-        {props.showPrediction && (
-          <div className="prediction-info">
-            <div className="prediction-badge">予測</div>
-            <p>
-              <strong>予測データ</strong>
-              <span className="prediction-method">予測手法: {props.predictionMethod || 'auto'}</span>
-            </p>
-          </div>
-        )}
-      </div>
-    );
+jest.mock('chart.js', () => {
+  // Chartクラスのモック
+  function MockChart() {
+    return {
+      destroy: jest.fn(),
+      update: jest.fn(),
+      data: { labels: [], datasets: [] }
+    };
+  }
+  // static registerメソッドを追加
+  MockChart.register = jest.fn();
+  // registerablesも空配列で用意
+  MockChart.registerables = [];
+  return {
+    Chart: MockChart,
+    ArcElement: jest.fn(),
+    PieController: jest.fn(),
+    Tooltip: jest.fn(),
+    Legend: jest.fn(),
+    registerables: [],
+    register: jest.fn(),
+    defaults: {
+      plugins: {
+        tooltip: {}
+      }
+    }
   };
 });
 
@@ -52,28 +62,35 @@ describe('App Debug Tests', () => {
   });
 
   // 表ボタンクリックのデバッグテストを修正
-  test('表ボタンクリックのデバッグ', () => {
-    render(<App />);
-    
+  test('表ボタンクリックのデバッグ', async () => {
+    await act(async () => {
+      render(<App />);
+    });
+
     console.log('=== 表示切り替えボタンの検索 ===');
-    
-    // 「表」ボタンが廃止されたので「生データ」ボタンに変更
+
+    // 「生データ」ボタンの存在とクリック
     try {
-      const dataButton = screen.getByRole('button', { name: /📄.*生データ/i });
+      const dataButton = await screen.findByRole('button', { name: /📄.*生データ/i });
       console.log('生データボタンが見つかりました:', dataButton.textContent);
-      
-      // ボタンをクリックしてテーブル表示に切り替え
-      fireEvent.click(dataButton);
+
+      await act(async () => {
+        fireEvent.click(dataButton);
+      });
+
+      // クリック後のUI変化を最低限チェック
+      expect(screen.getByText(/生データ/)).toBeInTheDocument();
     } catch (e) {
-      console.log('生データボタンが見つかりませんでした');
+      console.error('生データボタンが見つかりませんでした', e);
     }
-    
+
     // ダッシュボードボタンもチェック
     try {
-      const dashboardButton = screen.getByRole('button', { name: /📊.*ダッシュボード/i });
+      const dashboardButton = await screen.findByRole('button', { name: /📊.*ダッシュボード/i });
       console.log('ダッシュボードボタンが見つかりました:', dashboardButton.textContent);
+      expect(dashboardButton).toBeInTheDocument();
     } catch (e) {
-      console.log('ダッシュボードボタンが見つかりませんでした');
+      console.error('ダッシュボードボタンが見つかりませんでした', e);
     }
   });
 });

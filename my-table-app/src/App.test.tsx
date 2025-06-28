@@ -1,9 +1,8 @@
 /* eslint-disable */
 // jestとReactのインポートを先に行う
 import React from 'react';
-import { jest, test, expect, describe, beforeEach } from '@jest/globals';
+import { jest, test, describe, beforeEach } from '@jest/globals';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import userEvent from '@testing-library/user-event';
 
 // オリジナルのuseStateを保持
@@ -143,52 +142,61 @@ jest.mock('./components/fileHandlers', () => {
       console.log("MockData being set:", { mockDataWithNegative, positiveTotalMock, negativeTotalMock });
       
       // 状態の更新を同期的に行うため、すぐに各ステート更新関数を呼び出す
-      if (options.setData) {
-        options.setData(mockDataWithNegative);
+      // optionsの型を明示的に指定
+      const opts = options as {
+        setData?: (data: unknown[]) => void;
+        setPositiveChartData?: (data: unknown) => void;
+        setNegativeChartData?: (data: unknown) => void;
+        setPositiveTotal?: (n: number) => void;
+        setNegativeTotal?: (n: number) => void;
+        setAggregatedData?: (data: unknown) => void;
+        setCategoryTotals?: (data: unknown) => void;
+        setMonthlyTrendData?: (data: unknown) => void;
+        setDateRange?: (range: { startDate: string; endDate: string }) => void;
+        setFilteredData?: (data: unknown[]) => void;
+        setIsLoading?: (b: boolean) => void;
+      };
+      if (opts.setData) {
+        opts.setData(mockDataWithNegative);
         console.log("setData called with:", mockDataWithNegative.length, "items");
       }
-      if (options.setPositiveChartData) {
-        options.setPositiveChartData(positiveChartDataMock);
+      if (opts.setPositiveChartData) {
+        opts.setPositiveChartData(positiveChartDataMock);
         console.log("setPositiveChartData called");
       }
-      if (options.setNegativeChartData) {
-        options.setNegativeChartData(negativeChartDataMock);
+      if (opts.setNegativeChartData) {
+        opts.setNegativeChartData(negativeChartDataMock);
         console.log("setNegativeChartData called");
       }
-      if (options.setPositiveTotal) {
-        options.setPositiveTotal(positiveTotalMock);
+      if (opts.setPositiveTotal) {
+        opts.setPositiveTotal(positiveTotalMock);
         console.log("setPositiveTotal called with:", positiveTotalMock);
       }
-      if (options.setNegativeTotal) {
-        options.setNegativeTotal(negativeTotalMock);
+      if (opts.setNegativeTotal) {
+        opts.setNegativeTotal(negativeTotalMock);
         console.log("setNegativeTotal called with:", negativeTotalMock);
       }
-      if (options.setAggregatedData) {
-        options.setAggregatedData(aggregatedDataMock);
+      if (opts.setAggregatedData) {
+        opts.setAggregatedData(aggregatedDataMock);
         console.log("setAggregatedData called");
       }
-      if (options.setCategoryTotals) {
-        options.setCategoryTotals(categoryTotalsMock);
+      if (opts.setCategoryTotals) {
+        opts.setCategoryTotals(categoryTotalsMock);
         console.log("setCategoryTotals called");
       }
-      if (options.setMonthlyTrendData) {
-        options.setMonthlyTrendData(monthlyTrendDataMock);
+      if (opts.setMonthlyTrendData) {
+        opts.setMonthlyTrendData(monthlyTrendDataMock);
         console.log("setMonthlyTrendData called");
       }
-      if (options.setDateRange) {
+      if (opts.setDateRange) {
         console.log("setDateRange called with:", mockDateRange);
-        options.setDateRange(mockDateRange);
+        opts.setDateRange(mockDateRange);
       }
-      
-      // 重要: フィルタリングされたデータも必ず設定する
-      // これにより、データ件数が正しく表示される
-      if (options.setFilteredData) {
+      if (opts.setFilteredData) {
         console.log("setFilteredData called with:", mockDataWithNegative);
-        options.setFilteredData(mockDataWithNegative);  // 全データを設定
+        opts.setFilteredData(mockDataWithNegative);  // 全データを設定
       }
-      
-      // ローディング状態を更新
-      if (options.setIsLoading) options.setIsLoading(false);
+      if (opts.setIsLoading) opts.setIsLoading(false);
 
       return { success: true };
     },

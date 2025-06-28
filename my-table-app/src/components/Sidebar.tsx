@@ -5,34 +5,37 @@ import ReactFileReader from 'react-file-reader';
 import './Sidebar.css';
 
 const Sidebar: React.FC<SidebarProps> = ({
-  onViewChange = () => {}, 
+  onViewChange = (view: string) => {}, 
   onFileUpload = () => {}, 
   activeView = 'dashboard', 
   filters = {}, 
   onFilterChange, 
-  initialDateRange = {},
+  initialDateRange = undefined,
   dataProcessing = false
 }) => {
     const [expanded, setExpanded] = useState(false);
-    
     // initialDateRangeが更新されたらフィルターを更新するためのeffect
     useEffect(() => {
-        if (initialDateRange && initialDateRange.startDate && initialDateRange.endDate) {
+        if (
+          initialDateRange &&
+          typeof initialDateRange.startDate === 'string' &&
+          typeof initialDateRange.endDate === 'string'
+        ) {
             // 日付フィルターを初期値で設定
-            if (!filters.startDate) {
-                onFilterChange && onFilterChange('startDate', initialDateRange.startDate);
+            if (!filters['startDate']) {
+                if (onFilterChange) onFilterChange('startDate', initialDateRange.startDate);
             }
-            if (!filters.endDate) {
-                onFilterChange && onFilterChange('endDate', initialDateRange.endDate);
+            if (!filters['endDate']) {
+                if (onFilterChange) onFilterChange('endDate', initialDateRange.endDate);
             }
         }
     }, [initialDateRange, filters, onFilterChange]);
-    
+
     const toggleSidebar = () => {
         setExpanded(!expanded);
     };
-    
-    const handleViewChange = (view) => {
+
+    const handleViewChange = (view: string) => {
         onViewChange(view);
         if (window.innerWidth <= 768) {
             setExpanded(false);
@@ -40,21 +43,20 @@ const Sidebar: React.FC<SidebarProps> = ({
     };
 
     const toggleExcludeTransfers = () => {
-        onFilterChange && onFilterChange('excludeTransfers', !filters.excludeTransfers);
+        if (onFilterChange) onFilterChange('excludeTransfers', !filters['excludeTransfers']);
     };
 
-    const handleStartDateChange = (e) => {
-        onFilterChange && onFilterChange('startDate', e.target.value);
+    const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (onFilterChange) onFilterChange('startDate', e.target.value);
     };
 
-    const handleEndDateChange = (e) => {
-        onFilterChange && onFilterChange('endDate', e.target.value);
+    const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (onFilterChange) onFilterChange('endDate', e.target.value);
     };
 
     const resetDateFilter = () => {
-        // 初期値（CSVから検出した日付範囲）にリセット
-        onFilterChange && onFilterChange('startDate', initialDateRange.startDate || '');
-        onFilterChange && onFilterChange('endDate', initialDateRange.endDate || '');
+        if (onFilterChange) onFilterChange('startDate', initialDateRange && typeof initialDateRange.startDate === 'string' ? initialDateRange.startDate : '');
+        if (onFilterChange) onFilterChange('endDate', initialDateRange && typeof initialDateRange.endDate === 'string' ? initialDateRange.endDate : '');
     };
 
     return (
@@ -122,7 +124,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <label className="sidebar-checkbox-container">
                         <input 
                             type="checkbox"
-                            checked={!!filters.excludeTransfers}
+                            checked={Boolean(filters['excludeTransfers'])}
                             onChange={toggleExcludeTransfers}
                             data-testid="exclude-transfers-checkbox"
                         />
@@ -138,7 +140,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <input 
                                 type="date"
                                 id="start-date"
-                                value={filters.startDate || ''}
+                                value={typeof filters['startDate'] === 'string' ? filters['startDate'] as string : ''}
                                 onChange={handleStartDateChange}
                                 className="date-input"
                                 data-testid="start-date-input"
@@ -149,14 +151,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <input 
                                 type="date"
                                 id="end-date"
-                                value={filters.endDate || ''}
+                                value={typeof filters['endDate'] === 'string' ? filters['endDate'] as string : ''}
                                 onChange={handleEndDateChange}
                                 className="date-input"
                                 data-testid="end-date-input"
                             />
                         </div>
                         
-                        {(filters.startDate || filters.endDate) && (
+                        {(typeof filters['startDate'] === 'string' && filters['startDate']) || (typeof filters['endDate'] === 'string' && filters['endDate']) ? (
                             <button 
                                 className="clear-date-filter" 
                                 onClick={resetDateFilter}
@@ -164,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             >
                                 期間フィルターを初期値にリセット
                             </button>
-                        )}
+                        ) : null}
                     </div>
                 </div>
                 

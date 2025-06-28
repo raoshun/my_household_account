@@ -1,4 +1,3 @@
-/* eslint-disable */
 import '@testing-library/jest-dom';
 import { configure } from '@testing-library/react';
 
@@ -8,8 +7,6 @@ process.env.NODE_ENV = 'test';
 // React 18のcreateRootに関するエラー対策
 // Testing Libraryの設定
 configure({
-  // マウント先のDOM要素が確実に存在するようにする
-  defaultContainerReset: true,
   // React 18の機能を使用するかどうか
   reactStrictMode: true
 });
@@ -93,14 +90,11 @@ jest.mock('chart.js', () => {
   };
 
   const mockChart = jest.fn(() => mockChartInstance);
-  
-  // registerメソッドを追加
-  mockChart.register = jest.fn();
-  
+
   return {
     Chart: mockChart,
     ArcElement: jest.fn(),
-    PieController: jest.fn(), 
+    PieController: jest.fn(),
     Tooltip: jest.fn(),
     Legend: jest.fn(),
     register: jest.fn()
@@ -121,15 +115,15 @@ if (isDebugMode) {
   console.log = (...args) => {
     originalLog("[LOG]", ...args);
   };
-  
+
   console.info = (...args) => {
     originalInfo("[INFO]", ...args);
   };
-  
+
   console.warn = (...args) => {
     originalWarn("[WARN]", ...args);
   };
-  
+
   console.error = (...args) => {
     originalError("[ERROR]", ...args);
   };
@@ -142,7 +136,6 @@ if (isDebugMode) {
 
   // 各テスト実行前に情報表示
   beforeEach(() => {
-    const testPath = expect.getState().testPath;
     const testName = expect.getState().currentTestName;
     console.log("\n実行中のテスト:", testName);
   });
@@ -180,7 +173,7 @@ console.error = (...args) => {
       'Warning: %s: Support for defaultProps will be removed',
       'Warning: Using UNSAFE_'
     ];
-    
+
     // 無視する警告の場合はログを出力しない
     for (const warning of suppressedWarnings) {
       if (args[0].includes(warning)) {
@@ -188,7 +181,7 @@ console.error = (...args) => {
       }
     }
   }
-  
+
   // 他のエラーは通常通り出力
   if (globalThis.__TEST_DEBUG__) {
     originalError('\x1b[31m[ERROR]\x1b[0m', ...args);
@@ -199,28 +192,30 @@ console.error = (...args) => {
 
 // ResizeObserver APIのモック
 class MockResizeObserver {
-  constructor(callback) {
+  callback: (entries: Array<{ target: Element; contentRect: { width: number; height: number } }>) => void;
+  observedElements: Set<Element>;
+  constructor(callback: (entries: Array<{ target: Element; contentRect: { width: number; height: number } }>) => void) {
     this.callback = callback;
     this.observedElements = new Set();
   }
-  
-  observe(element) {
+
+  observe(element: Element) {
     // 要素を記録して監視
     this.observedElements.add(element);
   }
-  
-  unobserve(element) {
+
+  unobserve(element: Element) {
     // 要素の監視を解除
     this.observedElements.delete(element);
   }
-  
+
   disconnect() {
     // すべての監視を解除
     this.observedElements.clear();
   }
-  
+
   // テスト用：リサイズイベントをシミュレート
-  simulateResize(element, contentRect = { width: 100, height: 100 }) {
+  simulateResize(element: Element, contentRect = { width: 100, height: 100 }) {
     if (this.observedElements.has(element)) {
       this.callback([{ target: element, contentRect }]);
       return true;
@@ -231,7 +226,7 @@ class MockResizeObserver {
 
 // ResizeObserverが未定義の場合はモックをグローバルに設定
 if (typeof window !== 'undefined' && !window.ResizeObserver) {
-  window.ResizeObserver = MockResizeObserver;
+  window.ResizeObserver = MockResizeObserver as unknown as typeof window.ResizeObserver;
 }
 
 // ResizeObserver テスト用ヘルパー関数
@@ -243,7 +238,7 @@ globalThis.testResizeObserver = (element) => {
       mockInstances.push(element[key]);
     }
   }
-  
+
   return {
     // ResizeObserverインスタンスの有無を確認
     exists: () => mockInstances.length > 0,
