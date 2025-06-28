@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import type { AppProps, ChartData, TrendData } from './types';
 import AggregatedTable from './components/AggregatedTable';
 import Sidebar from './components/Sidebar';
 import Charts from './components/Charts';
@@ -11,23 +12,21 @@ import CategoryPieChart from './components/CategoryPieChart'; // 大項目・中
 import { handleFiles } from './components/fileHandlers';
 import { chartOptions } from './config/chartOptions';
 import { createMonthlyTrendData } from './utils/monthlyTrendUtils';
-import calculateCategoryTotals from './utils/calculateCategoryTotals';
 import { filterData } from './utils/sortData';
-import { splitDataBySign, formatCategoryData } from './utils';
-import PropTypes from 'prop-types';
+import { splitDataBySign } from './utils';
 import CategoryDetailsTable from './components/CategoryDetailsTable';
 import InvestmentView from './components/InvestmentView'; // 投資分析ビューをインポート
 import './App.css';
 
 // 安全な月次データの初期状態
-const EMPTY_MONTHLY_DATA = {
+const EMPTY_MONTHLY_DATA: TrendData = {
   labels: [],
   datasets: []
 };
 
-const App = ({ initialData = [] }) => {
-  const [data, setData] = useState([]);
-  const [positiveChartData, setPositiveChartData] = useState({
+const App: React.FC<AppProps> = ({ initialData = [] }) => {
+  const [data, setData] = useState<unknown[]>([]);
+  const [positiveChartData, setPositiveChartData] = useState<ChartData>({
     labels: [],
     datasets: [{
       data: [],
@@ -35,7 +34,7 @@ const App = ({ initialData = [] }) => {
       hoverBackgroundColor: []
     }]
   });
-  const [negativeChartData, setNegativeChartData] = useState({
+  const [negativeChartData, setNegativeChartData] = useState<ChartData>({
     labels: [],
     datasets: [{
       data: [],
@@ -43,25 +42,24 @@ const App = ({ initialData = [] }) => {
       hoverBackgroundColor: []
     }]
   });
-  const [monthlyTrendData, setMonthlyTrendData] = useState(EMPTY_MONTHLY_DATA);
-  const [positiveTotal, setPositiveTotal] = useState(0);
-  const [negativeTotal, setNegativeTotal] = useState(0);
-  const [view, setView] = useState('dashboard'); // 初期ビューを'dashboard'に変更
-  const [filteredData, setFilteredData] = useState([]);
-  const [hoverInfo, setHoverInfo] = useState(null); // ホバー情報を保持する状態
-  const [aggregatedData, setAggregatedData] = useState({});
-  const [categoryTotals, setCategoryTotals] = useState({});
-  const [filters, setFilters] = useState({ excludeTransfers: true }); // 振替除外をデフォルトに設定
-  const [initialDateRange, setInitialDateRange] = useState({ startDate: '', endDate: '' }); // 初期日付範囲を保存
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [categoryFilteredData, setCategoryFilteredData] = useState([]);
-  const [prevFilters, setPrevFilters] = useState({}); // 前回のフィルタ状態を保存
-  const [chartKey, setChartKey] = useState(0); // チャートの強制リロード用キー
-  const [dataProcessing, setDataProcessing] = useState(false); // データ処理中フラグ
-  const [monthlyViewMode, setMonthlyViewMode] = useState('chart'); // 月次推移の表示モード（chart or table）
-  const [showPrediction, setShowPrediction] = useState(false); // 予測表示のオン/オフ状態
-  const [forecastPeriods, setForecastPeriods] = useState(3); // 予測期間（デフォルト3ヶ月）
-  const [predictionMethod, setPredictionMethod] = useState('seasonal_ma'); // 予測手法（デフォルトは季節性移動平均）
+  const [monthlyTrendData, setMonthlyTrendData] = useState<TrendData>(EMPTY_MONTHLY_DATA);
+  const [positiveTotal, setPositiveTotal] = useState<number>(0);
+  const [negativeTotal, setNegativeTotal] = useState<number>(0);
+  const [view, setView] = useState<string>('dashboard'); // 初期ビューを'dashboard'に変更
+  const [filteredData, setFilteredData] = useState<unknown[]>([]);
+  const [hoverInfo, setHoverInfo] = useState<{ label: string; subtotal: number } | null>(null); // ホバー情報を保持する状態
+  const [aggregatedData, setAggregatedData] = useState<Record<string, unknown>>({});
+  const [filters, setFilters] = useState<Record<string, unknown>>({ excludeTransfers: true }); // 振替除外をデフォルトに設定
+  const [initialDateRange, setInitialDateRange] = useState<{ startDate: string; endDate: string }>({ startDate: '', endDate: '' }); // 初期日付範囲を保存
+  const [selectedCategory, setSelectedCategory] = useState<unknown | null>(null);
+  const [categoryFilteredData, setCategoryFilteredData] = useState<unknown[]>([]);
+  const [prevFilters, setPrevFilters] = useState<Record<string, unknown>>({}); // 前回のフィルタ状態を保存
+  const [chartKey, setChartKey] = useState<number>(0); // チャートの強制リロード用キー
+  const [dataProcessing, setDataProcessing] = useState<boolean>(false); // データ処理中フラグ
+  const [monthlyViewMode, setMonthlyViewMode] = useState<'chart' | 'table'>('chart'); // 月次推移の表示モード（chart or table）
+  const [showPrediction, setShowPrediction] = useState<boolean>(false); // 予測表示のオン/オフ状態
+  const [forecastPeriods, setForecastPeriods] = useState<number>(3); // 予測期間（デフォルト3ヶ月）
+  const [predictionMethod, setPredictionMethod] = useState<string>('seasonal_ma'); // 予測手法（デフォルトは季節性移動平均）
 
   // ファイルハンドラをラップする関数 - useCallbackで最適化
   const handleFileUpload = useCallback((files) => {
@@ -73,7 +71,6 @@ const App = ({ initialData = [] }) => {
       setPositiveTotal,
       setNegativeTotal,
       setAggregatedData,
-      setCategoryTotals,
       setMonthlyTrendData,
       setIsLoading: setDataProcessing, // 処理状態を共有
       // 日付範囲を設定する関数を追加
@@ -180,10 +177,7 @@ const App = ({ initialData = [] }) => {
       setPositiveTotal(chartData.positiveTotal);
       setNegativeTotal(chartData.negativeTotal);
     }
-    
-    calculateCategoryTotals(newFilteredData)
-      .then(totals => setCategoryTotals(totals))
-      .catch(error => console.error('カテゴリ合計の計算中にエラーが発生しました:', error));
+    // setCategoryTotalsの呼び出しを削除
   }, [data, filters]);
 
   // 月次推移データの更新（データまたはフィルタ変更時）
@@ -269,11 +263,6 @@ const App = ({ initialData = [] }) => {
       } catch (error) {
         console.error('初期チャートデータの生成中にエラーが発生しました:', error);
       }
-      
-      // カテゴリ合計を計算
-      calculateCategoryTotals(initialData)
-        .then(totals => setCategoryTotals(totals))
-        .catch(error => console.error('カテゴリ合計の計算中にエラーが発生しました:', error));
     }
   }, [initialData]);
 
@@ -312,7 +301,7 @@ const App = ({ initialData = [] }) => {
           <>
             {selectedCategory ? (
               <CategoryDetailsTable 
-                categoryName={selectedCategory.label}
+                category={selectedCategory.label}
                 data={categoryFilteredData}
                 onBack={() => setSelectedCategory(null)}
               />
@@ -331,7 +320,7 @@ const App = ({ initialData = [] }) => {
                   />
                   {hoverInfo && (
                     <div className="hover-info">
-                      <strong>{hoverInfo.label}:</strong> ¥{hoverInfo.subtotal.toLocaleString()}
+                      <strong>{hoverInfo.label}:</strong> ¥{hoverInfo.subtotal?.toLocaleString?.() ?? ''}
                     </div>
                   )}
                 </div>
@@ -344,7 +333,6 @@ const App = ({ initialData = [] }) => {
           <div data-testid="balance-view">
             <BalanceView 
               data={filteredData} 
-              hoverInfo={hoverInfo} 
               onHover={handleHover}
             />
           </div>
@@ -354,7 +342,7 @@ const App = ({ initialData = [] }) => {
           <div data-testid="category-quadrant-view">
             <CategoryQuadrantView 
               data={filteredData}
-              categoryTotals={categoryTotals}
+              negativeTotal={negativeTotal}
             />
           </div>
         )}
@@ -363,7 +351,6 @@ const App = ({ initialData = [] }) => {
           <div data-testid="category-view">
             <CategoryPieChart 
               data={filteredData}
-              hoverInfo={hoverInfo}
               onHover={handleHover}
             />
           </div>
@@ -371,7 +358,7 @@ const App = ({ initialData = [] }) => {
         
         {view === 'aggregated' && (
           <div data-testid="aggregated-view">
-            <AggregatedTable data={filteredData} />
+            <AggregatedTable aggregatedData={aggregatedData} />
           </div>
         )}
         
@@ -435,17 +422,15 @@ const App = ({ initialData = [] }) => {
             
             {monthlyViewMode === 'chart' ? (
               <MonthlyTrendChart 
-                data={monthlyTrendData} 
+                trendData={monthlyTrendData} 
                 showPrediction={showPrediction}
                 forecastPeriods={forecastPeriods}
                 predictionMethod={predictionMethod}
               />
             ) : (
               <MonthlyTrendTable 
-                data={monthlyTrendData} 
+                trendData={monthlyTrendData} 
                 showPrediction={showPrediction}
-                forecastPeriods={forecastPeriods}
-                predictionMethod={predictionMethod}
               />
             )}
           </div>
@@ -465,10 +450,6 @@ const App = ({ initialData = [] }) => {
       </div>
     </div>
   );
-};
-
-App.propTypes = {
-  initialData: PropTypes.array
 };
 
 export default App;

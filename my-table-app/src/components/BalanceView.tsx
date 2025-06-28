@@ -1,18 +1,14 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import './BalanceView.css';
+import type { BalanceViewProps } from '../types';
 
-/**
- * 収支バランスを視覚的に表示するコンポーネント
- * 
- * @param {Object} props
- * @param {number} props.positiveTotal - 収入合計額
- * @param {number} props.negativeTotal - 支出合計額（負の値）
- * @param {Object} props.positiveData - 収入のチャートデータ
- * @param {Object} props.negativeData - 支出のチャートデータ
- * @returns {JSX.Element} 収支バランスビュー
- */
-const BalanceView = ({ positiveTotal = 0, negativeTotal = 0, positiveData = {}, negativeData = {} }) => {
+const BalanceView: React.FC<BalanceViewProps> = ({ 
+  positiveTotal = 0, 
+  negativeTotal = 0, 
+  positiveData = {} as any, 
+  negativeData = {} as any, 
+  onHover 
+}) => {
   // 収支バランス（黒字/赤字）を計算
   const balance = positiveTotal + negativeTotal; // negativeTotal は負の値なので加算
   
@@ -143,13 +139,6 @@ const BalanceView = ({ positiveTotal = 0, negativeTotal = 0, positiveData = {}, 
       </div>
     </div>
   );
-};
-
-BalanceView.propTypes = {
-  positiveTotal: PropTypes.number,
-  negativeTotal: PropTypes.number,
-  positiveData: PropTypes.object,
-  negativeData: PropTypes.object
 };
 
 export default BalanceView;

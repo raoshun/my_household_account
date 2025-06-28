@@ -1,8 +1,15 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import './CategoryDetailsTable.css';
 
-const CategoryDetailsTable = ({ data, category, title }) => {
+// 型定義
+interface CategoryDetailsTableProps {
+  category: string;
+  data: any[];
+  onBack?: () => void;
+  title?: string;
+}
+
+const CategoryDetailsTable: React.FC<CategoryDetailsTableProps> = ({ category, data, onBack, title }) => {
   // データがない場合
   if (!data || data.length === 0) {
     return (
@@ -78,12 +85,6 @@ const CategoryDetailsTable = ({ data, category, title }) => {
       </div>
     </div>
   );
-};
-
-CategoryDetailsTable.propTypes = {
-  data: PropTypes.array.isRequired,
-  category: PropTypes.string.isRequired,
-  title: PropTypes.string
 };
 
 export default CategoryDetailsTable;

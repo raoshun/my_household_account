@@ -1,8 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import './AggregatedTable.css';
 
-const AggregatedTable = ({ aggregatedData }) => {
+// 型定義
+interface AggregatedTableProps {
+  aggregatedData: any;
+}
+
+const AggregatedTable: React.FC<AggregatedTableProps> = ({ aggregatedData = [] }) => {
   // 集計データが空の場合の処理
   if (!aggregatedData || Object.keys(aggregatedData).length === 0) {
     return (
@@ -43,10 +47,6 @@ const AggregatedTable = ({ aggregatedData }) => {
       </table>
     </div>
   );
-};
-
-AggregatedTable.propTypes = {
-  aggregatedData: PropTypes.object.isRequired,
 };
 
 export default AggregatedTable;

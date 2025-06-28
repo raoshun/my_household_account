@@ -1,16 +1,17 @@
+import type { SidebarProps } from '../types';
+
 import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import ReactFileReader from 'react-file-reader';
 import './Sidebar.css';
 
-const Sidebar = ({ 
-    onViewChange = () => {}, 
-    onFileUpload = () => {}, 
-    activeView = 'dashboard', 
-    filters = {}, 
-    onFilterChange, 
-    initialDateRange = {},
-    dataProcessing = false
+const Sidebar: React.FC<SidebarProps> = ({
+  onViewChange = () => {}, 
+  onFileUpload = () => {}, 
+  activeView = 'dashboard', 
+  filters = {}, 
+  onFilterChange, 
+  initialDateRange = {},
+  dataProcessing = false
 }) => {
     const [expanded, setExpanded] = useState(false);
     
@@ -190,16 +191,6 @@ const Sidebar = ({
             </div>
         </div>
     );
-};
-
-Sidebar.propTypes = {
-    onViewChange: PropTypes.func,
-    onFileUpload: PropTypes.func,
-    activeView: PropTypes.string,
-    filters: PropTypes.object,
-    onFilterChange: PropTypes.func,
-    initialDateRange: PropTypes.object,
-    dataProcessing: PropTypes.bool
 };
 
 export default Sidebar;

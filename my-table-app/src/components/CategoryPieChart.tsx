@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import PropTypes from 'prop-types';
+import type { CategoryPieChartProps } from '../types';
 
 const MAIN_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28BFE', '#FFB6B6', '#B6FFB6', '#B6D4FF'];
 const SUB_COLORS = [
@@ -167,8 +168,7 @@ CustomTooltip.defaultProps = {
   payload: []
 };
 
-// data: { '大分類 - 中分類': 合計, ... }
-const CategoryPieChart = ({ data }) => {
+const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ data = [], onHover }) => {
   // 状態の保持
   const [mainDataWithLayout, setMainDataWithLayout] = useState([]);
   const [subDataWithLayout, setSubDataWithLayout] = useState([]);
@@ -306,10 +306,6 @@ const CategoryPieChart = ({ data }) => {
       <Legend content={<CustomLegend />} />
     </PieChart>
   );
-};
-
-CategoryPieChart.propTypes = {
-  data: PropTypes.object.isRequired,
 };
 
 export default CategoryPieChart;

@@ -224,6 +224,11 @@ export const handleFiles = (files, setters = {}) => {
         if (filesProcessed === files.length) {
           // 基本データをセット - 空配列でも常にセットする
           setData(allData);
+
+          // ファイル読み込み後、CSV内容をデバッグ出力
+          if (Array.isArray(allData)) {
+            console.log('[DEBUG] CSV読み込み内容:', allData.slice(0, 10)); // 先頭10件のみ表示
+          }
           
           if (allData.length > 0) {
             // 日付範囲を検出して設定（追加）

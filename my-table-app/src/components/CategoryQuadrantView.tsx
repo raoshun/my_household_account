@@ -1,5 +1,5 @@
+import type { CategoryQuadrantViewProps } from '../types';
 import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import './CategoryQuadrantView.css';
 
 /**
@@ -11,7 +11,7 @@ import './CategoryQuadrantView.css';
  * @param {number} props.negativeTotal - 支出合計額（負の値）
  * @returns {React.ReactElement} カテゴリ四分法ビュー
  */
-const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
+const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], negativeTotal = 0 }) => {
   // 支出の絶対値（正の値）
   const expenseTotal = Math.abs(negativeTotal);
   
@@ -332,7 +332,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
   // カテゴリの分類状況の要約を計算
   // totalCategoriesの計算方法をgroupedUnassignedCategoriesに合わせて変更
   const totalAssignedCount = Object.keys(categoryAssignments).length;
-  const totalUnassignedCount = Object.values(groupedUnassignedCategories).reduce((sum, arr) => sum + arr.length, 0);
+  const totalUnassignedCount = Object.values(groupedUnassignedCategories).reduce((sum, arr) => sum + ((arr as string[])?.length ?? 0), 0);
   const totalCategories = totalAssignedCount + totalUnassignedCount;
   const assignmentProgress = totalCategories > 0 ? (totalAssignedCount / totalCategories) * 100 : 0;
 
@@ -362,7 +362,7 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
     const sortedGroupArray = Object.entries(groupedAssigned).sort(([a], [b]) => a.localeCompare(b));
     // 各グループ内も中項目でソート
     sortedGroupArray.forEach(([_mainCategory, subCategories], idx) => {
-      sortedGroupArray[idx][1] = subCategories.slice().sort();
+      sortedGroupArray[idx][1] = (subCategories as string[]).slice().sort();
     });
 
     return (
@@ -656,11 +656,6 @@ const CategoryQuadrantView = ({ data = [], negativeTotal = 0 }) => {
       )}
     </div>
   );
-};
-
-CategoryQuadrantView.propTypes = {
-  data: PropTypes.array,
-  negativeTotal: PropTypes.number
 };
 
 export default CategoryQuadrantView;

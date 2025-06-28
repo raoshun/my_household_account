@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Pie, Line } from 'react-chartjs-2';
-import PropTypes from 'prop-types';
 import './InvestmentView.css';
+import type { InvestmentViewProps } from '../types';
 
-const InvestmentView = ({ data = [] }) => {
+const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
   // アクティブなタブを管理する状態
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -411,10 +411,6 @@ const InvestmentView = ({ data = [] }) => {
       </div>
     </div>
   );
-};
-
-InvestmentView.propTypes = {
-  data: PropTypes.arrayOf(PropTypes.object)
 };
 
 export default InvestmentView;
