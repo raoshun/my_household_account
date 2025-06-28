@@ -46,6 +46,8 @@ jest.mock('chart.js', () => {
   };
 });
 
+// window拡張: テスト用プロパティを型安全に追加
+
 describe('Charts Component', () => {
   // テスト用のモック関数
   const mockOnClick = jest.fn();
@@ -57,7 +59,8 @@ describe('Charts Component', () => {
 
   afterEach(() => {
     cleanup();
-    delete window.__JEST_TEST_ENV__;
+    // windowをanyとして拡張プロパティを安全に削除
+    delete (window as any).__JEST_TEST_ENV__;
   });
   
   test('renders chart components with proper data', () => {

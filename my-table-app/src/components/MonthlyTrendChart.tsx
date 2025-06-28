@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Chart } from 'chart.js';
+import type { InteractionModeMap } from 'chart.js/dist/types';
 import { getDefaultTrendChartOptions } from '../utils/monthlyTrendUtils';
 import { getMockPrediction } from '../api/trendPredictionApi';
 import './MonthlyTrendChart.css';
@@ -326,7 +327,7 @@ const MonthlyTrendChart: React.FC<MonthlyTrendChartProps> = ({
         if (chartOptions.interaction && typeof chartOptions.interaction === 'object') {
           chartOptions.interaction = {
             ...chartOptions.interaction,
-            mode: 'index' as const, // 明示的な型アサーション
+            mode: 'index' as keyof InteractionModeMap, // 型安全な値に修正
             intersect: false,
           };
         }

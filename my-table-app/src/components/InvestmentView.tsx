@@ -47,8 +47,8 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
     const monthsMap = new Map();
     
     // データを日付でソート
-    const sortedData = [...filteredData].sort((a, b) => 
-      new Date(a['日付']) - new Date(b['日付'])
+    const sortedData = [...filteredData].sort((a, b) =>
+      new Date(a['日付'] as string).getTime() - new Date(b['日付'] as string).getTime()
     );
     
     // 月別・カテゴリ別に集計
@@ -164,7 +164,7 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'top' as const,
       },
       tooltip: {
         callbacks: {
@@ -211,7 +211,7 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'top' as const,
       },
       tooltip: {
         callbacks: {
