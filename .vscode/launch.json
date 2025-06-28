@@ -64,9 +64,8 @@
             "type": "node",
             "name": "Debug Tests",
             "request": "launch",
-            "name": "Launch React App",
-            "url": "http://localhost:3000",
-            "webRoot": "${workspaceFolder}/${input:reactAppFolder}",
+            // "url": "http://localhost:3000",
+            // "webRoot": "${workspaceFolder}/${input:reactAppFolder}",
             "preLaunchTask": "react-app-start",
             "skipFiles": [
                 "<node_internals>/**"
@@ -74,10 +73,12 @@
         },
         {
             "name": "Python: API Server",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "my_household_analysis.api.rest_server",
-            "args": ["${input:apiServerArgs}"],
+            "args": [
+                "${input:apiServerArgs}"
+            ],
             "cwd": "${workspaceFolder}/my_household_analysis",
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -88,7 +89,7 @@
         },
         {
             "name": "Python: Test Current File",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "pytest",
             "args": [
@@ -101,7 +102,7 @@
         },
         {
             "name": "Python: Test All",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "pytest",
             "args": [
@@ -113,8 +114,8 @@
             "justMyCode": false
         },
         {
-            "name": "Full Stack: API + React",
-            "type": "python",
+            "name": "Full Stack: API(Debug) + React",
+            "type": "debugpy",
             "request": "launch",
             "module": "my_household_analysis.api.rest_server",
             "args": [],
@@ -126,6 +127,17 @@
             },
             "preLaunchTask": "react-app-start",
             "envFile": "${workspaceFolder}/my_household_analysis/.env"
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "name": "Full Stack: React(Debug) + API",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/my-table-app/src",
+            "preLaunchTask": "python-api-server",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
         }
     ],
     "inputs": [
