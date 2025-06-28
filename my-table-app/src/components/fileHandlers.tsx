@@ -4,7 +4,7 @@ import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 import iconv from 'iconv-lite';
 import { splitDataBySign, filterEmptyRows } from '../utils';
 import { prepareMonthlyTrendData } from '../utils/chartDataUtils';
-import { DATE_KEY, MAIN_CATEGORY_KEY, SUB_CATEGORY_KEY, AMOUNT_KEY } from '../config/constants';
+import { DATE_KEY, MAIN_CATEGORY_KEY, AMOUNT_KEY } from '../config/constants';
 
 /**
  * CSVデータから日付の範囲を検出する関数
@@ -57,10 +57,10 @@ export const detectDateRange = (data, dateKey = DATE_KEY) => {
         }
       }
       // 数値形式（Excelの連番など）
-      else if (!isNaN(dateStr)) {
+      else if (!isNaN(Number(dateStr))) {
         const excelEpoch = new Date(1900, 0, 1);
         const millisPerDay = 24 * 60 * 60 * 1000;
-        const offsetDays = parseInt(dateStr) - 1;
+        const offsetDays = Number(dateStr) - 1;
         date = new Date(excelEpoch.getTime() + offsetDays * millisPerDay);
       }
       // その他の形式はDateコンストラクタに任せる
@@ -119,12 +119,16 @@ const parseCSVFile = (file, onComplete, onError) => {
     try {
       // テスト環境か実行環境かを判定
       let text;
-      if (e.target.result instanceof ArrayBuffer || e.target.result instanceof Uint8Array) {
+      const result = e.target.result;
+      if (
+        (typeof result === 'object' && result !== null && (result instanceof ArrayBuffer || ArrayBuffer.isView(result)))
+      ) {
         // 実際の環境: ArrayBufferからテキストをデコード
-        text = iconv.decode(new Uint8Array(e.target.result), 'Shift_JIS');
+        const uint8 = result instanceof Uint8Array ? result : new Uint8Array(result as ArrayBuffer);
+        text = iconv.decode(Buffer.from(uint8), 'Shift_JIS');
       } else {
         // テスト環境: 既に文字列として提供されている
-        text = e.target.result;
+        text = result as string;
       }
       
       parse(text, {
@@ -133,7 +137,7 @@ const parseCSVFile = (file, onComplete, onError) => {
           if (result && result.data) {
             // 空行を共通関数でフィルタリング
             const filteredData = filterEmptyRows(result.data);
-            if (process.env.NODE_ENV === 'development' || window.__TEST_DEBUG__) {
+            if (process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.__TEST_DEBUG__)) {
               console.log(`CSVデータの行数: ${result.data.length}, フィルタリング後: ${filteredData.length}`);
             }
             onComplete(filteredData);
@@ -175,7 +179,7 @@ const parseCSVFile = (file, onComplete, onError) => {
  * @param {Object} setters - 状態更新用のセッター関数オブジェクト
  * @returns {Object} 処理結果
  */
-export const handleFiles = (files, setters = {}) => {
+export const handleFiles = (files: FileList, setters: Setters = {}) => {
   // ファイルが提供されていない場合
   if (!files || files.length === 0) {
     return { success: false, message: 'No files provided' };
@@ -209,7 +213,7 @@ export const handleFiles = (files, setters = {}) => {
   let filesProcessed = 0;
   
   Array.from(files).forEach(file => {
-    if (process.env.NODE_ENV === 'development' || window.__TEST_DEBUG__) {
+    if (process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.__TEST_DEBUG__)) {
       console.log('Processing file:', file.name);
     }
     
@@ -234,7 +238,7 @@ export const handleFiles = (files, setters = {}) => {
             // 日付範囲を検出して設定（追加）
             if (setDateRange) {
               const dateRange = detectDateRange(allData);
-              if (process.env.NODE_ENV === 'development' || window.__TEST_DEBUG__) {
+              if (process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.__TEST_DEBUG__)) {
                 console.log('検出された日付範囲:', dateRange);
               }
               setDateRange(dateRange);
@@ -393,3 +397,24 @@ export const exportDataToCSV = (data, filename = 'export.csv') => {
     return { success: false, message: `Export failed: ${error.message}` };
   }
 };
+
+// セッター関数群の型定義
+export type Setters = {
+  setData?: (data: Record<string, unknown>[]) => void;
+  setPositiveChartData?: (data: Record<string, unknown>) => void;
+  setNegativeChartData?: (data: Record<string, unknown>) => void;
+  setPositiveTotal?: (n: number) => void;
+  setNegativeTotal?: (n: number) => void;
+  setAggregatedData?: (data: Record<string, unknown>) => void;
+  setCategoryTotals?: (totals: Record<string, number>) => void;
+  setIsLoading?: (b: boolean) => void;
+  setError?: (msg: string) => void;
+  setMonthlyTrendData?: (data: Record<string, unknown>) => void;
+  setDateRange?: (range: { startDate: string; endDate: string }) => void;
+};
+
+declare global {
+  interface Window {
+    __TEST_DEBUG__?: boolean;
+  }
+}
