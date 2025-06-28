@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { Chart, ArcElement, PieController, Tooltip, Legend } from 'chart.js';
-import { lightenColor } from '../utils/chartUtils';
 import type { ChartsProps } from '../types';
 
 // window拡張型
@@ -8,6 +7,7 @@ interface TestEnvWindow extends Window {
   __JEST_TEST_ENV__?: boolean;
   _env_?: { NODE_ENV?: string };
   testEnvironment?: boolean;
+  process?: { env?: { NODE_ENV?: string } };
 }
 
 // テスト環境を検出する方法を改善（Jest環境検出のための複数の方法を組み合わせ）
@@ -78,27 +78,30 @@ const doughnutOptions = {
   radius: '90%'  // チャート全体のサイズ
 };
 
-function getPlugins(options: Record<string, unknown>) {
-  if (options && typeof options === 'object' && 'plugins' in options && typeof options.plugins === 'object') {
-    return options.plugins as Record<string, unknown>;
-  }
-  return {};
+// options型を厳密化
+interface ChartPluginOptions {
+  plugins?: {
+    tooltip?: Record<string, unknown>;
+    legend?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
 }
 
-const Charts: React.FC<ChartsProps> = ({
+const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
   positiveChartData = { labels: [], datasets: [{ data: [] }] },
   negativeChartData = { labels: [], datasets: [{ data: [] }] },
   positiveTotal = 0,
   negativeTotal = 0,
-  options = {}, // ← Record<string, unknown>型
+  options = {},
   onHover,
   onClick,
   chartsKey = 0
 }: ChartsProps & { options?: Record<string, unknown> }) => {
-  const positiveChartRef = useRef(null);
-  const negativeChartRef = useRef(null);
-  const positiveChartInstance = useRef(null);
-  const negativeChartInstance = useRef(null);
+  const positiveChartRef = useRef<HTMLCanvasElement | null>(null);
+  const negativeChartRef = useRef<HTMLCanvasElement | null>(null);
+  const positiveChartInstance = useRef<Chart | null>(null);
+  const negativeChartInstance = useRef<Chart | null>(null);
   const prevChartsKeyRef = useRef(chartsKey);
 
   const isTestEnvironment = useMemo(() => isTestEnv(), []);
@@ -144,8 +147,8 @@ const Charts: React.FC<ChartsProps> = ({
         }
         const ctx = positiveChartRef.current.getContext && positiveChartRef.current.getContext('2d');
         if (ctx) {
-          const plugins = (options && typeof options === 'object' && 'plugins' in options && typeof (options as any).plugins === 'object' && (options as any).plugins !== null)
-            ? (options as any).plugins
+          const plugins = (options && typeof options === 'object' && 'plugins' in options && typeof (options as ChartPluginOptions).plugins === 'object' && (options as ChartPluginOptions).plugins !== null)
+            ? (options as ChartPluginOptions).plugins
             : {};
           positiveChartInstance.current = new Chart(ctx, {
             type: 'doughnut',
@@ -183,8 +186,8 @@ const Charts: React.FC<ChartsProps> = ({
         }
         const ctx = negativeChartRef.current.getContext && negativeChartRef.current.getContext('2d');
         if (ctx) {
-          const plugins = (options && typeof options === 'object' && 'plugins' in options && typeof (options as any).plugins === 'object' && (options as any).plugins !== null)
-            ? (options as any).plugins
+          const plugins = (options && typeof options === 'object' && 'plugins' in options && typeof (options as ChartPluginOptions).plugins === 'object' && (options as ChartPluginOptions).plugins !== null)
+            ? (options as ChartPluginOptions).plugins
             : {};
           negativeChartInstance.current = new Chart(ctx, {
             type: 'doughnut',
@@ -243,8 +246,8 @@ const Charts: React.FC<ChartsProps> = ({
           const index = elements[0].index;
           const label = chart.data.labels[index];
           const subtotal = chart.data.datasets[0].data[index];
-          onHover({ label, subtotal });
-          onClick && onClick({
+          onHover && void onHover({ label, subtotal });
+          onClick && void onClick({
             label,
             subtotal,
             category: label,
@@ -261,8 +264,8 @@ const Charts: React.FC<ChartsProps> = ({
           const index = elements[0].index;
           const label = chart.data.labels[index];
           const subtotal = chart.data.datasets[0].data[index];
-          onHover({ label, subtotal });
-          onClick && onClick({
+          onHover && void onHover({ label, subtotal });
+          onClick && void onClick({
             label,
             subtotal,
             category: label,
