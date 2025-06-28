@@ -16,8 +16,8 @@
  * @param {boolean} options.absolute - 金額の絶対値を使用するか (デフォルト: false)
  * @returns {Object} カテゴリごとの集計結果オブジェクト
  */
-export const aggregateByCategory = (data, options = {}) => {
-  // オプションの初期値設定
+export const aggregateByCategory = (data: Record<string, unknown>[], options: CategoryAggregationOptions = {}) => {
+  options = options || {};
   const {
     categoryKey = '大項目',
     subCategoryKey = null,
@@ -93,7 +93,7 @@ export const aggregateByCategory = (data, options = {}) => {
  * @param {boolean} filterPositive - 正の金額のみフィルタするか (デフォルト: false)
  * @returns {Array} [カテゴリ名, 金額] の配列のソート済み配列
  */
-export const sortCategoryTotals = (aggregatedData, limit = 0, filterPositive = false) => {
+export const sortCategoryTotals = (aggregatedData: Record<string, number>, limit = 0, filterPositive = false) => {
   // 入力チェック
   if (!aggregatedData || typeof aggregatedData !== 'object') {
     return [];
@@ -104,11 +104,9 @@ export const sortCategoryTotals = (aggregatedData, limit = 0, filterPositive = f
 
   // 正の金額のみにフィルタ（必要な場合）
   if (filterPositive) {
-    entries = entries.filter(([_, amount]) => amount > 0);
+    entries = entries.filter(([, amount]) => (amount as number) > 0);
   }
-
-  // 金額の降順でソート
-  entries.sort(([, a], [, b]) => b - a);
+  entries.sort(([, a], [, b]) => (b as number) - (a as number));
 
   // 制限がある場合は上位N個を返す
   if (limit > 0) {
@@ -128,10 +126,10 @@ export const sortCategoryTotals = (aggregatedData, limit = 0, filterPositive = f
  * @param {function} options.colorGenerator - 色を生成する関数 (デフォルト: generateColorPalette)
  * @returns {Object} Chart.js形式のデータオブジェクト
  */
-export const convertToChartData = (aggregatedData, options = {}) => {
-  // デフォルト値の設定
-  const { 
-    limit = 0, 
+export const convertToChartData = (aggregatedData: Record<string, number>, options: SortCategoryTotalsOptions = {}) => {
+  options = options || {};
+  const {
+    limit = 0,
     filterPositive = true,
     colorGenerator = null
   } = options;
@@ -163,12 +161,11 @@ export const convertToChartData = (aggregatedData, options = {}) => {
         '#2C7BE5', '#27AE60', '#9B59B6', '#F1C40F', '#E74C3C'
       ];
 
-      generateColors = (count) => {
+      generateColors = (count: number) => {
         if (count <= defaultColors.length) {
           return defaultColors.slice(0, count);
         }
-        // 色が足りない場合は循環する
-        return Array(count).fill()
+        return Array(count).fill(undefined)
           .map((_, i) => defaultColors[i % defaultColors.length]);
       };
     }
@@ -206,8 +203,8 @@ export const convertToChartData = (aggregatedData, options = {}) => {
  * @param {function} options.compareMonths - 月をソートする比較関数
  * @returns {Object} Chart.js折れ線グラフ用のデータ形式
  */
-export const aggregateMonthlyData = (data, options = {}) => {
-  // オプション設定のデフォルト値
+export const aggregateMonthlyData = (data: Record<string, unknown>[], options: AggregateMonthlyDataOptions = {}) => {
+  options = options || {};
   const {
     dateKey = '日付',
     categoryKey = '大項目',
@@ -409,7 +406,7 @@ export const aggregateMonthlyData = (data, options = {}) => {
   
   sortedMonths.forEach(month => {
     Object.entries(monthlyData[month]).forEach(([category, amount]) => {
-      categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(amount);
+      categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(amount as number);
     });
   });
   
@@ -427,18 +424,15 @@ export const aggregateMonthlyData = (data, options = {}) => {
   }
   
   // チャートカラーを生成
-  const generateColorsFn = colorGenerator || ((count) => {
-    // デフォルトカラーパレット
+  const generateColorsFn = colorGenerator || ((count: number) => {
     const defaultColors = [
       '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F',
       '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC'
     ];
-    
     if (count <= defaultColors.length) {
       return defaultColors.slice(0, count);
     }
-    
-    return Array(count).fill().map((_, i) => defaultColors[i % defaultColors.length]);
+    return Array(count).fill(undefined).map((_, i) => defaultColors[i % defaultColors.length]);
   });
   
   const colors = generateColorsFn(topCategories.length);
@@ -486,3 +480,30 @@ export default {
   convertToChartData,
   aggregateMonthlyData
 };
+
+// オプション型定義
+export interface CategoryAggregationOptions {
+  categoryKey?: string;
+  subCategoryKey?: string | null;
+  amountKey?: string;
+  defaultCategory?: string;
+  defaultSubCategory?: string;
+  includeZero?: boolean;
+  absolute?: boolean;
+}
+
+export interface SortCategoryTotalsOptions {
+  limit?: number;
+  filterPositive?: boolean;
+  colorGenerator?: ((count: number) => string[]);
+}
+
+export interface AggregateMonthlyDataOptions {
+  dateKey?: string;
+  categoryKey?: string;
+  amountKey?: string;
+  maxCategories?: number;
+  normalizeDate?: (dateValue: unknown) => string;
+  colorGenerator?: (count: number) => string[];
+  compareMonths?: (a: string, b: string) => number;
+}

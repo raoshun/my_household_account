@@ -30,14 +30,6 @@ const MonthlyTrendTable = ({
   const [categoryAssignments, setCategoryAssignments] = useState({}); // カテゴリ分類情報
   const [quadrantSummaryData, setQuadrantSummaryData] = useState(null); // 四分法集計データ
 
-  // 四分法の名称マッピング
-  const quadrantNames = {
-    'necessary-fixed': '必需費（固定）',
-    'necessary-variable': '必需費（変動）',
-    'leisure-fixed': '娯楽費（固定）',
-    'leisure-variable': '娯楽費（変動）'
-  };
-
   // カテゴリ分類情報をローカルストレージから読み込み
   useEffect(() => {
     try {
@@ -56,7 +48,7 @@ const MonthlyTrendTable = ({
             'waste': 'leisure-variable'
           };
           
-          convertedAssignments[category] = conversionMap[quadrant] || quadrant;
+          convertedAssignments[category] = conversionMap[quadrant as string] || quadrant;
         });
         
         setCategoryAssignments(convertedAssignments);
@@ -207,13 +199,13 @@ const MonthlyTrendTable = ({
         // 各象限の小計行を追加（四分法集計）- 合計がプラスの象限のみ表示
         const quadrantSummaryRows = Object.values(quadrantData)
           .filter(row => row.total > 0)
-          .map(row => ({...row, isQuadrantSummary: true})); // 識別用フラグ追加
+          .map(row => ({...row, isQuadrantSummary: true, quadrant: null})); // quadrant: nullを追加
         
         // 四分法集計データを状態に保存
         setQuadrantSummaryData(quadrantSummaryRows);
         
         // 四分法集計時は個別のカテゴリを表示しない場合、rowsを象限のサマリーだけにする
-        if (showQuadrantSummary === 'only') {
+        if (typeof showQuadrantSummary === 'string' && showQuadrantSummary === 'only') {
           const totalRow = rows.find(row => row.category === '合計');
           allRows = totalRow ? [...quadrantSummaryRows, totalRow] : quadrantSummaryRows;
           setTableData(allRows);
@@ -231,6 +223,7 @@ const MonthlyTrendTable = ({
         const totalRow = {
           category: '合計',
           total: 0,
+          quadrant: null, // quadrantを追加
         };
 
         // 各カテゴリと月の合計を計算
@@ -318,7 +311,7 @@ const MonthlyTrendTable = ({
       setTableData([]);
       setSavingsRateData(null);
     }
-  }, [trendData, predictionData, showPrediction, showSavingsRate, showQuadrantSummary]);
+  }, [trendData, predictionData, showPrediction, showSavingsRate, showQuadrantSummary, categoryAssignments]);
 
   // テーブルのソート処理
   const sortBy = (key) => {
@@ -455,7 +448,7 @@ const MonthlyTrendTable = ({
                   </td>
                 );
               })}
-              <td className="total-cell">{formatAmount(row.total)}</td>
+              <td className="total-cell">{formatAmount(row.total, row[`${displayLabels[displayLabels.length-1]}_isPrediction`])}</td>
             </tr>
           ))}
           
@@ -475,7 +468,7 @@ const MonthlyTrendTable = ({
                 );
               })}
               <td className="savings-rate-total-cell">
-                {formatSavingsRate(savingsRateData.total)}
+                {formatSavingsRate(savingsRateData.total, savingsRateData[`${displayLabels[displayLabels.length-1]}_isPrediction`])}
               </td>
             </tr>
           )}
@@ -495,7 +488,7 @@ const MonthlyTrendTable = ({
                   </td>
                 );
               })}
-              <td className="total-cell">{formatAmount(row.total)}</td>
+              <td className="total-cell">{formatAmount(row.total, row[`${displayLabels[displayLabels.length-1]}_isPrediction`])}</td>
             </tr>
           ))}
         </tbody>

@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 if (onFilterChange) onFilterChange('endDate', initialDateRange.endDate);
             }
         }
-    }, [initialDateRange, filters, onFilterChange]);
+    }, [initialDateRange, onFilterChange]);
 
     const toggleSidebar = () => {
         setExpanded(!expanded);

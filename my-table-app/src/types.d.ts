@@ -1,34 +1,38 @@
 /// <reference types="@testing-library/jest-dom" />
 
-// 家計簿データ1件
-export interface HouseholdRecord {
-  [key: string]: unknown;
-  '日付'?: string;
-  '大項目'?: string;
-  '中項目'?: string;
-  '金額（円）'?: number;
-}
-
-export interface ChartData {
+// ChartData, TrendData, HouseholdRecord などの型定義
+export type ChartData = {
   labels: string[];
   datasets: {
+    label: string;
     data: number[];
-    backgroundColor?: string[];
-    hoverBackgroundColor?: string[];
+    backgroundColor?: string;
+    borderColor?: string;
+    fill?: boolean;
     [key: string]: unknown;
   }[];
-}
+};
 
-export interface TrendDataset {
-  label: string;
-  data: number[];
-  borderColor?: string;
-  backgroundColor?: string;
-}
-export interface TrendData {
+export type TrendData = {
   labels: string[];
-  datasets: TrendDataset[];
-}
+  datasets: {
+    label: string;
+    data: number[];
+    borderColor?: string;
+    backgroundColor?: string;
+    fill?: boolean;
+    [key: string]: unknown;
+  }[];
+};
+
+export type HouseholdRecord = {
+  date: string;
+  category: string;
+  item: string;
+  amount: number;
+  memo?: string;
+  [key: string]: unknown;
+};
 
 export interface AppProps {
   initialData?: HouseholdRecord[];

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { AppProps, ChartData, TrendData } from './types';
+import type { AppProps, ChartData, TrendData, HouseholdRecord } from './types';
 import AggregatedTable from './components/AggregatedTable';
 import Sidebar from './components/Sidebar';
 import Charts from './components/Charts';
@@ -25,60 +25,60 @@ const EMPTY_MONTHLY_DATA: TrendData = {
 };
 
 const App: React.FC<AppProps> = ({ initialData = [] }) => {
-  const [data, setData] = useState<unknown[]>([]);
+  // HouseholdRecord[]型で明示
+  const [data, setData] = useState<HouseholdRecord[]>([]);
   const [positiveChartData, setPositiveChartData] = useState<ChartData>({
     labels: [],
     datasets: [{
+      label: '',
       data: [],
-      backgroundColor: [],
-      hoverBackgroundColor: []
+      backgroundColor: '',
+      hoverBackgroundColor: ''
     }]
   });
   const [negativeChartData, setNegativeChartData] = useState<ChartData>({
     labels: [],
     datasets: [{
+      label: '',
       data: [],
-      backgroundColor: [],
-      hoverBackgroundColor: []
+      backgroundColor: '',
+      hoverBackgroundColor: ''
     }]
   });
   const [monthlyTrendData, setMonthlyTrendData] = useState<TrendData>(EMPTY_MONTHLY_DATA);
   const [positiveTotal, setPositiveTotal] = useState<number>(0);
   const [negativeTotal, setNegativeTotal] = useState<number>(0);
-  const [view, setView] = useState<string>('dashboard'); // 初期ビューを'dashboard'に変更
-  const [filteredData, setFilteredData] = useState<unknown[]>([]);
-  const [hoverInfo, setHoverInfo] = useState<{ label: string; subtotal: number } | null>(null); // ホバー情報を保持する状態
+  const [view, setView] = useState<string>('dashboard');
+  const [filteredData, setFilteredData] = useState<HouseholdRecord[]>([]);
+  const [hoverInfo, setHoverInfo] = useState<{ label: string; subtotal: number } | null>(null);
   const [aggregatedData, setAggregatedData] = useState<Record<string, unknown>>({});
-  const [filters, setFilters] = useState<Record<string, unknown>>({ excludeTransfers: true }); // 振替除外をデフォルトに設定
-  const [initialDateRange, setInitialDateRange] = useState<{ startDate: string; endDate: string }>({ startDate: '', endDate: '' }); // 初期日付範囲を保存
-  const [selectedCategory, setSelectedCategory] = useState<unknown | null>(null);
-  const [categoryFilteredData, setCategoryFilteredData] = useState<unknown[]>([]);
-  const [prevFilters, setPrevFilters] = useState<Record<string, unknown>>({}); // 前回のフィルタ状態を保存
-  const [chartKey, setChartKey] = useState<number>(0); // チャートの強制リロード用キー
-  const [dataProcessing, setDataProcessing] = useState<boolean>(false); // データ処理中フラグ
-  const [monthlyViewMode, setMonthlyViewMode] = useState<'chart' | 'table'>('chart'); // 月次推移の表示モード（chart or table）
-  const [showPrediction, setShowPrediction] = useState<boolean>(false); // 予測表示のオン/オフ状態
-  const [forecastPeriods, setForecastPeriods] = useState<number>(3); // 予測期間（デフォルト3ヶ月）
-  const [predictionMethod, setPredictionMethod] = useState<string>('seasonal_ma'); // 予測手法（デフォルトは季節性移動平均）
+  const [filters, setFilters] = useState<Record<string, unknown>>({ excludeTransfers: true });
+  const [initialDateRange, setInitialDateRange] = useState<{ startDate: string; endDate: string }>({ startDate: '', endDate: '' });
+  const [selectedCategory, setSelectedCategory] = useState<{ label: string } | null>(null);
+  const [categoryFilteredData, setCategoryFilteredData] = useState<HouseholdRecord[]>([]);
+  const [prevFilters, setPrevFilters] = useState<Record<string, unknown>>({});
+  const [chartKey, setChartKey] = useState<number>(0);
+  const [dataProcessing, setDataProcessing] = useState<boolean>(false);
+  const [monthlyViewMode, setMonthlyViewMode] = useState<'chart' | 'table'>('chart');
+  const [showPrediction, setShowPrediction] = useState<boolean>(false);
+  const [forecastPeriods, setForecastPeriods] = useState<number>(3);
+  const [predictionMethod, setPredictionMethod] = useState<string>('seasonal_ma');
 
   // ファイルハンドラをラップする関数 - useCallbackで最適化
-  const handleFileUpload = useCallback((files) => {
+  const handleFileUpload = useCallback((files: FileList) => {
     setDataProcessing(true); // データ処理開始
     handleFiles(files, {
-      setData,
-      setPositiveChartData,
-      setNegativeChartData,
+      setData: (data: Record<string, unknown>[]) => setData(data as HouseholdRecord[]),
+      setPositiveChartData: (data: ChartData) => setPositiveChartData(data),
+      setNegativeChartData: (data: ChartData) => setNegativeChartData(data),
       setPositiveTotal,
       setNegativeTotal,
       setAggregatedData,
-      setMonthlyTrendData,
+      setMonthlyTrendData: (data: TrendData) => setMonthlyTrendData(data),
       setIsLoading: setDataProcessing, // 処理状態を共有
       // 日付範囲を設定する関数を追加
-      setDateRange: (dateRange) => {
-        // 初期日付範囲として保存
+      setDateRange: (dateRange: { startDate: string; endDate: string }) => {
         setInitialDateRange(dateRange);
-        
-        // 既存のexcludeTransfersフィルターを保持しつつ日付範囲を追加
         setFilters(prev => ({
           ...prev,
           startDate: dateRange.startDate,
@@ -159,25 +159,34 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
     const newFilteredData = filterData(data, filters);
     setFilteredData(newFilteredData);
     
-    // フィルタの変更を検出
     const filtersChanged = 
       JSON.stringify(prevFilters) !== JSON.stringify(filters);
     
-    // フィルタが変更された場合のみチャートをリロード
     if (filtersChanged) {
       setPrevFilters(filters);
-      setChartKey(prevKey => prevKey + 1); // キーを変更して強制リロード
+      setChartKey(prevKey => prevKey + 1);
 
-      // フィルタリングされたデータから新しいチャートデータを生成
       const chartData = splitDataBySign(newFilteredData);
-      
-      // 円グラフデータを更新
-      setPositiveChartData(chartData.positiveData);
-      setNegativeChartData(chartData.negativeData);
+      // datasetsのdataをnumber[]に変換し、backgroundColor等もstring型に正規化
+      const fixChartData = (data: { labels: string[]; datasets: { data: unknown[]; backgroundColor?: string | string[]; hoverBackgroundColor?: string | string[]; label?: string; [key: string]: unknown; }[] }): ChartData => ({
+        labels: data.labels,
+        datasets: data.datasets.map((ds) => ({
+          ...ds,
+          label: typeof ds.label === 'string' ? ds.label : '',
+          data: (ds.data as unknown[]).map(Number),
+          backgroundColor: Array.isArray(ds.backgroundColor)
+            ? (ds.backgroundColor[0] ?? '')
+            : (typeof ds.backgroundColor === 'string' ? ds.backgroundColor : ''),
+          hoverBackgroundColor: Array.isArray(ds.hoverBackgroundColor)
+            ? (ds.hoverBackgroundColor[0] ?? '')
+            : (typeof ds.hoverBackgroundColor === 'string' ? ds.hoverBackgroundColor : ''),
+        })),
+      });
+      setPositiveChartData(fixChartData(chartData.positiveData));
+      setNegativeChartData(fixChartData(chartData.negativeData));
       setPositiveTotal(chartData.positiveTotal);
       setNegativeTotal(chartData.negativeTotal);
     }
-    // setCategoryTotalsの呼び出しを削除
   }, [data, filters]);
 
   // 月次推移データの更新（データまたはフィルタ変更時）
@@ -226,14 +235,9 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
   // コンポーネントがマウントされた時に初期データが存在する場合は使用
   useEffect(() => {
     if (initialData && initialData.length > 0) {
-      // 初期データを設定
       setData(initialData);
-      // 初期データをフィルタリングデータとしても設定
       setFilteredData(initialData);
-
-      // 初期データから月次推移データを安全に生成
       try {
-        // 新しい関数を使用
         const initialTrendData = createMonthlyTrendData(initialData, {
           dateKey: '日付',
           categoryKey: '大項目',
@@ -241,7 +245,6 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
           maxCategories: 5,
           debug: false
         });
-        
         if (initialTrendData && initialTrendData.labels && initialTrendData.datasets) {
           setMonthlyTrendData(initialTrendData);
         }
@@ -249,14 +252,25 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
         console.error('初期月次推移データの生成中にエラーが発生しました:', error);
         setMonthlyTrendData(EMPTY_MONTHLY_DATA);
       }
-      
-      // 初期データからチャートデータを生成
       try {
         const initialChartData = splitDataBySign(initialData);
-        
+        const fixChartData = (data: { labels: string[]; datasets: { data: unknown[]; backgroundColor?: string | string[]; hoverBackgroundColor?: string | string[]; label?: string; [key: string]: unknown; }[] }): ChartData => ({
+          labels: data.labels,
+          datasets: data.datasets.map((ds) => ({
+            ...ds,
+            label: typeof ds.label === 'string' ? ds.label : '',
+            data: (ds.data as unknown[]).map(Number),
+            backgroundColor: Array.isArray(ds.backgroundColor)
+              ? (ds.backgroundColor[0] ?? '')
+              : (typeof ds.backgroundColor === 'string' ? ds.backgroundColor : ''),
+            hoverBackgroundColor: Array.isArray(ds.hoverBackgroundColor)
+              ? (ds.hoverBackgroundColor[0] ?? '')
+              : (typeof ds.hoverBackgroundColor === 'string' ? ds.hoverBackgroundColor : ''),
+          })),
+        });
         if (initialChartData) {
-          setPositiveChartData(initialChartData.positiveData || positiveChartData);
-          setNegativeChartData(initialChartData.negativeData || negativeChartData);
+          setPositiveChartData(fixChartData(initialChartData.positiveData) || positiveChartData);
+          setNegativeChartData(fixChartData(initialChartData.negativeData) || negativeChartData);
           setPositiveTotal(initialChartData.positiveTotal || 0);
           setNegativeTotal(initialChartData.negativeTotal || 0);
         }
@@ -277,6 +291,7 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
         filters={filters}
         initialDateRange={initialDateRange}
         onViewChange={handleViewChange}
+        view={view}
         activeView={view}
         dataProcessing={dataProcessing}
       />
@@ -333,6 +348,10 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
           <div data-testid="balance-view">
             <BalanceView 
               data={filteredData} 
+              positiveTotal={positiveTotal}
+              negativeTotal={negativeTotal}
+              positiveData={positiveChartData}
+              negativeData={negativeChartData}
               onHover={handleHover}
             />
           </div>

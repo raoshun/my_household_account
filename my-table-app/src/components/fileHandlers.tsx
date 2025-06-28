@@ -252,14 +252,39 @@ export const handleFiles = (files: FileList, setters: Setters = {}) => {
             
             // Chart.js用のデータを生成
             const chartData = splitDataBySign(allData);
-            
-            // 円グラフデータをセット
+
+            // ChartData型への変換関数
+            const fixChartData = (data: unknown): import('../types').ChartData => {
+              // any型をRecord<string, unknown>に変更
+              const chartData = data as Record<string, unknown>;
+              // datasetsの型を厳密化
+              const datasets = Array.isArray(chartData.datasets)
+                ? chartData.datasets.map((ds) => {
+                    const dsObj = ds as Record<string, unknown>;
+                    return {
+                      ...dsObj,
+                      label: typeof dsObj.label === 'string' ? dsObj.label : '',
+                      data: Array.isArray(dsObj.data)
+                        ? dsObj.data.map((v) => Number(v))
+                        : [],
+                    };
+                  })
+                : [];
+              return {
+                labels: Array.isArray(chartData.labels)
+                  ? chartData.labels.map((l) => String(l))
+                  : [],
+                datasets: datasets as import('../types').ChartData['datasets'],
+              };
+            };
+
+            // 円グラフデータをセット（型安全に変換して渡す）
             if (setPositiveChartData) {
-              setPositiveChartData(chartData.positiveData);
+              setPositiveChartData(fixChartData(chartData.positiveData));
             }
-            
+
             if (setNegativeChartData) {
-              setNegativeChartData(chartData.negativeData);
+              setNegativeChartData(fixChartData(chartData.negativeData));
             }
             
             // 合計値をセット
@@ -312,8 +337,8 @@ export const handleFiles = (files: FileList, setters: Setters = {}) => {
           } else {
             // 空の配列の場合も必要なデータを初期化する
             if (setAggregatedData) setAggregatedData({});
-            if (setPositiveChartData) setPositiveChartData({ labels: [], datasets: [{ data: [] }] });
-            if (setNegativeChartData) setNegativeChartData({ labels: [], datasets: [{ data: [] }] });
+            if (setPositiveChartData) setPositiveChartData({ labels: [], datasets: [{ label: '', data: [] }] });
+            if (setNegativeChartData) setNegativeChartData({ labels: [], datasets: [{ label: '', data: [] }] });
             if (setPositiveTotal) setPositiveTotal(0);
             if (setNegativeTotal) setNegativeTotal(0);
             if (setCategoryTotals) setCategoryTotals({});
@@ -360,11 +385,22 @@ export const exportDataToCSV = (data, filename = 'export.csv') => {
   try {
     // ヘッダーを取得
     const headers = Object.keys(data[0]);
-    
+
+    // 値をCSV用にエスケープする関数
+    const escapeCSV = (value: unknown): string => {
+      if (value === undefined || value === null) return '';
+      const str = String(value);
+      if (/[",\n\r]/.test(str)) {
+        // ダブルクォートを2つにエスケープ
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+
     // CSV文字列を作成
     const csvContent = [
       headers.join(','),
-      ...data.map(row => headers.map(header => row[header]).join(','))
+      ...data.map(row => headers.map(header => escapeCSV(row[header])).join(','))
     ].join('\n');
     
     // テスト環境（Node.js）かブラウザ環境かを判定
@@ -401,15 +437,15 @@ export const exportDataToCSV = (data, filename = 'export.csv') => {
 // セッター関数群の型定義
 export type Setters = {
   setData?: (data: Record<string, unknown>[]) => void;
-  setPositiveChartData?: (data: Record<string, unknown>) => void;
-  setNegativeChartData?: (data: Record<string, unknown>) => void;
+  setPositiveChartData?: (data: import('../types').ChartData) => void;
+  setNegativeChartData?: (data: import('../types').ChartData) => void;
   setPositiveTotal?: (n: number) => void;
   setNegativeTotal?: (n: number) => void;
   setAggregatedData?: (data: Record<string, unknown>) => void;
   setCategoryTotals?: (totals: Record<string, number>) => void;
   setIsLoading?: (b: boolean) => void;
   setError?: (msg: string) => void;
-  setMonthlyTrendData?: (data: Record<string, unknown>) => void;
+  setMonthlyTrendData?: (data: import('../types').TrendData) => void;
   setDateRange?: (range: { startDate: string; endDate: string }) => void;
 };
 
