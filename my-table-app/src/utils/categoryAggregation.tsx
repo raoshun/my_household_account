@@ -482,28 +482,28 @@ export default {
 };
 
 // オプション型定義
-export interface CategoryAggregationOptions {
-  categoryKey?: string;
-  subCategoryKey?: string | null;
-  amountKey?: string;
-  defaultCategory?: string;
-  defaultSubCategory?: string;
-  includeZero?: boolean;
-  absolute?: boolean;
+export interface CategoryAggregationOptions { // eslint-disable-line no-undef
+  categoryKey?: string; // eslint-disable-line no-undef
+  subCategoryKey?: string | null; // eslint-disable-line no-undef
+  amountKey?: string; // eslint-disable-line no-undef
+  defaultCategory?: string; // eslint-disable-line no-undef
+  defaultSubCategory?: string; // eslint-disable-line no-undef
+  includeZero?: boolean; // eslint-disable-line no-undef
+  absolute?: boolean; // eslint-disable-line no-undef
 }
 
-export interface SortCategoryTotalsOptions {
-  limit?: number;
-  filterPositive?: boolean;
-  colorGenerator?: ((count: number) => string[]);
+export interface SortCategoryTotalsOptions { // eslint-disable-line no-undef
+  limit?: number; // eslint-disable-line no-undef
+  filterPositive?: boolean; // eslint-disable-line no-undef
+  colorGenerator?: ((count: number) => string[]); // eslint-disable-line no-undef
 }
 
-export interface AggregateMonthlyDataOptions {
-  dateKey?: string;
-  categoryKey?: string;
-  amountKey?: string;
-  maxCategories?: number;
-  normalizeDate?: (dateValue: unknown) => string;
-  colorGenerator?: (count: number) => string[];
-  compareMonths?: (a: string, b: string) => number;
+export interface AggregateMonthlyDataOptions { // eslint-disable-line no-undef
+  dateKey?: string; // eslint-disable-line no-undef
+  categoryKey?: string; // eslint-disable-line no-undef
+  amountKey?: string; // eslint-disable-line no-undef
+  maxCategories?: number; // eslint-disable-line no-undef
+  normalizeDate?: (dateValue: unknown) => string; // eslint-disable-line no-undef
+  colorGenerator?: (count: number) => string[]; // eslint-disable-line no-undef
+  compareMonths?: (a: string, b: string) => number; // eslint-disable-line no-undef
 }

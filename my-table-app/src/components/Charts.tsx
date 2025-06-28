@@ -1,14 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { Chart, ArcElement, PieController, Tooltip, Legend } from 'chart.js';
-import type { ChartsProps } from '../types';
-
-// window拡張型
-interface TestEnvWindow extends Window {
-  __JEST_TEST_ENV__?: boolean;
-  _env_?: { NODE_ENV?: string };
-  testEnvironment?: boolean;
-  process?: { env?: { NODE_ENV?: string } };
-}
+import type { ChartsProps, TestEnvWindow, ChartPluginOptions } from '../types';
 
 // テスト環境を検出する方法を改善（Jest環境検出のための複数の方法を組み合わせ）
 const isTestEnv = () => {
@@ -78,26 +70,16 @@ const doughnutOptions = {
   radius: '90%'  // チャート全体のサイズ
 };
 
-// options型を厳密化
-interface ChartPluginOptions {
-  plugins?: {
-    tooltip?: Record<string, unknown>;
-    legend?: Record<string, unknown>;
-    [key: string]: unknown;
-  };
-  [key: string]: unknown;
-}
-
 const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
-  positiveChartData = { labels: [], datasets: [{ data: [] }] },
-  negativeChartData = { labels: [], datasets: [{ data: [] }] },
+  positiveChartData = { labels: [], datasets: [{ label: '', data: [] }] },
+  negativeChartData = { labels: [], datasets: [{ label: '', data: [] }] },
   positiveTotal = 0,
   negativeTotal = 0,
   options = {},
   onHover,
   onClick,
   chartsKey = 0
-}: ChartsProps & { options?: Record<string, unknown> }) => {
+}: ChartsProps & { options?: ChartPluginOptions }) => {
   const positiveChartRef = useRef<HTMLCanvasElement | null>(null);
   const negativeChartRef = useRef<HTMLCanvasElement | null>(null);
   const positiveChartInstance = useRef<Chart | null>(null);
@@ -244,10 +226,10 @@ const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
       positiveChartInstance.current.options.onClick = (event, elements, chart) => {
         if (elements && elements.length > 0) {
           const index = elements[0].index;
-          const label = chart.data.labels[index];
-          const subtotal = chart.data.datasets[0].data[index];
-          onHover && onHover({ label, subtotal });
-          onClick && onClick({
+          const label = String(chart.data.labels[index]);
+          const subtotal = Number(chart.data.datasets[0].data[index]);
+          if (onHover) onHover({ label, subtotal });
+          if (onClick) onClick({
             label,
             subtotal,
             category: label,
@@ -262,10 +244,10 @@ const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
       negativeChartInstance.current.options.onClick = (event, elements, chart) => {
         if (elements && elements.length > 0) {
           const index = elements[0].index;
-          const label = chart.data.labels[index];
-          const subtotal = chart.data.datasets[0].data[index];
-          onHover && onHover({ label, subtotal });
-          onClick && onClick({
+          const label = String(chart.data.labels[index]);
+          const subtotal = Number(chart.data.datasets[0].data[index]);
+          if (onHover) onHover({ label, subtotal });
+          if (onClick) onClick({
             label,
             subtotal,
             category: label,
@@ -293,7 +275,7 @@ const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
                 subtotal: safePositive.datasets && safePositive.datasets[0] && safePositive.datasets[0].data && safePositive.datasets[0].data[index] || 0,
                 category: label,
                 isPositive: true
-              } as Parameters<NonNullable<typeof onClick>>[0])}>
+              } as Parameters<NonNullable<typeof onClick>>[0])}> {/* eslint-disable-line no-undef */}
                 <span className="label">{label}</span>
                 <span className="value">¥{safeNumberFormat(safePositive.datasets && safePositive.datasets[0] && safePositive.datasets[0].data && safePositive.datasets[0].data[index])}</span>
               </div>
@@ -309,7 +291,7 @@ const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
                 subtotal: safeNegative.datasets && safeNegative.datasets[0] && safeNegative.datasets[0].data && safeNegative.datasets[0].data[index] || 0,
                 category: label,
                 isPositive: false
-              } as Parameters<NonNullable<typeof onClick>>[0])}>
+              } as Parameters<NonNullable<typeof onClick>>[0])}> {/* eslint-disable-line no-undef */}
                 <span className="label">{label}</span>
                 <span className="value">¥{safeNumberFormat(safeNegative.datasets && safeNegative.datasets[0] && safeNegative.datasets[0].data && safeNegative.datasets[0].data[index])}</span>
               </div>

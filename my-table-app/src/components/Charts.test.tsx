@@ -7,20 +7,26 @@ import Charts from './Charts';
 // テスト用データ
 const mockPositiveChartData = {
   labels: ['食費', '交通費', '娯楽'],
-  datasets: [{
-    data: [3000, 1000, 2000],
-    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-    hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
-  }]
+  datasets: [
+    {
+      label: '支出',
+      data: [3000, 1000, 2000],
+      backgroundColor: '#FF6384',
+      hoverBackgroundColor: '#FF6384'
+    }
+  ]
 };
 
 const mockNegativeChartData = {
   labels: ['給料', '賞与'],
-  datasets: [{
-    data: [30000, 5000],
-    backgroundColor: ['#4BC0C0', '#9966FF'],
-    hoverBackgroundColor: ['#4BC0C0', '#9966FF']
-  }]
+  datasets: [
+    {
+      label: '収入',
+      data: [30000, 5000],
+      backgroundColor: '#4BC0C0',
+      hoverBackgroundColor: '#4BC0C0'
+    }
+  ]
 };
 
 // Chart.jsの代わりにモックを使用
@@ -105,8 +111,18 @@ describe('Charts Component', () => {
 
   test('renders mock UI when test environment flag is enabled', () => {
     // テストフラグをセット
-    window.__JEST_TEST_ENV__ = true;
-    render(<Charts />);
+    (window as Window & { __JEST_TEST_ENV__?: boolean }).__JEST_TEST_ENV__ = true;
+    render(
+      <Charts
+        positiveChartData={mockPositiveChartData}
+        negativeChartData={mockNegativeChartData}
+        positiveTotal={6000}
+        negativeTotal={35000}
+        options={{}}
+        onHover={jest.fn()}
+        onClick={jest.fn()}
+      />
+    );
     // mock-charts が描画されること
     const mockContainer = screen.getByTestId('mock-charts');
     expect(mockContainer).toBeInTheDocument();

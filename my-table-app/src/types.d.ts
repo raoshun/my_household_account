@@ -98,4 +98,45 @@ export interface SidebarProps {
   dataProcessing?: boolean;
 }
 
-export {};
+// 家計簿データの型（投資用）
+export type InvestmentRecord = {
+  '日付': string;
+  '大項目': string;
+  '中項目': string;
+  '金額（円）': number;
+  [key: string]: unknown;
+};
+
+// 家計簿データの型（支出カテゴリ用）
+export type ExpenseRecord = {
+  '大項目': string;
+  '中項目': string;
+  '金額（円）': number;
+  [key: string]: unknown;
+};
+
+// Chart.jsテスト環境window拡張
+export interface TestEnvWindow extends Window {
+  __JEST_TEST_ENV__?: boolean;
+  _env_?: { NODE_ENV?: string };
+  testEnvironment?: boolean;
+  process?: { env?: { NODE_ENV?: string } };
+}
+
+// ChartPluginOptions型
+export interface ChartPluginOptions {
+  plugins?: {
+    tooltip?: Record<string, unknown>;
+    legend?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+// 予測APIの返り値型
+export type PredictionResult = {
+  nextMonths: string[];
+  nextMonth: string;
+  predictions: { [category: string]: number[] };
+  method: string;
+};

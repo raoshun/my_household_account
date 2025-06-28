@@ -2,14 +2,14 @@
 import { handleFiles } from '../components/fileHandlers';
 import { parse } from 'papaparse';
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
-import { createMockSetters } from '../test-utils/mockHelpers';
+import { createMockSetters, createMockFileList } from '../test-utils/mockHelpers';
 
 // モジュールをモック化
 jest.mock('papaparse');
 jest.mock('../utils', () => ({
   splitDataBySign: () => ({
-    positiveData: { labels: [], datasets: [{ data: [] }] },
-    negativeData: { labels: [], datasets: [{ data: [] }] },
+    positiveData: { labels: [], datasets: [{ label: '', data: [] }] },
+    negativeData: { labels: [], datasets: [{ label: '', data: [] }] },
     positiveTotal: 0,
     negativeTotal: 0
   })
@@ -22,25 +22,29 @@ jest.mock('iconv-lite', () => ({
   decode: () => ''
 }));
 
-// TextEncoderのモックを追加
-globalThis.TextEncoder = class {
-  encode(str) {
-    return new Uint8Array([...str].map(c => c.charCodeAt(0)));
-  }
-};
+// TextEncoderの型エラー対応
+Object.defineProperty(global, 'TextEncoder', {
+  value: window.TextEncoder,
+  writable: true,
+});
+
+// FileReaderのmockとstaticプロパティ
+const fileReaderMock = jest.fn().mockImplementation(() => ({
+  readAsText: jest.fn(),
+  addEventListener: jest.fn(),
+  removeEventListener: jest.fn(),
+  dispatchEvent: jest.fn(),
+  onload: null,
+  onerror: null,
+  result: null,
+}));
+Object.assign(fileReaderMock, { EMPTY: 0, LOADING: 1, DONE: 2 });
+Object.defineProperty(window, 'FileReader', { value: fileReaderMock });
+
 
 describe('データ件数のテスト', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // FileReaderのモックを改善
-    window.FileReader = jest.fn().mockImplementation(() => {
-      return {
-        readAsText: jest.fn(),
-        readAsArrayBuffer: jest.fn(),
-        onload: null // 後でテスト内で関数を直接設定できるようにする
-      };
-    });
   });
   
   test('空のCSVファイルを読み込むと0件になること', () => {
@@ -49,11 +53,10 @@ describe('データ件数のテスト', () => {
     });
     const mockFile = new File([''], 'empty.csv', { type: 'text/csv' });
     const setters = createMockSetters();
-    handleFiles([mockFile], setters);
-    const reader = window.FileReader.mock.instances[0];
-    reader.onload = jest.fn(e => {
-      setters.setData([]);
-    });
+    const fileList = createMockFileList([mockFile]);
+    handleFiles(fileList, setters);
+    const reader = ((window.FileReader as unknown) as jest.Mock).mock.instances[0];
+    reader.onload = jest.fn(() => { setters.setData([]); });
     reader.onload({ target: { result: new Uint8Array([]) } });
     expect(setters.setData).toHaveBeenCalledWith([]);
   });
@@ -71,11 +74,10 @@ describe('データ件数のテスト', () => {
     });
     const mockFile = new File(['dummy csv content'], 'test.csv', { type: 'text/csv' });
     const setters = createMockSetters();
-    handleFiles([mockFile], setters);
-    const reader = window.FileReader.mock.instances[0];
-    reader.onload = jest.fn(e => {
-      setters.setData(fiveRecords);
-    });
+    const fileList = createMockFileList([mockFile]);
+    handleFiles(fileList, setters);
+    const reader = ((window.FileReader as unknown) as jest.Mock).mock.instances[0];
+    reader.onload = jest.fn(() => { setters.setData(fiveRecords); });
     reader.onload({ target: { result: new Uint8Array([1, 2, 3]) } });
     expect(setters.setData).toHaveBeenCalled();
     const passedData = setters.setData.mock.calls[0][0];
@@ -93,9 +95,10 @@ describe('データ件数のテスト', () => {
     });
     const mockFile = new File(['invalid,csv,format'], 'invalid.csv', { type: 'text/csv' });
     const setters = createMockSetters();
-    handleFiles([mockFile], setters);
-    const reader = window.FileReader.mock.instances[0];
-    reader.onload = jest.fn(e => {
+    const fileList = createMockFileList([mockFile]);
+    handleFiles(fileList, setters);
+    const reader = ((window.FileReader as unknown) as jest.Mock).mock.instances[0];
+    reader.onload = jest.fn(() => {
       setters.setData([
         { '大項目': '食費', '金額（円）': 1000 },
         { '大項目': '交通費', '中項目': '電車' }
@@ -133,12 +136,13 @@ describe('データ件数のテスト', () => {
       { readAsText: jest.fn(), onload: null },
       { readAsText: jest.fn(), onload: null }
     ];
-    window.FileReader = jest.fn().mockImplementation(() => mockReaders[fileReaderIndex++]);
-    handleFiles(mockFiles, setters);
+    window.FileReader = jest.fn().mockImplementation(() => mockReaders[fileReaderIndex++]) as unknown as typeof FileReader;
+    const fileList = createMockFileList(mockFiles);
+    handleFiles(fileList, setters);
     const onLoadEvent1 = { target: { result: new Uint8Array([1, 2, 3]) } };
     const onLoadEvent2 = { target: { result: new Uint8Array([4, 5, 6]) } };
-    mockReaders[0].onload = jest.fn(event => setters.setData(firstFileData.concat(secondFileData)));
-    mockReaders[1].onload = jest.fn(event => setters.setData(firstFileData.concat(secondFileData)));
+    mockReaders[0].onload = jest.fn(() => setters.setData(firstFileData.concat(secondFileData)));
+    mockReaders[1].onload = jest.fn(() => setters.setData(firstFileData.concat(secondFileData)));
     mockReaders[0].onload(onLoadEvent1);
     mockReaders[1].onload(onLoadEvent2);
     expect(setters.setData).toHaveBeenCalledTimes(2);

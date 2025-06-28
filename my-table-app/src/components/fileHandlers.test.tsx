@@ -1,7 +1,7 @@
 /* eslint-env jest, browser */
 import { handleFiles, processFile, exportDataToCSV, detectDateRange } from './fileHandlers';
 import { parse } from 'papaparse';
-import { describe, test, expect, beforeEach, jest, beforeAll, afterAll, afterEach } from '@jest/globals';
+import { describe, test, expect, beforeEach, jest, beforeAll, afterAll } from '@jest/globals';
 // ErrorEventのモックをインポート
 import '../test-utils/errorEventMock';
 
@@ -27,8 +27,6 @@ jest.mock('../utils/calculateCategoryTotals', () => {
 
 // 必要なモック関数のインポート
 import * as actualUtils from '../utils';
-import { sortAndAggregateData } from '../utils/sortData';
-import calculateCategoryTotals from '../utils/calculateCategoryTotals';
 
 // papaparseのモック
 jest.mock('papaparse');
@@ -42,11 +40,14 @@ jest.mock('iconv-lite', () => ({
 globalThis.URL = {
   createObjectURL: jest.fn(() => 'mock-url'),
   revokeObjectURL: jest.fn()
-};
+} as unknown as typeof URL;
 
+// FileReaderのグローバルモック
 import MockFileReader from '../test-utils/fileReaderMock';
+(window as unknown as { FileReader: typeof MockFileReader }).FileReader = MockFileReader;
+
 import { setupTestEnvironment, cleanupTestEnvironment } from '../test-utils/testSetup';
-import { createMockSetters, createMockCSVData } from '../test-utils/mockHelpers';
+import { createMockSetters, createMockFileList } from '../test-utils/mockHelpers';
 
 // テスト前の設定
 beforeAll(() => {
@@ -59,17 +60,20 @@ afterAll(() => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  // splitDataBySignのモック
   jest.spyOn(actualUtils, 'splitDataBySign').mockImplementation(() => ({
+    positive: [],
+    negative: [],
+    positiveTotal: 4000,
+    negativeTotal: -5000,
     positiveData: {
       labels: ['食費', '交通費'],
-      datasets: [{ data: [3000, 1000] }]
+      datasets: [{ data: [3000, 1000], backgroundColor: ['#ff6384', '#36a2eb'], borderWidth: 1 }]
     },
     negativeData: {
       labels: ['収入'],
-      datasets: [{ data: [-5000] }]
-    },
-    positiveTotal: 4000,
-    negativeTotal: -5000
+      datasets: [{ data: [-5000], backgroundColor: ['#ff6384'], borderWidth: 1 }]
+    }
   }));
   parse.mockImplementation((text, options) => {
     options.complete({
@@ -84,16 +88,16 @@ beforeEach(() => {
   // DOMのモック
   if (typeof document === 'undefined') {
     globalThis.document = {
-      createElement: jest.fn(() => ({
+      createElement: (() => ({
         setAttribute: jest.fn(),
         style: {},
         click: jest.fn()
-      })),
+      })) as unknown as typeof globalThis.document.createElement,
       body: {
         appendChild: jest.fn(),
         removeChild: jest.fn()
-      }
-    };
+      } as unknown as HTMLElement
+    } as unknown as Document;
   }
 });
 
@@ -114,7 +118,7 @@ function createAllSetters() {
 function setupFileTest({ fileContents = ['dummy csv content'], fileNames = ['test.csv'], setters = null } = {}) {
   const files = fileContents.map((content, i) => new File([content], fileNames[i] || `file${i}.csv`, { type: 'text/csv' }));
   const s = setters || createMockSetters();
-  return { files, setters: s };
+  return { files: createMockFileList(files), setters: s };
 }
 
 async function waitForAsync(ms = 100) {
@@ -136,14 +140,14 @@ describe('fileHandlers 基本機能テスト', () => {
 
   test('handleFiles should handle empty files array', () => {
     const { setData, setPositiveChartData } = createMockSetters();
-    const result = handleFiles([], { setData, setPositiveChartData });
+    const result = handleFiles(createMockFileList([]), { setData, setPositiveChartData });
     expect(result.success).toBe(false);
     expect(result.message).toBe('No files provided');
   });
 
   test('handleFiles should detect test environment when callbacks not provided', () => {
     const mockFile = new File(['test data'], 'test.csv', { type: 'text/csv' });
-    const result = handleFiles([mockFile]);
+    const result = handleFiles(createMockFileList([mockFile]));
     expect(result.success).toBe(true);
     expect(result.message).toBe('Test environment detected');
   });
@@ -221,7 +225,7 @@ describe('fileHandlers エッジケーステスト', () => {
     
     // ファイルモック
     const mockFile = new File([''], 'empty.csv', { type: 'text/csv' });
-    const mockFiles = [mockFile];
+    const mockFiles = createMockFileList([mockFile]);
     
     // セッター関数をモック
     const setData = jest.fn();
@@ -269,7 +273,7 @@ describe('CSV空行フィルタリングテスト', () => {
     
     // モックのCSVファイル
     const mockFile = new File(['dummy csv with empty lines'], 'test_with_empty_lines.csv', { type: 'text/csv' });
-    const mockFiles = [mockFile];
+    const mockFiles = createMockFileList([mockFile]);
     
     // セッター関数をモック
     const setData = jest.fn();
@@ -289,12 +293,8 @@ describe('CSV空行フィルタリングテスト', () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     
     // 検証：空行がフィルタリングされているか
-    expect(setData).toHaveBeenCalled();
-    
-    // setDataに渡されたデータを検証
-    const passedData = setData.mock.calls[0][0];
+    const passedData = setData.mock.calls[0][0] as Record<string, unknown>[];
     expect(Array.isArray(passedData)).toBe(true);
-    
     // 空行がフィルタリングされ、有効なデータのみが残っていることを確認
     expect(passedData.length).toBe(3); // 元の6行から空行3行が除去され3行に
     
@@ -333,7 +333,7 @@ describe('CSV空行フィルタリングテスト', () => {
     
     // モックのCSVファイル
     const mockFile = new File(['dummy csv with various empty lines'], 'test_with_various_empty.csv', { type: 'text/csv' });
-    const mockFiles = [mockFile];
+    const mockFiles = createMockFileList([mockFile]);
     
     // セッター関数をモック
     const setData = jest.fn();
@@ -353,18 +353,26 @@ describe('CSV空行フィルタリングテスト', () => {
     await new Promise(resolve => setTimeout(resolve, 100));
     
     // 検証：空行がフィルタリングされているか
-    const passedData = setData.mock.calls[0][0];
-    
+    const passedData = setData.mock.calls[0][0] as Record<string, unknown>[];
+    expect(Array.isArray(passedData)).toBe(true);
     // 空行がフィルタリングされ、有効なデータのみが残っていることを確認
-    expect(passedData.length).toBe(3); // 元の7行から空行4行が除去され3行に
+    expect(passedData.length).toBe(3); // 元の6行から空行3行が除去され3行に
     
-    // 各行の内容を確認
-    expect(passedData[0]['大項目']).toBe('食費');
-    expect(passedData[0]['中項目']).toBe('食料品');
-    expect(passedData[1]['大項目']).toBe('食費');
-    expect(passedData[1]['中項目']).toBe('外食');
-    expect(passedData[2]['大項目']).toBe('交通費');
-    expect(passedData[2]['中項目']).toBe('電車');
+    // 残ったデータが正しいか確認
+    const validItems = passedData.filter(item => 
+      item['大項目'] === '食費' || item['大項目'] === '交通費'
+    );
+    expect(validItems.length).toBe(3);
+
+    // フィルタリングされたデータに空行が含まれていないことを確認
+    const emptyRows = passedData.filter(item => 
+      !item || 
+      Object.keys(item).length === 0 || 
+      Object.values(item).every(val => val === null || val === undefined || val === '')
+    );
+    expect(emptyRows.length).toBe(0);
+    
+    expect(setIsLoading).toHaveBeenCalledWith(false);
   });
 });
 

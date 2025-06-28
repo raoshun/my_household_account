@@ -1,5 +1,8 @@
 // FileReaderのモック（全テスト共通で利用可能）
 class MockFileReader {
+  static EMPTY = 0;
+  static LOADING = 1;
+  static DONE = 2;
   onload: ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null = null;
   onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => void) | null = null;
   result: string | ArrayBuffer | null = null;
@@ -15,7 +18,8 @@ class MockFileReader {
     }, 0);
   }
 
-  readAsArrayBuffer(_file: { type: string }) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  readAsArrayBuffer(_: { type: string }) {
     setTimeout(() => {
       const mockData = new Uint8Array([97, 98, 99]); // "abc"
       this.result = mockData.buffer;

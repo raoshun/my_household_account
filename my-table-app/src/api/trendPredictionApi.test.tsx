@@ -1,4 +1,5 @@
 import { getMockPrediction } from './trendPredictionApi';
+import { PredictionResult, TrendData } from '../types';
 
 // fetch のモック
 global.fetch = jest.fn();
@@ -6,12 +7,13 @@ global.fetch = jest.fn();
 describe('trendPredictionApi', () => {
   beforeEach(() => {
     // テストごとに fetch のモックをリセット
-    fetch.mockClear();
+    (fetch as jest.Mock).mockClear();
   });
 
   describe('getMockPrediction', () => {
     it('空のデータに対して適切な応答を返す', async () => {
-      const result = await getMockPrediction({});
+      const emptyTrendData: TrendData = { labels: [], datasets: [] };
+      const result = await getMockPrediction(emptyTrendData) as PredictionResult;
       
       expect(result).toHaveProperty('nextMonths');
       expect(result).toHaveProperty('predictions');
@@ -36,13 +38,8 @@ describe('trendPredictionApi', () => {
         ]
       };
       
-      // デフォルト設定での予測
-      const result = await getMockPrediction(trendData);
-      
-      // 結果を検証
-      expect(result).toHaveProperty('nextMonths');
+      const result = await getMockPrediction(trendData) as PredictionResult;
       expect(result.nextMonths).toHaveLength(3); // デフォルトは3ヶ月
-      expect(result).toHaveProperty('predictions');
       expect(Object.keys(result.predictions)).toHaveLength(2); // 2つのカテゴリ
       expect(result.predictions).toHaveProperty('食費');
       expect(result.predictions).toHaveProperty('交通費');
@@ -63,12 +60,12 @@ describe('trendPredictionApi', () => {
       };
       
       // 1ヶ月の予測
-      const result1Month = await getMockPrediction(trendData, { forecastPeriods: 1 });
+      const result1Month = await getMockPrediction(trendData, { forecastPeriods: 1 }) as PredictionResult;
       expect(result1Month.nextMonths).toHaveLength(1);
       expect(result1Month.predictions['食費']).toHaveLength(1);
       
       // 2ヶ月の予測
-      const result2Month = await getMockPrediction(trendData, { forecastPeriods: 2 });
+      const result2Month = await getMockPrediction(trendData, { forecastPeriods: 2 }) as PredictionResult;
       expect(result2Month.nextMonths).toHaveLength(2);
       expect(result2Month.predictions['食費']).toHaveLength(2);
     });
@@ -89,7 +86,7 @@ describe('trendPredictionApi', () => {
       const methodsToTest = ['auto', 'arima', 'exponential', 'seasonal_ma'];
       
       for (const method of methodsToTest) {
-        const result = await getMockPrediction(trendData, { method });
+        const result = await getMockPrediction(trendData, { method }) as PredictionResult;
         expect(result).toHaveProperty('method');
         expect(result.method).toBe(method);
       }
@@ -111,7 +108,7 @@ describe('trendPredictionApi', () => {
       const result = await getMockPrediction(trendData, { 
         method: 'seasonal_ma',
         forecastPeriods: 3 
-      });
+      }) as PredictionResult;
       
       // 結果を検証
       expect(result).toHaveProperty('method');

@@ -22,3 +22,20 @@ export function createMockCSVData() {
     { '大項目': '交通費', '中項目': '電車', '金額（円）': -500 }
   ];
 }
+
+// FileList互換のモックを生成するヘルパー
+export function createMockFileList(files: File[]): FileList {
+  const fileList: Partial<FileList> = {
+    length: files.length,
+    item: (i: number) => files[i] || null,
+    [Symbol.iterator]: function* () {
+      for (let i = 0; i < files.length; i++) {
+        yield files[i];
+      }
+    }
+  };
+  for (let i = 0; i < files.length; i++) {
+    (fileList as unknown as { [key: number]: File })[i] = files[i];
+  }
+  return fileList as FileList;
+}

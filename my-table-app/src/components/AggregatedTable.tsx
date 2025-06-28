@@ -1,10 +1,6 @@
 import React from 'react';
 import './AggregatedTable.css';
-
-// 型定義
-interface AggregatedTableProps {
-  aggregatedData: any;
-}
+import type { AggregatedTableProps } from '../types';
 
 const AggregatedTable: React.FC<AggregatedTableProps> = ({ aggregatedData = [] }) => {
   // 集計データが空の場合の処理

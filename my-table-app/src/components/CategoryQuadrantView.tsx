@@ -1,4 +1,5 @@
 import type { CategoryQuadrantViewProps } from '../types';
+import type { ExpenseRecord } from '../types';
 import React, { useState, useEffect } from 'react';
 import './CategoryQuadrantView.css';
 
@@ -114,12 +115,12 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
     }
     
     // すべての支出カテゴリ（「大項目 - 中項目」）を取得（重複排除）
-    const allExpenseCategories = [...new Set(
-      data
-        .filter(item => item['金額（円）'] < 0 && item['大項目'] && item['中項目']) // 中項目が存在する支出データのみ対象
-        .map(item => `${item['大項目']} - ${item['中項目']}`) // 「大項目 - 中項目」形式のキーを作成
-        .filter(Boolean) // 空文字などを除外
-    )];
+    const allExpenseCategories = Array.from(new Set(
+      (data as ExpenseRecord[])
+        .filter(item => Number(item['金額（円）']) < 0 && item['大項目'] && item['中項目'])
+        .map(item => `${item['大項目']} - ${item['中項目']}`)
+        .filter(Boolean)
+    ));
     
     // 未割り当てのカテゴリキーを特定
     const unassignedCategoryKeys = allExpenseCategories.filter(
@@ -282,9 +283,9 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
     };
     
     // データを手動割り当てに基づいて分類
-    data.forEach(item => {
+    (data as ExpenseRecord[]).forEach(item => {
       // 収入や金額のないデータ、大項目・中項目がないデータはスキップ
-      if (item['金額（円）'] >= 0 || !item['大項目'] || !item['中項目']) return;
+      if (Number(item['金額（円）']) >= 0 || !item['大項目'] || !item['中項目']) return;
       
       const categoryKey = `${item['大項目']} - ${item['中項目']}`; // 「大項目 - 中項目」キー
       const quadrant = categoryAssignments[categoryKey]; // キーで分類を取得
@@ -332,8 +333,8 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
   // カテゴリの分類状況の要約を計算
   // totalCategoriesの計算方法をgroupedUnassignedCategoriesに合わせて変更
   const totalAssignedCount = Object.keys(categoryAssignments).length;
-  const totalUnassignedCount = Object.values(groupedUnassignedCategories).reduce((sum, arr) => sum + ((arr as string[])?.length ?? 0), 0);
-  const totalCategories = totalAssignedCount + totalUnassignedCount;
+  const totalUnassignedCount = Object.values(groupedUnassignedCategories).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+  const totalCategories = totalAssignedCount + Number(totalUnassignedCount);
   const assignmentProgress = totalCategories > 0 ? (totalAssignedCount / totalCategories) * 100 : 0;
 
   // 象限内のカテゴリ表示をレンダリングする関数
@@ -420,7 +421,6 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
 
   return (
     <div className="category-quadrant-container">
-      {console.log('CategoryQuadrantView rendered')}
       <h2 className="category-quadrant-title">支出カテゴリ四分法</h2>
 
       {/* 設定エクスポート・インポートボタン */}

@@ -132,8 +132,8 @@ jest.mock('./components/fileHandlers', () => {
           { label: '収入', data: [5000, 0], borderColor: '#0000ff' }
         ]
       };
-      const positiveChartDataMock = { labels: ['収入'], datasets: [{ data: [5000] }] };
-      const negativeChartDataMock = { labels: ['食費', '交通費'], datasets: [{ data: [3000, 500] }] }; // チャート用に絶対値
+      const positiveChartDataMock = { labels: ['収入'], datasets: [{ label: '収入', data: [5000] }] };
+      const negativeChartDataMock = { labels: ['食費', '交通費'], datasets: [{ label: '支出', data: [3000, 500] }] }; // チャート用に絶対値
       
       // モックの日付範囲
       const mockDateRange = { startDate: '2023-01-05', endDate: '2023-02-15' };

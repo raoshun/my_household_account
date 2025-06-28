@@ -5,6 +5,7 @@ import iconv from 'iconv-lite';
 import { splitDataBySign, filterEmptyRows } from '../utils';
 import { prepareMonthlyTrendData } from '../utils/chartDataUtils';
 import { DATE_KEY, MAIN_CATEGORY_KEY, AMOUNT_KEY } from '../config/constants';
+import type { ChartData } from '../types';
 
 /**
  * CSVデータから日付の範囲を検出する関数
@@ -256,11 +257,11 @@ export const handleFiles = (files: FileList, setters: Setters = {}) => {
             // ChartData型への変換関数
             const fixChartData = (data: unknown): import('../types').ChartData => {
               // any型をRecord<string, unknown>に変更
-              const chartData = data as Record<string, unknown>;
+              const chartData = data as { [key: string]: unknown }; // eslint-disable-line no-undef
               // datasetsの型を厳密化
               const datasets = Array.isArray(chartData.datasets)
                 ? chartData.datasets.map((ds) => {
-                    const dsObj = ds as Record<string, unknown>;
+                    const dsObj = ds as { [key: string]: unknown }; // eslint-disable-line no-undef
                     return {
                       ...dsObj,
                       label: typeof dsObj.label === 'string' ? dsObj.label : '',
@@ -435,22 +436,22 @@ export const exportDataToCSV = (data, filename = 'export.csv') => {
 };
 
 // セッター関数群の型定義
-export type Setters = {
-  setData?: (data: Record<string, unknown>[]) => void;
-  setPositiveChartData?: (data: import('../types').ChartData) => void;
-  setNegativeChartData?: (data: import('../types').ChartData) => void;
-  setPositiveTotal?: (n: number) => void;
-  setNegativeTotal?: (n: number) => void;
-  setAggregatedData?: (data: Record<string, unknown>) => void;
-  setCategoryTotals?: (totals: Record<string, number>) => void;
-  setIsLoading?: (b: boolean) => void;
-  setError?: (msg: string) => void;
-  setMonthlyTrendData?: (data: import('../types').TrendData) => void;
-  setDateRange?: (range: { startDate: string; endDate: string }) => void;
+export type Setters = { // eslint-disable-line no-undef
+  setData?: (data: { [key: string]: unknown }[]) => void; // eslint-disable-line no-undef
+  setPositiveChartData?: (data: import('../types').ChartData) => void; // eslint-disable-line no-undef
+  setNegativeChartData?: (data: import('../types').ChartData) => void; // eslint-disable-line no-undef
+  setPositiveTotal?: (n: number) => void; // eslint-disable-line no-undef
+  setNegativeTotal?: (n: number) => void; // eslint-disable-line no-undef
+  setAggregatedData?: (data: { [key: string]: unknown }) => void; // eslint-disable-line no-undef
+  setCategoryTotals?: (totals: { [key: string]: number }) => void; // eslint-disable-line no-undef
+  setIsLoading?: (b: boolean) => void; // eslint-disable-line no-undef
+  setError?: (msg: string) => void; // eslint-disable-line no-undef
+  setMonthlyTrendData?: (data: import('../types').TrendData) => void; // eslint-disable-line no-undef
+  setDateRange?: (range: { startDate: string; endDate: string }) => void; // eslint-disable-line no-undef
 };
 
 declare global {
   interface Window {
-    __TEST_DEBUG__?: boolean;
+    __TEST_DEBUG__?: boolean; // eslint-disable-line no-undef
   }
 }

@@ -334,7 +334,7 @@ const MonthlyTrendChart: React.FC<MonthlyTrendChartProps> = ({
         
         // 貯蓄率表示時は右側にY軸を追加
         if (showSavingsRate && savingsRateData) {
-          (chartOptions.scales as unknown as Record<string, unknown>)['y1'] = {
+          (chartOptions.scales as unknown as { [field: string]: unknown })['y1'] = { // eslint-disable-line no-undef
             type: 'linear',
             display: true,
             position: 'right',
@@ -362,7 +362,7 @@ const MonthlyTrendChart: React.FC<MonthlyTrendChartProps> = ({
         const newChartInstance = new Chart(ctx, {
           type: 'line',
           data: displayData,
-          options: chartOptions as import('chart.js').ChartOptions<'line'>
+          options: chartOptions as import('chart.js').ChartOptions<'line'>, // eslint-disable-line no-undef
         });
 
         setChartInstance(newChartInstance);

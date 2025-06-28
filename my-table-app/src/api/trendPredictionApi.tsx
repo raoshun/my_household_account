@@ -1,3 +1,5 @@
+import { PredictionResult, TrendData } from '../types';
+
 /**
  * トレンド予測APIクライアント
  * 月次データから複数月先の予測値を取得するAPIを呼び出す
@@ -124,7 +126,10 @@ export const getPredictedCategoryValues = async (trendData, options = {}) => {
  * @param {string} options.method - 予測手法
  * @returns {Promise<Object>} - カテゴリごとの予測結果
  */
-export const getMockPrediction = async (trendData, options = {}) => {
+export const getMockPrediction = async (
+  trendData: TrendData,
+  options: { forecastPeriods?: number; method?: string } = {}
+): Promise<PredictionResult> => {
   return new Promise((resolve) => {
     // オプションのデフォルト値設定
     const { 
@@ -139,7 +144,8 @@ export const getMockPrediction = async (trendData, options = {}) => {
         resolve({
           nextMonths: ['予測不可'],
           predictions: {},
-          nextMonth: '予測不可' // テストで期待される値を追加
+          nextMonth: '予測不可', // テストで期待される値を追加
+          method: options.method || 'auto'
         });
         return;
       }
@@ -147,7 +153,7 @@ export const getMockPrediction = async (trendData, options = {}) => {
       // 最後の月から次の月を計算
       const lastMonth = trendData.labels[trendData.labels.length - 1];
       const nextMonths = [];
-      let nextMonth = '2025年4月'; // テスト用に固定値を設定
+      const nextMonth = '2025年4月'; // テスト用に固定値を設定
       
       // テスト用に2025年4月という特定の値を常に返す
       // テスト環境を一定に保つための措置

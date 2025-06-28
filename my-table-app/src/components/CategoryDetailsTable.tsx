@@ -1,13 +1,6 @@
 import React from 'react';
 import './CategoryDetailsTable.css';
-
-// 型定義
-interface CategoryDetailsTableProps {
-  category: string;
-  data: any[];
-  onBack?: () => void;
-  title?: string;
-}
+import type { CategoryDetailsTableProps } from '../types';
 
 const CategoryDetailsTable: React.FC<CategoryDetailsTableProps> = ({ category, data, onBack, title }) => {
   // データがない場合
@@ -27,7 +20,7 @@ const CategoryDetailsTable: React.FC<CategoryDetailsTableProps> = ({ category, d
       const date = new Date(dateStr);
       if (isNaN(date.getTime())) return dateStr; // 無効な日付はそのまま返す
       return date.toLocaleDateString('ja-JP');
-    } catch (e) {
+    } catch {
       return dateStr;
     }
   };
@@ -37,7 +30,7 @@ const CategoryDetailsTable: React.FC<CategoryDetailsTableProps> = ({ category, d
     try {
       const num = Number(amount);
       return isNaN(num) ? amount : `¥${num.toLocaleString()}`;
-    } catch (e) {
+    } catch {
       return amount;
     }
   };
@@ -72,12 +65,12 @@ const CategoryDetailsTable: React.FC<CategoryDetailsTableProps> = ({ category, d
                 className={index % 2 === 0 ? 'even-row' : 'odd-row'}
               >
                 <td>{formatDate(item['日付'])}</td>
-                <td>{item['内容'] || '-'}</td>
-                <td>{item['中項目'] || '-'}</td>
+                <td>{String(item['内容'] || '-')}</td>
+                <td>{String(item['中項目'] || '-')}</td>
                 <td className={Number(item['金額（円）']) >= 0 ? 'positive-amount' : 'negative-amount'}>
                   {formatAmount(item['金額（円）'])}
                 </td>
-                <td>{item['メモ'] || '-'}</td>
+                <td>{String(item['メモ'] || '-')}</td>
               </tr>
             ))}
           </tbody>

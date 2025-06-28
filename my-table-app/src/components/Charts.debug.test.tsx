@@ -42,20 +42,26 @@ import Charts from './Charts';
 // テスト用データ
 const mockPositiveChartData = {
   labels: ['食費', '交通費', '娯楽'],
-  datasets: [{
-    data: [3000, 1000, 2000],
-    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-    hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
-  }]
+  datasets: [
+    {
+      label: '支出',
+      data: [3000, 1000, 2000],
+      backgroundColor: '#FF6384',
+      hoverBackgroundColor: '#FF6384'
+    }
+  ]
 };
 
 const mockNegativeChartData = {
   labels: ['給料', '賞与'],
-  datasets: [{
-    data: [30000, 5000],
-    backgroundColor: ['#4BC0C0', '#9966FF'],
-    hoverBackgroundColor: ['#4BC0C0', '#9966FF']
-  }]
+  datasets: [
+    {
+      label: '収入',
+      data: [30000, 5000],
+      backgroundColor: '#4BC0C0',
+      hoverBackgroundColor: '#4BC0C0'
+    }
+  ]
 };
 
 describe('Charts Component Debug', () => {

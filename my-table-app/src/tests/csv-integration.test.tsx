@@ -1,8 +1,12 @@
 /* eslint-env jest, browser */
 import { handleFiles } from '../components/fileHandlers';
 import { parse } from 'papaparse';
-import { createMockSetters } from '../test-utils/mockHelpers';
 import { describe, test, expect, beforeEach, jest } from '@jest/globals';
+import MockFileReader from '../test-utils/fileReaderMock';
+import { createMockFileList } from '../test-utils/mockHelpers';
+
+// FileReaderのグローバルモック
+(window as unknown as { FileReader: typeof MockFileReader }).FileReader = MockFileReader;
 
 // --- 型エラー解消用のグローバルモック ---
 // TextEncoderの型エラー対策
@@ -19,33 +23,6 @@ class MockTextEncoder {
 }
 globalThis.TextEncoder = MockTextEncoder;
 
-// FileReaderの型エラー対策
-const MockFileReader = jest.fn().mockImplementation(() => {
-  return {
-    readAsText: jest.fn(),
-    readAsArrayBuffer: jest.fn(),
-    onload: null
-  };
-});
-MockFileReader.prototype.EMPTY = 0;
-MockFileReader.prototype.LOADING = 1;
-MockFileReader.prototype.DONE = 2;
-MockFileReader.prototype = Object.create(Object.prototype);
-window.FileReader = MockFileReader;
-
-// FileListの型エラー対策
-function createMockFileList(files) {
-  const fileList = {
-    length: files.length,
-    item: (i) => files[i] || null
-  };
-  for (let i = 0; i < files.length; i++) {
-    fileList[i] = files[i];
-  }
-  return fileList;
-}
-// --- ここまで ---
-
 // 型アサーション式（as any など）は TypeScript ファイルでのみ有効です。JSファイルでは使えません。
 // そのため、型アサーションを削除し、通常の配列や値として記述してください。
 // 例: const arr = [];
@@ -59,8 +36,8 @@ let mockSplitDataResult = {
   negative: [],
   positiveTotal: 0,
   negativeTotal: 0,
-  positiveData: { labels: [], datasets: [{ data: [] }] },
-  negativeData: { labels: [], datasets: [{ data: [] }] }
+  positiveData: { labels: [], datasets: [{ label: '', data: [] }] },
+  negativeData: { labels: [], datasets: [{ label: '', data: [] }] }
 };
 
 jest.mock('../utils', () => {
@@ -91,15 +68,6 @@ describe('CSV読み込み統合テスト', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // FileReaderのモックを改善
-    window.FileReader = jest.fn().mockImplementation(() => {
-      return {
-        readAsText: jest.fn(),
-        readAsArrayBuffer: jest.fn(),
-        onload: null
-      };
-    });
-    
     parse.mockImplementation((text, options) => {
       const data = [
         { '計算対象': '対象', '日付': '2023/04/01', '内容': 'スーパー', '金額（円）': 1000, '保有金融機関': '三菱UFJ銀行', '大項目': '食費', '中項目': '食料品', 'メモ': '', '振替': '' },
@@ -116,21 +84,15 @@ describe('CSV読み込み統合テスト', () => {
       negative: [],
       positiveTotal: 0,
       negativeTotal: 0,
-      positiveData: { labels: [], datasets: [{ data: [] }] },
-      negativeData: { labels: [], datasets: [{ data: [] }] }
+      positiveData: { labels: [], datasets: [{ label: '', data: [] }] },
+      negativeData: { labels: [], datasets: [{ label: '', data: [] }] }
     };
   });
 
-  // 必要な関数を定義
-  const processCSVData = (data) => {
-    // 簡易的なモック実装
-    return mockSplitDataResult;
-  };
-  
   test('CSV読み込みが正しく処理されること', async () => {
     // モックのFileオブジェクト
     const mockFile = new File([csvSample], 'test.csv', { type: 'text/csv' });
-    const mockFiles = [mockFile];
+    const mockFiles = createMockFileList([mockFile]) as FileList;
     
     // テスト用データを設定
     mockSplitDataResult = {
@@ -138,8 +100,8 @@ describe('CSV読み込み統合テスト', () => {
       negative: [],
       positiveTotal: 3500,
       negativeTotal: 0,
-      positiveData: { labels: ['食費', '交通費'], datasets: [{ data: [3000, 500] }] },
-      negativeData: { labels: [], datasets: [{ data: [] }] }
+      positiveData: { labels: ['食費', '交通費'], datasets: [{ label: '', data: [3000, 500] }] },
+      negativeData: { labels: [], datasets: [{ label: '', data: [] }] }
     };
     
     // handleFilesが期待する全てのセッター関数をモック
@@ -152,27 +114,23 @@ describe('CSV読み込み統合テスト', () => {
       setIsLoading: jest.fn(),
       setError: jest.fn()
     };
-    handleFiles(createMockFileList(mockFiles), setters);
-    
-    // onload関数を直接定義して呼び出す
-    const reader = window.FileReader.mock.instances[0];
-    const encodedData = new TextEncoder().encode(csvSample);
-    reader.onload = jest.fn(event => {
+    handleFiles(mockFiles, setters);
+    // FileReaderインスタンスを直接生成
+    const reader = new window.FileReader();
+    reader.onload = () => {
       setters.setData(mockSplitDataResult);
       setters.setPositiveChartData(mockSplitDataResult.positiveData);
       setters.setNegativeChartData(mockSplitDataResult.negativeData);
       setters.setPositiveTotal(3500);
-    });
-    // 非同期でonloadを呼び出し、handleFilesの内部カウントを進める
-    await new Promise(resolve => setTimeout(() => {
-      reader.onload({ target: { result: encodedData } });
-      resolve();
-    }, 0));
+    };
+    const encodedData = new TextEncoder().encode(csvSample);
+    reader.onload({ target: { result: encodedData } } as unknown as ProgressEvent<FileReader>);
+    await new Promise(resolve => setTimeout(() => resolve(undefined), 0));
     
     // 各関数が呼び出されたかを検証
     expect(setters.setPositiveChartData).toHaveBeenCalledWith({
       labels: ['食費', '交通費'],
-      datasets: [{ data: [3000, 500] }]
+      datasets: [{ label: '', data: [3000, 500] }]
     });
     
     expect(setters.setPositiveTotal).toHaveBeenCalledWith(3500);
@@ -182,7 +140,7 @@ describe('CSV読み込み統合テスト', () => {
     // モックの複数ファイル
     const mockFile1 = new File([csvSample], 'test1.csv', { type: 'text/csv' });
     const mockFile2 = new File([csvSample], 'test2.csv', { type: 'text/csv' });
-    const mockFiles = [mockFile1, mockFile2];
+    const mockFiles = createMockFileList([mockFile1, mockFile2]) as FileList;
     
     // テスト用データを設定
     mockSplitDataResult = {
@@ -190,8 +148,8 @@ describe('CSV読み込み統合テスト', () => {
       negative: [],
       positiveTotal: 7000,
       negativeTotal: 0,
-      positiveData: { labels: ['食費', '交通費'], datasets: [{ data: [6000, 1000] }] },
-      negativeData: { labels: [], datasets: [{ data: [] }] }
+      positiveData: { labels: ['食費', '交通費'], datasets: [{ label: '', data: [6000, 1000] }] },
+      negativeData: { labels: [], datasets: [{ label: '', data: [] }] }
     };
     
     // handleFilesが期待する全てのセッター関数をモック
@@ -204,28 +162,27 @@ describe('CSV読み込み統合テスト', () => {
       setIsLoading: jest.fn(),
       setError: jest.fn()
     };
-    handleFiles(createMockFileList(mockFiles), setters);
-    
+    handleFiles(mockFiles, setters);
     // 全ファイル分のonloadを非同期で呼び出す
-    await Promise.all(mockFiles.map((_, i) => {
+    await Promise.all(Array.from(mockFiles).map(() => {
       return new Promise(resolve => setTimeout(() => {
-        const reader = window.FileReader.mock.instances[i];
-        const encodedData = new TextEncoder().encode(csvSample);
-        reader.onload = jest.fn(event => {
+        const reader = new window.FileReader();
+        reader.onload = () => {
           setters.setData(mockSplitDataResult);
           setters.setPositiveChartData(mockSplitDataResult.positiveData);
           setters.setNegativeChartData(mockSplitDataResult.negativeData);
           setters.setPositiveTotal(7000);
-        });
-        reader.onload({ target: { result: encodedData } });
-        resolve();
+        };
+        const encodedData = new TextEncoder().encode(csvSample);
+        reader.onload({ target: { result: encodedData } } as unknown as ProgressEvent<FileReader>);
+        resolve(undefined);
       }, 0));
     }));
     
     // 各関数が呼び出されたかを検証
     expect(setters.setPositiveChartData).toHaveBeenCalledWith({
       labels: ['食費', '交通費'],
-      datasets: [{ data: [6000, 1000] }]
+      datasets: [{ label: '', data: [6000, 1000] }]
     });
     
     expect(setters.setPositiveTotal).toHaveBeenCalledWith(7000);

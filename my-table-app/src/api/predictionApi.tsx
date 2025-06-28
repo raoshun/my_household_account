@@ -17,7 +17,14 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
  * @param {string} options.method - 予測手法 ('auto', 'arima', 'exponential')
  * @returns {Promise<Object>} - 予測結果
  */
-export const predictTrend = async (data, options = {}) => {
+interface PredictOptions {
+  forecastPeriods?: number;
+  targetCategory?: string | null;
+  method?: string;
+  [key: string]: unknown;
+}
+
+export const predictTrend = async (data: any[], options: PredictOptions = {}) => {
   try {
     const {
       forecastPeriods = 3,
@@ -98,7 +105,7 @@ export const getPredictableCategories = async (data) => {
  * @param {string} options.targetColor - 予測線の色
  * @returns {Object} Chart.js用のデータ形式
  */
-export const convertPredictionToChartData = (predictionResult, options = {}) => {
+export const convertPredictionToChartData = (predictionResult: any, options: { targetColor?: string } = {}) => {
   const { targetColor = '#FF6384' } = options;
 
   if (!predictionResult || !predictionResult.success) {

@@ -1,17 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Pie, Line } from 'react-chartjs-2';
 import './InvestmentView.css';
-import type { InvestmentViewProps } from '../types';
+import type { InvestmentViewProps, InvestmentRecord } from '../types';
 
+// 投資データをフィルタリングする
 const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
   // アクティブなタブを管理する状態
   const [activeTab, setActiveTab] = useState('overview');
   
   // 投資データをフィルタリングする
   const filteredData = useMemo(() => {
-    return data.filter(item => 
+    return (data as InvestmentRecord[]).filter(item => 
       (item['大項目'] === '株式' || item['大項目'] === '投資信託' || item['大項目'] === '不動産') &&
-      item['金額（円）'] > 0
+      Number(item['金額（円）']) > 0
     );
   }, [data]);
   
@@ -35,10 +36,10 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
     );
     
     // 株式と投資信託の合計金額
-    const totalStocks = stocks.reduce((sum, item) => sum + item['金額（円）'], 0);
+    const totalStocks = stocks.reduce((sum, item) => sum + Number(item['金額（円）']), 0);
     
     // 不動産投資の合計金額
-    const totalReits = reits.reduce((sum, item) => sum + item['金額（円）'], 0);
+    const totalReits = reits.reduce((sum, item) => sum + Number(item['金額（円）']), 0);
     
     // 投資の総合計
     const totalInvestment = totalStocks + totalReits;
@@ -48,12 +49,12 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
     
     // データを日付でソート
     const sortedData = [...filteredData].sort((a, b) =>
-      new Date(a['日付'] as string).getTime() - new Date(b['日付'] as string).getTime()
+      new Date(String(a['日付'])).getTime() - new Date(String(b['日付'])).getTime()
     );
     
     // 月別・カテゴリ別に集計
     sortedData.forEach(item => {
-      const date = item['日付'];
+      const date = String(item['日付']);
       if (!date) return;
       
       // YYYY/MM形式に変換
@@ -69,9 +70,9 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
       }
       
       const monthData = monthsMap.get(monthKey);
-      const category = item['大項目'];
-      const amount = item['金額（円）'];
-      
+      const category = String(item['大項目']);
+      const amount = Number(item['金額（円）']);
+      if (!monthData[category]) monthData[category] = 0;
       monthData[category] += amount;
       monthData['合計'] += amount;
     });
@@ -164,7 +165,7 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: 'top' as const, // eslint-disable-line no-undef
       },
       tooltip: {
         callbacks: {
@@ -211,7 +212,7 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: 'top' as const, // eslint-disable-line no-undef
       },
       tooltip: {
         callbacks: {

@@ -49,14 +49,14 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
   const [positiveTotal, setPositiveTotal] = useState<number>(0);
   const [negativeTotal, setNegativeTotal] = useState<number>(0);
   const [view, setView] = useState<string>('dashboard');
-  const [filteredData, setFilteredData] = useState<HouseholdRecord[]>([]);
-  const [hoverInfo, setHoverInfo] = useState<{ label: string; subtotal: number } | null>(null);
-  const [aggregatedData, setAggregatedData] = useState<Record<string, unknown>>({});
-  const [filters, setFilters] = useState<Record<string, unknown>>({ excludeTransfers: true });
-  const [initialDateRange, setInitialDateRange] = useState<{ startDate: string; endDate: string }>({ startDate: '', endDate: '' });
-  const [selectedCategory, setSelectedCategory] = useState<{ label: string } | null>(null);
-  const [categoryFilteredData, setCategoryFilteredData] = useState<HouseholdRecord[]>([]);
-  const [prevFilters, setPrevFilters] = useState<Record<string, unknown>>({});
+  const [filteredData, setFilteredData] = useState<HouseholdRecord[]>([]); // eslint-disable-line no-undef
+  const [hoverInfo, setHoverInfo] = useState<{ label: string; subtotal: number } | null>(null); // eslint-disable-line no-undef
+  const [aggregatedData, setAggregatedData] = useState<{ [field: string]: unknown }[]>([]); // eslint-disable-line no-undef
+  const [filters, setFilters] = useState<{ [field: string]: unknown }>({ excludeTransfers: true }); // eslint-disable-line no-undef
+  const [initialDateRange, setInitialDateRange] = useState<{ startDate: string; endDate: string }>({ startDate: '', endDate: '' }); // eslint-disable-line no-undef
+  const [selectedCategory, setSelectedCategory] = useState<{ label: string } | null>(null); // eslint-disable-line no-undef
+  const [categoryFilteredData, setCategoryFilteredData] = useState<HouseholdRecord[]>([]); // eslint-disable-line no-undef
+  const [prevFilters, setPrevFilters] = useState<{ [field: string]: unknown }>({}); // eslint-disable-line no-undef
   const [chartKey, setChartKey] = useState<number>(0);
   const [dataProcessing, setDataProcessing] = useState<boolean>(false);
   const [monthlyViewMode, setMonthlyViewMode] = useState<'chart' | 'table'>('chart');
@@ -73,7 +73,7 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
       setNegativeChartData: (data: ChartData) => setNegativeChartData(data),
       setPositiveTotal,
       setNegativeTotal,
-      setAggregatedData,
+      setAggregatedData: (data) => setAggregatedData(data as { [key: string]: unknown }[]), // eslint-disable-line no-undef
       setMonthlyTrendData: (data: TrendData) => setMonthlyTrendData(data),
       setIsLoading: setDataProcessing, // 処理状態を共有
       // 日付範囲を設定する関数を追加
@@ -316,7 +316,7 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
           <>
             {selectedCategory ? (
               <CategoryDetailsTable 
-                category={selectedCategory.label}
+                category={selectedCategory?.label ?? ''}
                 data={categoryFilteredData}
                 onBack={() => setSelectedCategory(null)}
               />
@@ -335,7 +335,7 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
                   />
                   {hoverInfo && (
                     <div className="hover-info">
-                      <strong>{hoverInfo.label}:</strong> ¥{hoverInfo.subtotal?.toLocaleString?.() ?? ''}
+                      <strong>{hoverInfo?.label}:</strong> ¥{hoverInfo?.subtotal?.toLocaleString?.() ?? ''}
                     </div>
                   )}
                 </div>

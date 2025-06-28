@@ -41,15 +41,17 @@ describe('Charts Component with Manual Mock', () => {
         positiveChartData={{
           labels: ['食費', '交通費', '娯楽'],
           datasets: [{ 
+            label: '収入',
             data: [3000, 1000, 2000],
-            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'] 
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'] as unknown as string
           }]
         }}
         negativeChartData={{
           labels: ['給料', '賞与'],
           datasets: [{ 
+            label: '支出',
             data: [30000, 5000],
-            backgroundColor: ['#4BC0C0', '#9966FF'] 
+            backgroundColor: ['#4BC0C0', '#9966FF'] as unknown as string
           }]
         }}
         positiveTotal={6000}
