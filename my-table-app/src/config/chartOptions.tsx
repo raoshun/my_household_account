@@ -10,7 +10,7 @@ export const chartOptions = {
         }
       },
       // インタラクション時のツールチップ表示制御
-      external: function(context) {
+      external: function() {
         // カスタムツールチップのレンダリングロジック
         // 実際の実装はチャートコンポーネント側で行う
       }
