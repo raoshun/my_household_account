@@ -2,17 +2,16 @@
 /* eslint-disable */
 /**
  * テストをデバッグモードで実行するためのスクリプト
- * 
+ *
  * 使用方法:
- * node src/tests/run-debug-test.js [テストファイルパターン] [--watch]
- * 
+ * node scripts/run-debug-test.js [テストファイルパターン] [--watch]
+ *
  * 例:
- * node src/tests/run-debug-test.js src/components/Charts.test.js --watch
+ * node scripts/run-debug-test.js src/components/Charts.test.js --watch
  */
 
-import { spawnSync } from 'child_process';
-import * as path from 'path';
-import * as fs from 'fs';
+const { spawnSync } = require('child_process');
+const path = require('path');
 
 // コマンドライン引数を解析
 const args = process.argv.slice(2);
@@ -24,7 +23,7 @@ console.log(`テストファイル: ${testFile || '全てのテスト'}`);
 console.log(`監視モード: ${shouldWatch ? '有効' : '無効'}`);
 
 // ファイルパスの確認にpathを使用
-if (testFile && !fs.existsSync(path.resolve(process.cwd(), testFile))) {
+if (testFile && !require('fs').existsSync(path.resolve(process.cwd(), testFile))) {
   console.error(`Error: テストファイル "${testFile}" が見つかりません`);
   process.exit(1);
 }
@@ -71,6 +70,3 @@ if (result.status !== 0) {
 }
 
 process.exit(result.status);
-
-// Node.jsスクリプトは scripts/ ディレクトリに移動しました。
-// このファイルはフロントエンドビルドから除外するため、内容をコメントアウトしています。

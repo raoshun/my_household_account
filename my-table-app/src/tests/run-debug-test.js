@@ -10,9 +10,9 @@
  * node src/tests/run-debug-test.js src/components/Charts.test.js --watch
  */
 
-import { spawnSync } from 'child_process';
-import * as path from 'path';
-import * as fs from 'fs';
+const { spawnSync } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
 // コマンドライン引数を解析
 const args = process.argv.slice(2);
