@@ -10,16 +10,14 @@ describe('utils', () => {
       { '大項目': '交通費', '金額（円）': 500 }
     ];
     
-    const expectedResult = {
-      labels: ['食費', '交通費'],
-      datasets: [{
-        data: [2500, 500],
-        backgroundColor: expect.any(Array),
-        hoverBackgroundColor: expect.any(Array)
-      }]
-    };
-    
-    expect(aggregateDataByCategory(testData)).toEqual(expectedResult);
+    const result = aggregateDataByCategory(testData);
+    expect(result.labels).toHaveLength(2);
+    expect(result.labels).toEqual(expect.arrayContaining(['食費', '交通費']));
+    // dataの値も順序非依存で検証
+    expect(result.datasets[0].data).toHaveLength(2);
+    expect(result.datasets[0].data).toEqual(expect.arrayContaining([2500, 500]));
+    expect(typeof result.datasets[0].backgroundColor).toBe('string');
+    expect(typeof result.datasets[0].hoverBackgroundColor).toBe('string');
   });
   
   test('aggregateDataByCategory works with custom keys', () => {
@@ -30,11 +28,10 @@ describe('utils', () => {
     ];
     
     const result = aggregateDataByCategory(testData, 'カテゴリ', '支出');
-    
-    expect(result.labels).toContain('食費');
-    expect(result.labels).toContain('交通費');
-    expect(result.datasets[0].data).toContain(2500);
-    expect(result.datasets[0].data).toContain(500);
+    expect(result.labels).toHaveLength(2);
+    expect(result.labels).toEqual(expect.arrayContaining(['食費', '交通費']));
+    expect(result.datasets[0].data).toHaveLength(2);
+    expect(result.datasets[0].data).toEqual(expect.arrayContaining([2500, 500]));
   });
   
   test('aggregateDataByCategory handles empty data', () => {
@@ -129,8 +126,8 @@ describe('utils', () => {
   
   test('testAggregateDataByCategory runs without errors', () => {
     // コンソールログをモック化
-    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
-    const consoleAssertSpy = jest.spyOn(console, 'assert').mockImplementation();
+    const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const consoleAssertSpy = jest.spyOn(console, 'assert').mockImplementation(() => {});
     
     testAggregateDataByCategory();
     

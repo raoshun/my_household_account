@@ -113,8 +113,15 @@ describe('BalanceView コンポーネント', () => {
   
   // データがない場合のテスト
   test('データがない場合も正しく表示される', () => {
-    render(<BalanceView {...baseProps} />);
-    
+    render(
+      <BalanceView
+        positiveTotal={0}
+        negativeTotal={0}
+        positiveData={{ labels: [], datasets: [{ label: '収入', data: [], backgroundColor: '', hoverBackgroundColor: '' }] }}
+        negativeData={{ labels: [], datasets: [{ label: '支出', data: [], backgroundColor: '', hoverBackgroundColor: '' }] }}
+        data={[]}
+      />
+    );
     expect(screen.getByText('収入データがありません')).toBeInTheDocument();
     expect(screen.getByText('支出データがありません')).toBeInTheDocument();
   });

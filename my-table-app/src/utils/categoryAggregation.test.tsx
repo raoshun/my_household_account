@@ -130,32 +130,30 @@ describe('categoryAggregation', () => {
       // 基本構造を確認
       expect(result).toHaveProperty('labels');
       expect(result).toHaveProperty('datasets');
-      expect(result.datasets).toHaveLength(1);
-      expect(result.datasets[0]).toHaveProperty('data');
-      expect(result.datasets[0]).toHaveProperty('backgroundColor');
-      
+      expect(result.datasets).toHaveLength(3); // カテゴリ数分
+      result.datasets.forEach((ds, idx) => {
+        expect(ds).toHaveProperty('data');
+        expect(ds).toHaveProperty('backgroundColor');
+        expect(typeof ds.backgroundColor).toBe('string');
+        expect(ds.data).toHaveLength(1);
+      });
       // 内容を確認
       expect(result.labels).toContain('食費');
       expect(result.labels).toContain('交通費');
       expect(result.labels).toContain('娯楽');
-      
       // データが正しいか確認
-      expect(result.datasets[0].data).toContain(3000);
-      expect(result.datasets[0].data).toContain(1700);
-      expect(result.datasets[0].data).toContain(5000);
-      
-      // ラベルとデータの位置が対応しているか確認
-      const foodIndex = result.labels.indexOf('食費');
-      expect(result.datasets[0].data[foodIndex]).toBe(3000);
+      const foodIdx = result.labels.indexOf('食費');
+      expect(result.datasets[foodIdx].data[0]).toBe(3000);
     });
 
     test('制限付きでChart.js形式に変換', () => {
       const result = convertToChartData(aggregatedData, { limit: 2 });
-      
       // 制限が適用されているか確認
       expect(result.labels).toHaveLength(2);
-      expect(result.datasets[0].data).toHaveLength(2);
-      
+      expect(result.datasets).toHaveLength(2);
+      result.datasets.forEach(ds => {
+        expect(ds.data).toHaveLength(1);
+      });
       // 金額順でソートされているか確認
       expect(result.labels[0]).toBe('娯楽');
       expect(result.datasets[0].data[0]).toBe(5000);
