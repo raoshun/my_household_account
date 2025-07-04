@@ -1,13 +1,12 @@
 import React from 'react';
 import './BalanceView.css';
-import type { BalanceViewProps } from '../types';
+import type { BalanceViewProps as _BalanceViewProps, ChartData } from '../types';
 
-const BalanceView: React.FC<BalanceViewProps> = ({ 
+const BalanceView: React.FC<_BalanceViewProps> = ({ 
   positiveTotal = 0, 
   negativeTotal = 0, 
-  positiveData = {} as any, 
-  negativeData = {} as any, 
-  onHover 
+  positiveData = {} as ChartData, 
+  negativeData = {} as ChartData
 }) => {
   // 収支バランス（黒字/赤字）を計算
   const balance = positiveTotal + negativeTotal; // negativeTotal は負の値なので加算

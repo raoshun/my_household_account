@@ -8,17 +8,26 @@ const createMockData = (isPositive = true) => {
   return {
     labels: ['カテゴリ1', 'カテゴリ2', 'カテゴリ3'],
     datasets: [{
+      label: isPositive ? '収入' : '支出',
       data: [50000, 30000, 20000],
-      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-      hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+      backgroundColor: '#FF6384',
+      hoverBackgroundColor: '#FF6384'
     }]
   };
+};
+
+const baseProps = {
+  positiveTotal: 50000,
+  negativeTotal: -30000,
+  positiveData: createMockData(true),
+  negativeData: createMockData(false),
+  data: [],
 };
 
 describe('BalanceView コンポーネント', () => {
   // 基本的なレンダリングテスト
   test('コンポーネントが正常にレンダリングされる', () => {
-    render(<BalanceView />);
+    render(<BalanceView {...baseProps} />);
     
     expect(screen.getByText('収支バランス')).toBeInTheDocument();
     expect(screen.getByText('今月の収支')).toBeInTheDocument();
@@ -37,12 +46,13 @@ describe('BalanceView コンポーネント', () => {
         negativeTotal={negativeTotal} 
         positiveData={positiveData}
         negativeData={negativeData}
+        data={[]}
       />
     );
     
     // 収支合計をチェック（20000円の黒字）- より具体的なセレクタを使用
     const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card');
-    expect(within(summaryCard).getByText('¥20,000')).toBeInTheDocument();
+    expect(within(summaryCard).getByText('¥20,000') as HTMLElement).toBeInTheDocument();
     expect(screen.getByText('黒字')).toBeInTheDocument();
     
     // 黒字用のアドバイスが表示されているか
@@ -62,12 +72,13 @@ describe('BalanceView コンポーネント', () => {
         negativeTotal={negativeTotal} 
         positiveData={positiveData}
         negativeData={negativeData}
+        data={[]}
       />
     );
     
     // 収支合計をチェック（30000円の赤字）- より具体的なセレクタを使用
     const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card');
-    expect(within(summaryCard).getByText('¥-30,000')).toBeInTheDocument();
+    expect(within(summaryCard).getByText('¥-30,000') as HTMLElement).toBeInTheDocument();
     expect(screen.getByText('赤字')).toBeInTheDocument();
     
     // 赤字用のアドバイスが表示されているか
@@ -87,12 +98,13 @@ describe('BalanceView コンポーネント', () => {
         negativeTotal={negativeTotal} 
         positiveData={positiveData}
         negativeData={negativeData}
+        data={[]}
       />
     );
     
     // 収支合計をチェック（0円で均衡）- より具体的なセレクタを使用
     const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card');
-    expect(within(summaryCard).getByText('¥0')).toBeInTheDocument();
+    expect(within(summaryCard).getByText('¥0') as HTMLElement).toBeInTheDocument();
     expect(screen.getByText('収支均衡')).toBeInTheDocument();
     
     // 収支均衡用のアドバイスが表示されているか
@@ -101,7 +113,7 @@ describe('BalanceView コンポーネント', () => {
   
   // データがない場合のテスト
   test('データがない場合も正しく表示される', () => {
-    render(<BalanceView />);
+    render(<BalanceView {...baseProps} />);
     
     expect(screen.getByText('収入データがありません')).toBeInTheDocument();
     expect(screen.getByText('支出データがありません')).toBeInTheDocument();
@@ -120,6 +132,7 @@ describe('BalanceView コンポーネント', () => {
         negativeTotal={negativeTotal} 
         positiveData={positiveData}
         negativeData={negativeData}
+        data={[]}
       />
     );
     
@@ -146,6 +159,7 @@ describe('BalanceView コンポーネント', () => {
         negativeTotal={negativeTotal} 
         positiveData={positiveData}
         negativeData={negativeData}
+        data={[]}
       />
     );
     
