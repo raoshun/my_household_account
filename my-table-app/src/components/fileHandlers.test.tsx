@@ -6,7 +6,8 @@ import { describe, test, expect, beforeEach, jest, beforeAll, afterAll } from '@
 import '../test-utils/errorEventMock';
 
 // テスト環境フラグを明示的に設定
-window.__JEST_TEST_ENV__ = true;
+import type { TestEnvWindow } from '../types';
+(window as TestEnvWindow).__JEST_TEST_ENV__ = true;
 
 // モジュールのモックを改善
 jest.mock('../utils/sortData', () => {
@@ -68,11 +69,11 @@ beforeEach(() => {
     negativeTotal: -5000,
     positiveData: {
       labels: ['食費', '交通費'],
-      datasets: [{ data: [3000, 1000], backgroundColor: ['#ff6384', '#36a2eb'], borderWidth: 1 }]
+      datasets: [{ data: [3000, 1000], backgroundColor: '#ff6384', borderWidth: 1 }]
     },
     negativeData: {
       labels: ['収入'],
-      datasets: [{ data: [-5000], backgroundColor: ['#ff6384'], borderWidth: 1 }]
+      datasets: [{ data: [-5000], backgroundColor: '#ff6384', borderWidth: 1 }]
     }
   }));
   parse.mockImplementation((text, options) => {

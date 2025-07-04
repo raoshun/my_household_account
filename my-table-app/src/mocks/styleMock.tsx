@@ -1,2 +1,3 @@
 // スタイルファイルのモック
-module.exports = {};
+export {};
+export default {};

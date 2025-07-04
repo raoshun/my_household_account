@@ -10,13 +10,13 @@ const Chart = jest.fn().mockImplementation(() => {
 const registerables = ['scale', 'legend', 'title'];
 
 // register()メソッドを定義 - スプレッド演算子で渡されるregisterablesを正しく処理
-Chart.register = jest.fn((...components) => {
+(Chart as unknown as { register: jest.Mock }).register = jest.fn(() => {
   // 引数を処理するモック実装（各コンポーネントを登録する処理をシミュレート）
   return;
 });
 
 // モックにregisterablesプロパティを設定
-Chart.registerables = registerables;
+(Chart as unknown as { registerables: string[] }).registerables = registerables;
 
 export { Chart, registerables };
 export default Chart;

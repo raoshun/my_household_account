@@ -27,7 +27,8 @@ export function testElementResize(element) {
   const isResizeObserverMocked = 
     typeof window !== 'undefined' && 
     window.ResizeObserver &&
-    typeof window.ResizeObserver.prototype.simulateResize === 'function';
+    process.env.NODE_ENV === 'test' &&
+    typeof (window.ResizeObserver.prototype as unknown as { simulateResize: unknown }).simulateResize === 'function';
 
   if (!isResizeObserverMocked) {
     console.warn('ResizeObserverのモックが利用できません。setupTests.jsでモックが正しく設定されているか確認してください。');
@@ -111,6 +112,7 @@ export function isResizeObserverMocked() {
   return (
     typeof window !== 'undefined' && 
     window.ResizeObserver &&
-    typeof window.ResizeObserver.prototype.simulateResize === 'function'
+    process.env.NODE_ENV === 'test' &&
+    typeof (window.ResizeObserver.prototype as unknown as { simulateResize: unknown }).simulateResize === 'function'
   );
 }

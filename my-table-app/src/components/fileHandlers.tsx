@@ -302,10 +302,12 @@ export const handleFiles = (files: FileList, setters: Setters = {}) => {
               try {
                 const trendData = prepareMonthlyTrendData(
                   allData,
-                  DATE_KEY, // 日付キー
-                  MAIN_CATEGORY_KEY, // カテゴリキー
-                  AMOUNT_KEY, // 金額キー
-                  5 // 表示する最大カテゴリ数
+                  {
+                    dateKey: DATE_KEY, // 日付キー
+                    categoryKey: MAIN_CATEGORY_KEY, // カテゴリキー
+                    amountKey: AMOUNT_KEY, // 金額キー
+                    maxCategories: 5 // 表示する最大カテゴリ数
+                  }
                 );
                 setMonthlyTrendData(trendData);
               } catch (error) {

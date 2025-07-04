@@ -42,7 +42,11 @@ export const createMockData = (count = 5, category = '食費') => {
  * @param {Object} props コンポーネントのプロパティ
  * @param {Object} initialState 初期状態
  */
-export function setupTestComponent(Component, props = {}, initialState = {}) {
+export function setupTestComponent(
+  Component,
+  props = {},
+  initialState: Record<string, unknown> = {}
+) {
   // コンポーネントに必要な設定を行う
   // ...
   return {

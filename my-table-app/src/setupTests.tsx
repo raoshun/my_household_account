@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/extend-expect';
 import { configure } from '@testing-library/react';
 
 // テスト環境変数を設定
@@ -72,7 +73,10 @@ if (typeof document !== 'undefined') {
           top: 0,
           left: 0,
           right: 500,
-          bottom: 500
+          bottom: 500,
+          x: 0,
+          y: 0,
+          toJSON: () => ({})
         }),
         configurable: true,
       });

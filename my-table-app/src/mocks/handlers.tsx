@@ -1,10 +1,21 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
+
+interface TrendPredictionRequest {
+  data: Array<{ date: string; value: number }>;
+  forecastMonths: number;
+}
+
+interface PredictionRequest {
+  category: string;
+  months: number;
+}
 
 // 予測APIのモックハンドラー
 export const handlers = [
   // 予測APIのモック
-  rest.post('/api/predict', (req, res, ctx) => {
-    const { category, months } = req.body;
+  http.post('/api/predict', async ({ request }) => {
+    const body = (await request.json()) as PredictionRequest;
+    const { category, months } = body;
     
     // 予測データのモック作成
     const mockPredictionData = [];
@@ -21,31 +32,26 @@ export const handlers = [
       });
     }
     
-    return res(
-      ctx.status(200),
-      ctx.json({
-        predictions: mockPredictionData,
-        accuracy: 0.85
-      })
-    );
+    return HttpResponse.json({
+      predictions: mockPredictionData,
+      accuracy: 0.85
+    }, { status: 200 });
   }),
   
   // 予測可能なカテゴリ取得APIのモック
-  rest.get('/api/predictable-categories', (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json({
-        categories: ['食費', '住居費', '交通費', '娯楽費', '光熱費']
-      })
-    );
+  http.get('/api/predictable-categories', () => {
+    return HttpResponse.json({
+      categories: ['食費', '住居費', '交通費', '娯楽費', '光熱費']
+    }, { status: 200 });
   }),
   
   // トレンド予測APIのモック
-  rest.post('/api/trend-prediction', (req, res, ctx) => {
-    const { data, forecastMonths } = req.body;
+  http.post('/api/trend-prediction', async ({ request }) => {
+    const body = (await request.json()) as TrendPredictionRequest;
+    const { data, forecastMonths } = body;
     
     // モックデータ生成
-    const lastDate = data.length > 0 
+    const lastDate = data && data.length > 0 
       ? new Date(data[data.length - 1].date) 
       : new Date();
     
@@ -61,26 +67,20 @@ export const handlers = [
       });
     }
     
-    return res(
-      ctx.status(200),
-      ctx.json({
-        forecast: mockForecast,
-        confidence: 0.87
-      })
-    );
+    return HttpResponse.json({
+      forecast: mockForecast,
+      confidence: 0.87
+    }, { status: 200 });
   }),
   
   // エラー処理テスト用
-  rest.post('/api/predict-error', (req, res, ctx) => {
-    return res(
-      ctx.status(500),
-      ctx.json({
-        error: 'Internal Server Error'
-      })
-    );
+  http.post('/api/predict-error', () => {
+    return HttpResponse.json({
+      error: 'Internal Server Error'
+    }, { status: 500 });
   }),
   
-  rest.get('/api/network-error', (req, res) => {
-    return res.networkError('Network Error');
+  http.get('/api/network-error', () => {
+    return HttpResponse.error();
   })
 ];

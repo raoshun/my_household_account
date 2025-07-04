@@ -32,7 +32,7 @@ export const debugButtons = (screen) => {
     buttons.forEach((button, index) => {
       console.log(`Button ${index + 1}:`, button.textContent);
     });
-  } catch (error) {
+  } catch {
     console.log('No buttons found');
   }
   console.log('=== END BUTTONS ===');
@@ -46,7 +46,7 @@ export const debugButtons = (screen) => {
 export const debugTextElements = (screen, text) => {
   console.log(`=== ELEMENTS WITH TEXT: "${text}" ===`);
   try {
-    const elements = screen.getAllByText((content, element) => {
+    const elements = screen.getAllByText((content) => {
       return content.includes(text);
     });
     elements.forEach((element, index) => {
@@ -57,7 +57,7 @@ export const debugTextElements = (screen, text) => {
         className: element.className
       });
     });
-  } catch (error) {
+  } catch {
     console.log(`No elements found with text containing "${text}"`);
     // DOM全体をダンプしてテキストを探す
     console.log('Full DOM for reference:');
