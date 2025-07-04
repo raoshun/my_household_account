@@ -14,14 +14,18 @@
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "isolatedModules": true,
-    "jsx": "react-jsx",
-    "types": [
-      "jest",
-      "testing-library__jest-dom"
-    ]
+    "jsx": "react-jsx"
   },
   "include": [
-    "src",
-    "src/setupTests.tsx"
+    "src"
+  ],
+  "exclude": [
+    "**/*.test.tsx",
+    "**/*.test.ts",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "src/tests/**",
+    "src/mocks/**",
+    "scripts/**"
   ]
 }
