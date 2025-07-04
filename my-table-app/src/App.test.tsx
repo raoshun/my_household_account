@@ -4,12 +4,13 @@ import React from 'react';
 import { jest, test, describe, beforeEach } from '@jest/globals';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { TestEnvWindow } from './types';
 
 // オリジナルのuseStateを保持
 const originalUseState = React.useState;
 
 // テスト環境フラグを明示的に設定
-window.__JEST_TEST_ENV__ = true;
+(window as TestEnvWindow).__JEST_TEST_ENV__ = true;
 
 // PropTypesをモック化する前に、既存のPropTypesモックを削除
 jest.unmock('prop-types');
@@ -335,7 +336,7 @@ describe('ビュー切り替え機能', () => {
     
     // クリックしてビューを切り替える
     await act(async () => {
-      userEvent.click(rawDataButton);
+      userEvent.click(rawDataButton!); // 非nullアサーションで型エラー回避
       // 状態更新を待つ
       await new Promise(resolve => setTimeout(resolve, 0));
     });
@@ -363,7 +364,7 @@ describe('収支バランスビュー機能', () => {
     
     // クリックしてビューを切り替える
     await act(async () => {
-      userEvent.click(balanceButton);
+      userEvent.click(balanceButton!); // 非nullアサーションで型エラー回避
       // 状態更新を待つ
       await new Promise(resolve => setTimeout(resolve, 0));
     });

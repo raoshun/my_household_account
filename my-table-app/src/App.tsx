@@ -1,5 +1,6 @@
+/* global Record */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { AppProps, ChartData, TrendData, HouseholdRecord } from './types';
+import type { ChartData, TrendData, HouseholdRecord, AggregatedCategory, AppProps as _AppProps } from './types';
 import AggregatedTable from './components/AggregatedTable';
 import Sidebar from './components/Sidebar';
 import Charts from './components/Charts';
@@ -16,6 +17,7 @@ import { filterData } from './utils/sortData';
 import { splitDataBySign } from './utils';
 import CategoryDetailsTable from './components/CategoryDetailsTable';
 import InvestmentView from './components/InvestmentView'; // 投資分析ビューをインポート
+import { aggregateByCategory } from './utils/categoryAggregation';
 import './App.css';
 
 // 安全な月次データの初期状態
@@ -24,7 +26,7 @@ const EMPTY_MONTHLY_DATA: TrendData = {
   datasets: []
 };
 
-const App: React.FC<AppProps> = ({ initialData = [] }) => {
+const App: React.FC<_AppProps> = ({ initialData = [] }) => {
   // HouseholdRecord[]型で明示
   const [data, setData] = useState<HouseholdRecord[]>([]);
   const [positiveChartData, setPositiveChartData] = useState<ChartData>({
@@ -51,7 +53,7 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
   const [view, setView] = useState<string>('dashboard');
   const [filteredData, setFilteredData] = useState<HouseholdRecord[]>([]); // eslint-disable-line no-undef
   const [hoverInfo, setHoverInfo] = useState<{ label: string; subtotal: number } | null>(null); // eslint-disable-line no-undef
-  const [aggregatedData, setAggregatedData] = useState<{ [field: string]: unknown }[]>([]); // eslint-disable-line no-undef
+  const [aggregatedData, setAggregatedData] = useState<Record<string, AggregatedCategory>>({});
   const [filters, setFilters] = useState<{ [field: string]: unknown }>({ excludeTransfers: true }); // eslint-disable-line no-undef
   const [initialDateRange, setInitialDateRange] = useState<{ startDate: string; endDate: string }>({ startDate: '', endDate: '' }); // eslint-disable-line no-undef
   const [selectedCategory, setSelectedCategory] = useState<{ label: string } | null>(null); // eslint-disable-line no-undef
@@ -73,7 +75,15 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
       setNegativeChartData: (data: ChartData) => setNegativeChartData(data),
       setPositiveTotal,
       setNegativeTotal,
-      setAggregatedData: (data) => setAggregatedData(data as { [key: string]: unknown }[]), // eslint-disable-line no-undef
+      setAggregatedData: (data) => {
+        const safeData = Object.fromEntries(
+          Object.entries(data).map(([k, v]) => [
+            k,
+            v as AggregatedCategory
+          ])
+        );
+        setAggregatedData(safeData);
+      },
       setMonthlyTrendData: (data: TrendData) => setMonthlyTrendData(data),
       setIsLoading: setDataProcessing, // 処理状態を共有
       // 日付範囲を設定する関数を追加
@@ -369,7 +379,7 @@ const App: React.FC<AppProps> = ({ initialData = [] }) => {
         {view === 'category' && (
           <div data-testid="category-view">
             <CategoryPieChart 
-              data={filteredData}
+              data={aggregateByCategory(filteredData)}
               onHover={handleHover}
             />
           </div>
