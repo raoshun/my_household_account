@@ -1,6 +1,13 @@
 /**
  * Canvas要素のモック
  */
+
+// モジュールとして認識させるために追加
+export {};
+
+/**
+ * Canvas要素のモック
+ */
 class MockCanvasRenderingContext2D {
   canvas: HTMLCanvasElement | null;
   fillStyle: string;
@@ -123,16 +130,13 @@ if (typeof window !== 'undefined') {
   const proto = window.HTMLCanvasElement.prototype as unknown as { _getContext?: (contextType: string) => unknown };
   if (!proto._getContext) {
     proto._getContext = window.HTMLCanvasElement.prototype.getContext;
-    // オーバーロード宣言で型安全にgetContextを再定義
-    function getContext(this: HTMLCanvasElement, contextId: "2d", options?: unknown): CanvasRenderingContext2D | null;
-    function getContext(this: HTMLCanvasElement, contextId: "webgl" | "webgl2", options?: unknown): WebGLRenderingContext | WebGL2RenderingContext | null;
-    function getContext(this: HTMLCanvasElement, contextId: "bitmaprenderer", options?: unknown): ImageBitmapRenderingContext | null;
-    function getContext(this: HTMLCanvasElement, contextId: string, options?: unknown): unknown {
+    // getContextメソッドを再定義
+    const getContext = (contextId: string, options?: unknown): unknown => {
       if (contextId === '2d') {
         return new MockCanvasRenderingContext2D() as unknown as CanvasRenderingContext2D;
       }
-      return (this as unknown as { _getContext: (contextType: string, options?: unknown) => unknown })._getContext(contextId, options);
-    }
+      return (proto as unknown as { _getContext: (contextType: string, options?: unknown) => unknown })._getContext(contextId, options);
+    };
     window.HTMLCanvasElement.prototype.getContext = getContext as typeof window.HTMLCanvasElement.prototype.getContext;
   }
 }

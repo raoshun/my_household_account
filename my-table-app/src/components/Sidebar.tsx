@@ -1,11 +1,11 @@
-import type { SidebarProps } from '../types';
+import type { SidebarProps as _SidebarProps } from '../types';
 
 import React, { useState, useEffect } from 'react';
 import ReactFileReader from 'react-file-reader';
 import './Sidebar.css';
 
-const Sidebar: React.FC<SidebarProps> = ({
-  onViewChange = (view: string) => {}, 
+const Sidebar: React.FC<_SidebarProps> = ({
+  onViewChange = () => {}, 
   onFileUpload = () => {}, 
   activeView = 'dashboard', 
   filters = {}, 

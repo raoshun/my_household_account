@@ -1,6 +1,15 @@
 import React from 'react';
 
-const DateTimeTable = ({ data }) => {
+interface DateTimeItem {
+  date: string;
+  time: string;
+}
+
+interface DateTimeTableProps {
+  data: DateTimeItem[];
+}
+
+const DateTimeTable: React.FC<DateTimeTableProps> = ({ data }) => {
   return (
     <table>
       <thead>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { Chart, ArcElement, PieController, Tooltip, Legend } from 'chart.js';
-import type { ChartsProps, TestEnvWindow, ChartPluginOptions } from '../types';
+import type { ChartsProps as _ChartsProps, TestEnvWindow, ChartPluginOptions } from '../types';
 
 // テスト環境を検出する方法を改善（Jest環境検出のための複数の方法を組み合わせ）
 const isTestEnv = () => {
@@ -70,7 +70,7 @@ const doughnutOptions = {
   radius: '90%'  // チャート全体のサイズ
 };
 
-const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
+const Charts: React.FC<_ChartsProps & { options?: ChartPluginOptions }> = ({
   positiveChartData = { labels: [], datasets: [{ label: '', data: [] }] },
   negativeChartData = { labels: [], datasets: [{ label: '', data: [] }] },
   positiveTotal = 0,
@@ -79,7 +79,7 @@ const Charts: React.FC<ChartsProps & { options?: ChartPluginOptions }> = ({
   onHover,
   onClick,
   chartsKey = 0
-}: ChartsProps & { options?: ChartPluginOptions }) => {
+}: _ChartsProps & { options?: ChartPluginOptions }) => {
   const positiveChartRef = useRef<HTMLCanvasElement | null>(null);
   const negativeChartRef = useRef<HTMLCanvasElement | null>(null);
   const positiveChartInstance = useRef<Chart | null>(null);

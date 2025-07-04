@@ -1,6 +1,6 @@
 /* eslint-env jest */
 import calculateCategoryTotals from './calculateCategoryTotals';
-import { describe, it, expect } from '@jest/globals';
+import { describe, expect } from '@jest/globals';
 
 describe('calculateCategoryTotals', () => {
   test('calculateCategoryTotals returns correct totals', async () => {

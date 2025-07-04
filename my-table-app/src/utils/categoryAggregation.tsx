@@ -100,7 +100,7 @@ export const sortCategoryTotals = (aggregatedData: Record<string, number>, limit
   }
 
   // オブジェクトを配列に変換
-  let entries = Object.entries(aggregatedData);
+  let entries = Object.entries(aggregatedData) as [string, number][];
 
   // 正の金額のみにフィルタ（必要な場合）
   if (filterPositive) {
@@ -130,7 +130,6 @@ export const convertToChartData = (aggregatedData: Record<string, number>, optio
   options = options || {};
   const {
     limit = 0,
-    filterPositive = true,
     colorGenerator = null
   } = options;
 
@@ -146,46 +145,21 @@ export const convertToChartData = (aggregatedData: Record<string, number>, optio
   }
 
   // カテゴリをソート
-  const sortedCategories = sortCategoryTotals(aggregatedData, limit, filterPositive);
+  const sortedCategoryNames = (Object.entries(aggregatedData) as [string, number][])
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .slice(0, limit > 0 ? limit : undefined)
+    .map(([category]) => category);
 
-  // カラー生成関数の参照
-  let generateColors;
-  try {
-    if (colorGenerator && typeof colorGenerator === 'function') {
-      generateColors = colorGenerator;
-    } else {
-      // デフォルトのカラーリスト
-      const defaultColors = [
-        '#4E79A7', '#F28E2B', '#E15759', '#76B7B2', '#59A14F',
-        '#EDC948', '#B07AA1', '#FF9DA7', '#9C755F', '#BAB0AC',
-        '#2C7BE5', '#27AE60', '#9B59B6', '#F1C40F', '#E74C3C'
-      ];
+  const colors = colorGenerator(sortedCategoryNames.length);
 
-      generateColors = (count: number) => {
-        if (count <= defaultColors.length) {
-          return defaultColors.slice(0, count);
-        }
-        return Array(count).fill(undefined)
-          .map((_, i) => defaultColors[i % defaultColors.length]);
-      };
-    }
-  } catch (error) {
-    console.error('色生成関数のロード時にエラーが発生しました:', error);
-    // エラー時のフォールバック
-    generateColors = (count) => Array(count).fill('#cccccc');
-  }
-
-  // カラーを生成
-  const colors = generateColors(sortedCategories.length);
-
-  // Chart.js用のデータ形式に変換
   return {
-    labels: sortedCategories.map(item => item[0]),
-    datasets: [{
-      data: sortedCategories.map(item => item[1]),
-      backgroundColor: colors,
+    labels: sortedCategoryNames,
+    datasets: sortedCategoryNames.map((category, idx) => ({
+      label: category,
+      data: [aggregatedData[category]],
+      backgroundColor: colors[idx],
       borderWidth: 1
-    }]
+    }))
   };
 };
 
@@ -203,8 +177,18 @@ export const convertToChartData = (aggregatedData: Record<string, number>, optio
  * @param {function} options.compareMonths - 月をソートする比較関数
  * @returns {Object} Chart.js折れ線グラフ用のデータ形式
  */
-export const aggregateMonthlyData = (data: Record<string, unknown>[], options: AggregateMonthlyDataOptions = {}) => {
-  options = options || {};
+export const aggregateMonthlyData = (
+  data: Record<string, unknown>[],
+  options: Partial<{
+    dateKey: string;
+    categoryKey: string;
+    amountKey: string;
+    maxCategories: number;
+    normalizeDate?: (dateValue: unknown) => string;
+    colorGenerator?: (count: number) => string[];
+    compareMonths?: (a: string, b: string) => number;
+  }> = {}
+) => {
   const {
     dateKey = '日付',
     categoryKey = '大項目',
@@ -402,7 +386,7 @@ export const aggregateMonthlyData = (data: Record<string, unknown>[], options: A
   console.log('ソート済み月次データ:', sortedMonths);
   
   // カテゴリごとの合計金額を計算
-  const categoryTotals = {};
+  const categoryTotals: { [category: string]: number } = {};
   
   sortedMonths.forEach(month => {
     Object.entries(monthlyData[month]).forEach(([category, amount]) => {
@@ -410,19 +394,20 @@ export const aggregateMonthlyData = (data: Record<string, unknown>[], options: A
     });
   });
   
-  // 合計金額の降順でカテゴリをソート、上位N個を選択
-  const topCategories = Object.keys(categoryTotals)
-    .filter(category => categoryTotals[category] > 0)
-    .sort((a, b) => categoryTotals[b] - categoryTotals[a])
-    .slice(0, maxCategories);
-  
-  console.log('選択されたトップカテゴリ:', topCategories);
-  
-  if (topCategories.length === 0) {
+  // カテゴリを合計金額降順でソート
+  const sortedCategories = Object.entries(categoryTotals)
+    .map(([k, v]) => [k, Number(v)] as [string, number])
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .slice(0, maxCategories)
+    .map(([category]) => category);
+
+  console.log('選択されたトップカテゴリ:', sortedCategories);
+
+  if (sortedCategories.length === 0) {
     console.warn('表示可能なカテゴリがありません');
     return { labels: [], datasets: [] };
   }
-  
+
   // チャートカラーを生成
   const generateColorsFn = colorGenerator || ((count: number) => {
     const defaultColors = [
@@ -434,22 +419,17 @@ export const aggregateMonthlyData = (data: Record<string, unknown>[], options: A
     }
     return Array(count).fill(undefined).map((_, i) => defaultColors[i % defaultColors.length]);
   });
-  
-  const colors = generateColorsFn(topCategories.length);
-  
+
+  const colors = generateColorsFn(sortedCategories.length);
+
   // Chart.js用のデータセットを作成
-  const datasets = topCategories.map((category, index) => {
-    // 月ごとの金額データを収集
-    const data = sortedMonths.map(month => {
-      return monthlyData[month][category] || 0;
-    });
-    
-    // データセット定義を作成
+  const datasets = sortedCategories.map((category, index) => {
+    const data = sortedMonths.map(month => monthlyData[month][category] || 0);
     return {
       label: category,
-      data: data,
+      data,
       borderColor: colors[index],
-      backgroundColor: `${colors[index]}33`, // 透明度33%
+      backgroundColor: `${colors[index]}33`,
       borderWidth: 2,
       fill: false,
       tension: 0.1,

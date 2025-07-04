@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 /// <reference types="@testing-library/jest-dom" />
 
 // ChartData, TrendData, HouseholdRecord などの型定義
@@ -38,8 +39,10 @@ export interface AppProps {
   initialData?: HouseholdRecord[];
 }
 
+export type AggregatedCategory = { total: number; items: unknown[] };
+
 export interface AggregatedTableProps {
-  aggregatedData: Record<string, unknown>[];
+  aggregatedData: Record<string, AggregatedCategory>;
 }
 export interface BalanceViewProps {
   positiveTotal: number;
@@ -56,7 +59,7 @@ export interface CategoryDetailsTableProps {
   title?: string;
 }
 export interface CategoryPieChartProps {
-  data: Record<string, unknown>[];
+  data: Record<string, number>;
   onHover?: (info: { label: string; subtotal: number; [key: string]: unknown }) => void;
 }
 export interface CategoryQuadrantViewProps {
@@ -135,8 +138,9 @@ export interface ChartPluginOptions {
 
 // 予測APIの返り値型
 export type PredictionResult = {
-  nextMonths: string[];
-  nextMonth: string;
-  predictions: { [category: string]: number[] };
-  method: string;
+  success: boolean;
+  historical_data: { year_month: string; amount: number; lower_bound?: number; upper_bound?: number }[];
+  forecast_data: { year_month: string; amount: number; lower_bound?: number; upper_bound?: number }[];
+  target_category?: string;
+  [key: string]: unknown;
 };

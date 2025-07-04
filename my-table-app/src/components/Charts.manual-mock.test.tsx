@@ -33,6 +33,25 @@ jest.mock('./Charts', () => {
 
 // モックしたコンポーネントをインポート
 import Charts from './Charts';
+// Charts.manual-mock.test.tsxのprops型エラー解消: props型を明示的に定義
+import type { ChartsProps } from '../types';
+
+const DummyCharts = (props: ChartsProps) => (
+  <div>
+    <h2>収入: ¥{props.positiveTotal.toLocaleString()}</h2>
+    {props.positiveChartData.labels.map((label, i) => (
+      <div key={label}>
+        {label}: ¥{props.positiveChartData.datasets[0].data[i].toLocaleString()}
+      </div>
+    ))}
+    <h2>支出: ¥{props.negativeTotal.toLocaleString()}</h2>
+    {props.negativeChartData.labels.map((label, i) => (
+      <div key={label}>
+        {label}: ¥{props.negativeChartData.datasets[0].data[i].toLocaleString()}
+      </div>
+    ))}
+  </div>
+);
 
 describe('Charts Component with Manual Mock', () => {
   test('renders with mocked Chart.js', () => {
@@ -43,7 +62,7 @@ describe('Charts Component with Manual Mock', () => {
           datasets: [{ 
             label: '収入',
             data: [3000, 1000, 2000],
-            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'] as unknown as string
+            backgroundColor: '#FF6384'
           }]
         }}
         negativeChartData={{
@@ -51,7 +70,7 @@ describe('Charts Component with Manual Mock', () => {
           datasets: [{ 
             label: '支出',
             data: [30000, 5000],
-            backgroundColor: ['#4BC0C0', '#9966FF'] as unknown as string
+            backgroundColor: '#4BC0C0'
           }]
         }}
         positiveTotal={6000}

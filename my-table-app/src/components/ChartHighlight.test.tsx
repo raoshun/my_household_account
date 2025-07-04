@@ -40,9 +40,10 @@ jest.mock('chart.js', () => {
 const mockChartData = {
   labels: ['食費', '交通費', '娯楽'],
   datasets: [{
+    label: '支出',
     data: [3000, 1000, 2000],
-    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-    hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+    backgroundColor: '#FF6384',
+    hoverBackgroundColor: '#FF6384'
   }]
 };
 

@@ -1,8 +1,8 @@
 import React from 'react';
 import './CategoryDetailsTable.css';
-import type { CategoryDetailsTableProps } from '../types';
+import type { CategoryDetailsTableProps as _CategoryDetailsTableProps } from '../types';
 
-const CategoryDetailsTable: React.FC<CategoryDetailsTableProps> = ({ category, data, onBack, title }) => {
+const CategoryDetailsTable: React.FC<_CategoryDetailsTableProps> = ({ category, data, title }) => {
   // データがない場合
   if (!data || data.length === 0) {
     return (

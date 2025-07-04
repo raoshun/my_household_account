@@ -1,17 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Chart, ArcElement, Tooltip, Legend, PieController } from 'chart.js';
 import PropTypes from 'prop-types';
+import type { TestEnvWindow } from '../types';
 
 // テスト環境を検出する関数（より堅牢な実装に）
 const isTestEnv = () => {
   // Jest環境かどうか確認（複数の方法で検出）
   if (typeof window !== 'undefined') {
-    if (window.__JEST_TEST_ENV__ === true) {
+    if ((window as TestEnvWindow).__JEST_TEST_ENV__ === true) {
       return true;
     }
     
     // window上の他のテスト環境フラグをチェック
-    if (window.testEnvironment || window._env_?.NODE_ENV === 'test') {
+    if ((window as TestEnvWindow).testEnvironment || (window as TestEnvWindow)._env_?.NODE_ENV === 'test') {
       return true;
     }
   }
@@ -32,7 +33,7 @@ const isTestEnv = () => {
     if (userAgent.includes('node.js') || userAgent.includes('jsdom')) {
       return true;
     }
-  } catch (e) {
+  } catch {
     // navigatorアクセスエラーはテスト環境の可能性が高い
     return true;
   }
@@ -42,7 +43,7 @@ const isTestEnv = () => {
 
 // グローバルにテスト環境フラグを設定（他のモジュールからも参照できるように）
 if (typeof window !== 'undefined') {
-  window.__JEST_TEST_ENV__ = isTestEnv();
+  (window as TestEnvWindow).__JEST_TEST_ENV__ = isTestEnv();
 }
 
 // Chart.js コンポーネントを登録（テスト環境でなければ実行）

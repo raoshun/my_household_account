@@ -1,17 +1,19 @@
 import React from 'react';
-import { render, fireEvent, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
+import type { TestEnvWindow } from '../types';
+import PropTypes from 'prop-types';
 
 // テスト環境フラグを明示的に設定 - グローバルとJest環境変数の両方を設定
-window.__JEST_TEST_ENV__ = true;
-process.env.NODE_ENV = 'test';
+(window as TestEnvWindow).__JEST_TEST_ENV__ = true;
+// process.env.NODE_ENV = 'test'; // 読み取り専用なのでコメントアウト
 
 // カウンターを使ったレンダリング追跡
 let renderCount = 0;
 
 // モック用コンポーネント - chartsKeyをより分かりやすく表示
-const MockCharts = ({ chartsKey, positiveChartData, negativeChartData, options, onClick, onHover }) => {
+const MockCharts = ({ chartsKey, positiveChartData, negativeChartData, options, onClick, onHover, positiveTotal, negativeTotal }) => {
   // レンダリングカウンターをインクリメント
   renderCount++;
   
@@ -30,15 +32,31 @@ const MockCharts = ({ chartsKey, positiveChartData, negativeChartData, options, 
           </div>
         ))}
       </div>
+      <div className="totals">
+        <div>収入合計: {positiveTotal}円</div>
+        <div>支出合計: {negativeTotal}円</div>
+      </div>
+      <div className="handlers">
+        <button onClick={onClick}>クリック</button>
+        <button onMouseEnter={onHover}>ホバー</button>
+      </div>
+      <div className="options-debug">
+        Options: {JSON.stringify(options)}
+      </div>
+      <div className="negative-data">
+        {negativeChartData && `負のデータ件数: ${negativeChartData.labels?.length || 0}件`}
+      </div>
     </div>
   );
 };
 
 // モック適用 - Chartsコンポーネントを完全に置き換え
 jest.mock('../components/Charts', () => {
-  return function(props) {
+  const MockChartsComponent = function(props) {
     return <MockCharts {...props} />;
   };
+  MockChartsComponent.displayName = 'MockCharts';
+  return MockChartsComponent;
 });
 
 // テスト対象のDashboardコンポーネント
@@ -106,11 +124,32 @@ function Dashboard({ data, filters, onFilterChange }) {
           positiveTotal={0}
           negativeTotal={0}
           options={{}}
+          onClick={() => {}}
+          onHover={() => {}}
         />
       </div>
     </div>
   );
 }
+
+// PropTypesを追加
+MockCharts.propTypes = {
+  chartsKey: PropTypes.any,
+  positiveChartData: PropTypes.object,
+  negativeChartData: PropTypes.object,
+  options: PropTypes.object,
+  onClick: PropTypes.func,
+  onHover: PropTypes.func,
+  positiveTotal: PropTypes.number,
+  negativeTotal: PropTypes.number
+};
+
+// DashboardコンポーネントのPropTypesを追加
+Dashboard.propTypes = {
+  data: PropTypes.array,
+  filters: PropTypes.object,
+  onFilterChange: PropTypes.func
+};
 
 // テスト
 describe('Dashboard フィルター変更時にチャートが再レンダリングされること', () => {
@@ -138,7 +177,7 @@ describe('Dashboard フィルター変更時にチャートが再レンダリン
         <Dashboard 
           data={testData}
           filters={{ category: '' }}
-          onFilterChange={(filters) => {
+          onFilterChange={(_filters) => {
             // ここでは何もしない (テスト用のスタブ)
           }}
         />

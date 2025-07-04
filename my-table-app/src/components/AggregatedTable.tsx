@@ -1,8 +1,8 @@
 import React from 'react';
 import './AggregatedTable.css';
-import type { AggregatedTableProps } from '../types';
+import type { AggregatedTableProps as _AggregatedTableProps } from '../types';
 
-const AggregatedTable: React.FC<AggregatedTableProps> = ({ aggregatedData = [] }) => {
+const AggregatedTable: React.FC<_AggregatedTableProps> = ({ aggregatedData = [] }) => {
   // 集計データが空の場合の処理
   if (!aggregatedData || Object.keys(aggregatedData).length === 0) {
     return (

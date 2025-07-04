@@ -3,23 +3,26 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Charts from './Charts';
 import { chartOptions } from '../config/chartOptions';
+import type { TestEnvWindow } from '../types';
 
 // テスト用データ
 const mockPositiveChartData = {
   labels: ['食費', '交通費', '娯楽'],
   datasets: [{
+    label: '支出',
     data: [3000, 1000, 2000],
-    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-    hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56']
+    backgroundColor: '#FF6384', // 修正
+    hoverBackgroundColor: '#FF6384' // 修正
   }]
 };
 
 const mockNegativeChartData = {
   labels: ['給料', '賞与'],
   datasets: [{
+    label: '収入',
     data: [30000, 5000],
-    backgroundColor: ['#4BC0C0', '#9966FF'],
-    hoverBackgroundColor: ['#4BC0C0', '#9966FF']
+    backgroundColor: '#4BC0C0', // 修正
+    hoverBackgroundColor: '#4BC0C0' // 修正
   }]
 };
 
@@ -32,7 +35,7 @@ describe('チャートのホバー機能テスト', () => {
 
   test('カスタムマウス移動ハンドラーが適切に動作することを確認', async () => {
     // テスト環境フラグを設定
-    window.__JEST_TEST_ENV__ = true;
+    (window as TestEnvWindow).__JEST_TEST_ENV__ = true;
     
     await act(async () => {
       render(
@@ -50,6 +53,7 @@ describe('チャートのホバー機能テスト', () => {
 
     // テスト環境向けモックUIでテスト
     const positiveChartElem = screen.getByTestId('mock-positive-chart');
+    console.log('Found chart element:', positiveChartElem);
     
     // チャートの項目にマウスを移動
     const foodItem = screen.getByText(/食費/);
@@ -70,7 +74,7 @@ describe('チャートのホバー機能テスト', () => {
   
   test('実環境ではカスタムmousemoveハンドラーが設定されることを確認', async () => {
     // テスト環境フラグを解除してrealDOMをシミュレート
-    window.__JEST_TEST_ENV__ = false;
+    (window as TestEnvWindow).__JEST_TEST_ENV__ = false;
     
     // Canvasをモック
     const mockCanvas = document.createElement('canvas');
@@ -93,18 +97,21 @@ describe('チャートのホバー機能テスト', () => {
       width: 200,
       height: 200,
       left: 0,
-      top: 0
+      top: 0,
+      right: 200,
+      bottom: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({})
     });
     
     // querySelectorのモック
     const originalQuerySelector = document.querySelector;
     document.querySelector = jest.fn().mockReturnValue(mockCanvas);
     
-    let positiveChartRef;
-    
     // Refを取得するためのモックコンポーネント
-    function MockCharts(props) {
-      positiveChartRef = React.useRef(mockCanvas);
+    function MockCharts() {
+      React.useRef(mockCanvas);
       return <div data-testid="mock-component"></div>;
     }
     
@@ -129,7 +136,7 @@ describe('チャートのホバー機能テスト', () => {
     
     // モックを元に戻す
     document.querySelector = originalQuerySelector;
-    window.__JEST_TEST_ENV__ = true;
+    (window as TestEnvWindow).__JEST_TEST_ENV__ = true;
     
     // mousemoveハンドラーが設定されたことを確認
     expect(mousemoveSpy).toHaveBeenCalled();

@@ -289,30 +289,25 @@ export const parseNumber = (value) => {
  * @param {number} [maxCategories] - 表示するカテゴリの最大数（位置パラメータ方式の場合）
  * @returns {Object} - Chart.js折れ線グラフ用のデータ形式
  */
-export const prepareMonthlyTrendData = (data, options = {}, categoryKey, amountKey, maxCategories) => {
+export const prepareMonthlyTrendData = (
+  data: Record<string, unknown>[],
+  options: Partial<{
+    dateKey: string;
+    categoryKey: string;
+    amountKey: string;
+    maxCategories: number;
+    debugMode?: boolean;
+  }> = {}
+) => {
   // パラメータの形式をチェックして適切に変換
-  let normalizedOptions = options;
-  
-  // 第2引数が文字列の場合は位置パラメータ方式と判断
-  if (typeof options === 'string') {
-    normalizedOptions = {
-      dateKey: options, // 第2引数をdateKeyとして使用
-      categoryKey: categoryKey || '大項目',
-      amountKey: amountKey || '金額（円）',
-      maxCategories: maxCategories || 5
-    };
-    
-    console.log('位置パラメータ方式でprepareMonthlyTrendDataが呼び出されました');
-  } else {
-    // デフォルト値の設定
-    normalizedOptions = {
-      dateKey: options.dateKey || '日付',
-      categoryKey: options.categoryKey || '大項目',
-      amountKey: options.amountKey || '金額（円）',
-      maxCategories: options.maxCategories || 5,
-      ...options
-    };
-  }
+  const normalizedOptions = {
+    dateKey: options?.dateKey || '日付',
+    categoryKey: options?.categoryKey || '大項目',
+    amountKey: options?.amountKey || '金額（円）',
+    maxCategories: options?.maxCategories || 5,
+    debugMode: options?.debugMode || false,
+    ...options
+  };
   
   try {
     // データ入力チェック

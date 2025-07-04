@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import PropTypes from 'prop-types';
-import type { CategoryPieChartProps } from '../types';
+import type { CategoryPieChartProps as _CategoryPieChartProps } from '../types';
 
 const MAIN_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28BFE', '#FFB6B6', '#B6FFB6', '#B6D4FF'];
 const SUB_COLORS = [
@@ -168,23 +168,23 @@ CustomTooltip.defaultProps = {
   payload: []
 };
 
-const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ data = [], onHover }) => {
+const CategoryPieChart: React.FC<_CategoryPieChartProps> = ({ data = {} }) => {
   // 状態の保持
   const [mainDataWithLayout, setMainDataWithLayout] = useState([]);
   const [subDataWithLayout, setSubDataWithLayout] = useState([]);
-  const [startAngle, setStartAngle] = useState(-90); // 12時の位置から開始
-  const [endAngle, setEndAngle] = useState(270);    // 360-90 で一周
-  const [totalAmount, setTotalAmount] = useState(0); // 総額
+  const [startAngle] = useState(-90); // 12時の位置から開始
+  const [endAngle] = useState(270);    // 360-90 で一周
 
   useEffect(() => {
     // 総額を計算
-    const total = Object.values(data).reduce((sum, value) => sum + value, 0);
-    setTotalAmount(total);
+    const total = Object.values(data)
+      .filter((value): value is number => typeof value === 'number')
+      .reduce((sum, value) => sum + value, 0);
     
     // 大分類ごとに合計を集計
     const mainTotals = {};
     Object.entries(data).forEach(([key, value]) => {
-      const [main, _] = key.split(' - ');
+      const [main] = key.split(' - ');
       if (!mainTotals[main]) mainTotals[main] = 0;
       mainTotals[main] += value;
     });
@@ -209,7 +209,7 @@ const CategoryPieChart: React.FC<CategoryPieChartProps> = ({ data = [], onHover 
 
     // 中分類データをグループ化
     Object.entries(data).forEach(([key, value]) => {
-      const [main, sub] = key.split(' - ');
+      const [main] = key.split(' - ');
       const mainIdx = Object.keys(mainTotals).indexOf(main);
       
       if (subDataByMain[main]) {

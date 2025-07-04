@@ -5,7 +5,6 @@
  * @param {string} order - ソート順序 ('asc' または 'desc')
  * @returns {Array} - ソート済みの配列
  */
-import { aggregateByCategory } from './categoryAggregation';
 
 export function sortData(data, key, order = 'asc') {
   // 入力チェック

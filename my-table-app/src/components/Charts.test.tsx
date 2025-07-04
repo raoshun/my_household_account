@@ -3,28 +3,28 @@ import React from 'react';
 import { render, screen, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Charts from './Charts';
+import type { TestEnvWindow } from '../types';
 
 // テスト用データ
 const mockPositiveChartData = {
-  labels: ['食費', '交通費', '娯楽'],
-  datasets: [
-    {
-      label: '支出',
-      data: [3000, 1000, 2000],
-      backgroundColor: '#FF6384',
-      hoverBackgroundColor: '#FF6384'
-    }
-  ]
-};
-
-const mockNegativeChartData = {
-  labels: ['給料', '賞与'],
+  labels: ['A', 'B'],
   datasets: [
     {
       label: '収入',
-      data: [30000, 5000],
-      backgroundColor: '#4BC0C0',
-      hoverBackgroundColor: '#4BC0C0'
+      data: [1000, 2000],
+      backgroundColor: '#fff',
+      hoverBackgroundColor: '#eee'
+    }
+  ]
+};
+const mockNegativeChartData = {
+  labels: ['A', 'B'],
+  datasets: [
+    {
+      label: '支出',
+      data: [3000, 4000],
+      backgroundColor: '#000',
+      hoverBackgroundColor: '#ccc'
     }
   ]
 };
@@ -71,7 +71,7 @@ describe('Charts Component', () => {
   afterEach(() => {
     cleanup();
     // windowをanyとして拡張プロパティを安全に削除
-    delete (window as any).__JEST_TEST_ENV__;
+    delete (window as TestEnvWindow).__JEST_TEST_ENV__;
   });
   
   test('renders chart components with proper data', () => {

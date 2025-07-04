@@ -1,4 +1,4 @@
-import type { CategoryQuadrantViewProps } from '../types';
+import type { CategoryQuadrantViewProps as _CategoryQuadrantViewProps } from '../types';
 import type { ExpenseRecord } from '../types';
 import React, { useState, useEffect } from 'react';
 import './CategoryQuadrantView.css';
@@ -12,7 +12,7 @@ import './CategoryQuadrantView.css';
  * @param {number} props.negativeTotal - 支出合計額（負の値）
  * @returns {React.ReactElement} カテゴリ四分法ビュー
  */
-const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], negativeTotal = 0 }) => {
+const CategoryQuadrantView: React.FC<_CategoryQuadrantViewProps> = ({ data = [], negativeTotal = 0 }) => {
   // 支出の絶対値（正の値）
   const expenseTotal = Math.abs(negativeTotal);
   
@@ -333,7 +333,7 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
   // カテゴリの分類状況の要約を計算
   // totalCategoriesの計算方法をgroupedUnassignedCategoriesに合わせて変更
   const totalAssignedCount = Object.keys(categoryAssignments).length;
-  const totalUnassignedCount = Object.values(groupedUnassignedCategories).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
+  const totalUnassignedCount = Object.values(groupedUnassignedCategories).reduce((sum: number, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
   const totalCategories = totalAssignedCount + Number(totalUnassignedCount);
   const assignmentProgress = totalCategories > 0 ? (totalAssignedCount / totalCategories) * 100 : 0;
 
@@ -341,7 +341,7 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
   const renderQuadrantCategories = (quadrant) => {
     // 該当象限に割り当てられたカテゴリキーを取得
     const assignedKeysInQuadrant = Object.entries(categoryAssignments)
-      .filter(([_categoryKey, assignedQuadrant]) => assignedQuadrant === quadrant)
+      .filter(([, assignedQuadrant]) => assignedQuadrant === quadrant)
       .map(([categoryKey]) => categoryKey);
 
     // 割り当てられたカテゴリを大項目ごとにグループ化
@@ -362,7 +362,7 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
     // 大項目名でソート
     const sortedGroupArray = Object.entries(groupedAssigned).sort(([a], [b]) => a.localeCompare(b));
     // 各グループ内も中項目でソート
-    sortedGroupArray.forEach(([_mainCategory, subCategories], idx) => {
+    sortedGroupArray.forEach(([, subCategories], idx) => {
       sortedGroupArray[idx][1] = (subCategories as string[]).slice().sort();
     });
 
@@ -389,7 +389,7 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
               <div key={`assigned-group-${quadrant}-${mainCategory}`} className="assigned-category-group">
                 <h5 className="assigned-main-category-header">{mainCategory}</h5>
                 <div className="assigned-subcategory-tags">
-                  {subCategories.map(subCategory => {
+                  {Array.isArray(subCategories) ? subCategories.map(subCategory => {
                     const categoryKey = `${mainCategory} - ${subCategory}`;
                     return (
                       <div 
@@ -407,7 +407,7 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
                         >×</button>
                       </div>
                     );
-                  })}
+                  }) : null}
                 </div>
               </div>
             ))
@@ -469,12 +469,12 @@ const CategoryQuadrantView: React.FC<CategoryQuadrantViewProps> = ({ data = [], 
               <div key={`unassigned-group-${mainCategory}`} className="unassigned-category-group">
                 <h4 className="unassigned-main-category-header">{mainCategory}</h4>
                 <div className="unassigned-subcategory-list">
-                  {subCategories.map(subCategory => {
+                  {Array.isArray(subCategories) ? subCategories.map(subCategory => {
                     const categoryKey = `${mainCategory} - ${subCategory}`;
                     return (
                       <div key={`unassigned-${categoryKey}`} className={`unassigned-category-item ${draggedCategory === categoryKey ? 'dragging' : ''}`} draggable onDragStart={(e) => handleDragStart(e, categoryKey)} onDragEnd={handleDragEnd}>{subCategory}</div>
                     );
-                  })}
+                  }) : null}
                 </div>
               </div>
             ))

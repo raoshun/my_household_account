@@ -1,11 +1,30 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+
+interface Dataset {
+  label: string;
+  data: number[];
+  borderColor: string;
+  backgroundColor: string;
+}
+
+interface TrendData {
+  labels: string[];
+  datasets: Dataset[];
+}
+
+interface MockMonthlyTrendChartProps {
+  trendData?: TrendData;
+  options?: object;
+  showPrediction?: boolean;
+  forecastPeriods?: number;
+  predictionMethod?: string;
+}
 
 /**
  * MonthlyTrendChartのモック版（テスト用）
  * Chart.registerablesに関する問題を回避するためのシンプルな実装
  */
-const MockMonthlyTrendChart = ({ 
+const MockMonthlyTrendChart: React.FC<MockMonthlyTrendChartProps> = ({ 
   trendData = { labels: [], datasets: [] },
   showPrediction = false,
   predictionMethod = 'auto'
@@ -13,6 +32,9 @@ const MockMonthlyTrendChart = ({
   return (
     <div className="monthly-trend-chart-container" data-testid="monthly-trend-chart">
       <canvas className="monthly-trend-chart"></canvas>
+      <div className="chart-info">
+        <span>データ数: {trendData.labels?.length || 0}</span>
+      </div>
       
       {showPrediction && (
         <div className="prediction-info">
@@ -25,22 +47,6 @@ const MockMonthlyTrendChart = ({
       )}
     </div>
   );
-};
-
-MockMonthlyTrendChart.propTypes = {
-  trendData: PropTypes.shape({
-    labels: PropTypes.array,
-    datasets: PropTypes.arrayOf(PropTypes.shape({
-      label: PropTypes.string,
-      data: PropTypes.array,
-      borderColor: PropTypes.string,
-      backgroundColor: PropTypes.string
-    }))
-  }),
-  options: PropTypes.object,
-  showPrediction: PropTypes.bool,
-  forecastPeriods: PropTypes.number,
-  predictionMethod: PropTypes.string
 };
 
 export default MockMonthlyTrendChart;

@@ -62,9 +62,8 @@ export function lightenColor(colorHex, percent) {
 /**
  * チャートを安全に更新する関数
  * @param {Object} chartRef - チャートへの参照
- * @param {Object} newData - 新しいデータ
  */
-export function safeChartUpdate(chartRef, newData) {
+export function safeChartUpdate(chartRef) {
   if (chartRef && chartRef.current && typeof chartRef.current.update === 'function') {
     chartRef.current.update();
   }

@@ -4,7 +4,7 @@ import type { InteractionModeMap } from 'chart.js/dist/types';
 import { getDefaultTrendChartOptions } from '../utils/monthlyTrendUtils';
 import { getMockPrediction } from '../api/trendPredictionApi';
 import './MonthlyTrendChart.css';
-import type { MonthlyTrendChartProps } from '../types';
+import type { MonthlyTrendChartProps as _MonthlyTrendChartProps } from '../types';
 
 /**
  * 月次推移チャートコンポーネント
@@ -20,7 +20,7 @@ import type { MonthlyTrendChartProps } from '../types';
  * @param {boolean} props.showSavingsRate - 貯蓄率を表示するかどうか
  * @returns {JSX.Element} - 月次推移チャート
  */
-const MonthlyTrendChart: React.FC<MonthlyTrendChartProps> = ({ 
+const MonthlyTrendChart: React.FC<_MonthlyTrendChartProps> = ({ 
   trendData = { labels: [], datasets: [] }, 
   options = {},
   showPrediction = false,

@@ -17,7 +17,7 @@ const mockPositiveChartData = {
   labels: ['食費', '交通費', '娯楽'],
   datasets: [
     {
-      label: '支出',
+      label: '支出', // 追加
       data: [3000, 1000, 2000],
       backgroundColor: '#FF6384',
       hoverBackgroundColor: '#FF6384'
@@ -29,7 +29,7 @@ const mockNegativeChartData = {
   labels: ['給料', '賞与'],
   datasets: [
     {
-      label: '収入',
+      label: '収入', // 追加
       data: [30000, 5000],
       backgroundColor: '#4BC0C0',
       hoverBackgroundColor: '#4BC0C0'
@@ -105,6 +105,7 @@ jest.mock('./Charts', () => {
 import Charts from './Charts';
 // chartOptionsをインポート
 import { chartOptions } from '../config/chartOptions';
+import type { TestEnvWindow } from '../types';
 
 describe('Charts インタラクションテスト', () => {
   beforeEach(() => {
@@ -114,7 +115,7 @@ describe('Charts インタラクションテスト', () => {
 
   test('チャートがクリック時にのみ反応することを確認', async () => {
     // テスト環境変数を設定して実際のChart.jsを使用
-    window.__JEST_TEST_ENV__ = true;
+    (window as TestEnvWindow).__JEST_TEST_ENV__ = true;
     
     // テスト用のチャートオプション
     const testOptions = {
@@ -246,13 +247,25 @@ describe('Charts 統合テスト', () => {
 describe('Charts マウスイベントテスト', () => {
   test('canvasにマウスイベントハンドラが設定されることを確認', async () => {
     // テスト環境フラグを一時的に解除
-    const originalIsTestEnv = window.__JEST_TEST_ENV__;
-    window.__JEST_TEST_ENV__ = false;
+    const originalIsTestEnv = (window as TestEnvWindow).__JEST_TEST_ENV__;
+    (window as TestEnvWindow).__JEST_TEST_ENV__ = false;
     
     // カスタムモックCanvasを作成
     const mockCanvas = document.createElement('canvas');
     const noopFunc = () => {};
     mockCanvas.getContext = jest.fn().mockReturnValue({});
+    // getBoundingClientRectをモック
+    mockCanvas.getBoundingClientRect = () => ({
+      width: 200,
+      height: 200,
+      left: 0,
+      top: 0,
+      right: 200,
+      bottom: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => ({})
+    });
     
     // querySelectorのモック
     const originalQuerySelector = document.querySelector;
@@ -279,7 +292,7 @@ describe('Charts マウスイベントテスト', () => {
     
     // モックを元に戻す
     document.querySelector = originalQuerySelector;
-    window.__JEST_TEST_ENV__ = originalIsTestEnv;
+    (window as TestEnvWindow).__JEST_TEST_ENV__ = originalIsTestEnv;
     
     // 実際のアサーションなしでも成功とみなす（エラーが発生しなければOK）
     expect(true).toBeTruthy();

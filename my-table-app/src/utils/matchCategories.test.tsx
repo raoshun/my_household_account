@@ -1,5 +1,5 @@
 // matchCategories.test.js
-import { jest, test, expect, describe, beforeEach } from '@jest/globals';
+import { jest, test, expect, describe } from '@jest/globals';
 
 // モックデータ（モジュールの外部で定義）
 const mockCategoryData = [

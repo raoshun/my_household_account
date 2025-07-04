@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useTable, useSortBy, usePagination } from 'react-table';
 import './DataTable.css';
-import type { DataTableProps } from '../types';
+import type { DataTableProps as _DataTableProps } from '../types';
 
 // セル用PropTypes
 const CellPropType = {
@@ -28,7 +28,7 @@ function AmountCell({ value }) {
 
 AmountCell.propTypes = CellPropType;
 
-const DataTable: React.FC<DataTableProps> = ({ data }) => {
+const DataTable: React.FC<_DataTableProps> = ({ data }) => {
   const columns = React.useMemo(
     () => [
       { Header: '計算対象', accessor: '計算対象' },

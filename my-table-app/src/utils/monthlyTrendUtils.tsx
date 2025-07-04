@@ -148,7 +148,13 @@ export const generateColors = (count) => {
  * @param {boolean} options.debug - デバッグモードを有効にするかどうか (デフォルト: false)
  * @returns {Object} Chart.js折れ線グラフ用のデータ
  */
-export const createMonthlyTrendData = (data, options = {}) => {
+export const createMonthlyTrendData = (data: Record<string, unknown>[], options: Partial<{
+  dateKey: string;
+  categoryKey: string;
+  amountKey: string;
+  maxCategories: number;
+  debug?: boolean;
+}> = {}) => {
   // デフォルトオプション
   const {
     dateKey = '日付',
@@ -228,7 +234,8 @@ export const createMonthlyTrendData = (data, options = {}) => {
 
     // カテゴリを合計金額降順でソート
     const sortedCategories = Object.entries(categoryTotals)
-      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => [k, Number(v)] as [string, number])
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
       .slice(0, maxCategories)
       .map(([category]) => category);
 
