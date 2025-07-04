@@ -1,3 +1,5 @@
+import { generateColorPalette } from './chartDataUtils';
+
 /**
  * カテゴリ集計に関する共通ユーティリティ関数
  */
@@ -130,7 +132,7 @@ export const convertToChartData = (aggregatedData: Record<string, number>, optio
   options = options || {};
   const {
     limit = 0,
-    colorGenerator = null
+    colorGenerator = generateColorPalette // デフォルト値を関数に
   } = options;
 
   // 集計データが無効な場合は空のチャートデータを返す

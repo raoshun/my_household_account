@@ -46,15 +46,17 @@ export const splitDataBySign = (data, amountKey = '金額（円）') => {
 export const aggregateDataByCategory = (data, categoryKey = '大項目', amountKey = '金額（円）') => {
   // prepareChartDataを利用して集計
   const result = originalPrepareChartData(data, categoryKey, amountKey);
-  
-  // テスト互換形式に変換して返す
+
+  // Chart.jsの標準形式（1つのdatasetに全カテゴリ分のdata）に変換
   return {
     labels: result.labels,
-    datasets: [{
-      data: result.datasets[0].data,
-      backgroundColor: result.datasets[0].backgroundColor || [],
-      hoverBackgroundColor: result.datasets[0].backgroundColor || [] // 元の背景色と同じに
-    }]
+    datasets: [
+      {
+        data: result.datasets.map(ds => ds.data[0]),
+        backgroundColor: result.datasets[0]?.backgroundColor || '',
+        hoverBackgroundColor: result.datasets[0]?.backgroundColor || '',
+      }
+    ]
   };
 };
 
