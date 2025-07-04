@@ -51,8 +51,8 @@ describe('BalanceView コンポーネント', () => {
     );
     
     // 収支合計をチェック（20000円の黒字）- より具体的なセレクタを使用
-    const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card');
-    expect(within(summaryCard).getByText('¥20,000') as HTMLElement).toBeInTheDocument();
+    const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card') as HTMLElement;
+    expect(within(summaryCard).getByText('¥20,000')).toBeInTheDocument();
     expect(screen.getByText('黒字')).toBeInTheDocument();
     
     // 黒字用のアドバイスが表示されているか
@@ -77,8 +77,8 @@ describe('BalanceView コンポーネント', () => {
     );
     
     // 収支合計をチェック（30000円の赤字）- より具体的なセレクタを使用
-    const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card');
-    expect(within(summaryCard).getByText('¥-30,000') as HTMLElement).toBeInTheDocument();
+    const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card') as HTMLElement;
+    expect(within(summaryCard).getByText('¥-30,000')).toBeInTheDocument();
     expect(screen.getByText('赤字')).toBeInTheDocument();
     
     // 赤字用のアドバイスが表示されているか
@@ -103,8 +103,8 @@ describe('BalanceView コンポーネント', () => {
     );
     
     // 収支合計をチェック（0円で均衡）- より具体的なセレクタを使用
-    const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card');
-    expect(within(summaryCard).getByText('¥0') as HTMLElement).toBeInTheDocument();
+    const summaryCard = screen.getByText('今月の収支').closest('.balance-summary-card') as HTMLElement;
+    expect(within(summaryCard).getByText('¥0')).toBeInTheDocument();
     expect(screen.getByText('収支均衡')).toBeInTheDocument();
     
     // 収支均衡用のアドバイスが表示されているか

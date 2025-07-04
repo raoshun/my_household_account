@@ -196,7 +196,7 @@ describe('categoryAggregation', () => {
       
       // 各カテゴリの月別データが正しいか確認
       const foodDataset = result.datasets.find(dataset => dataset.label === '食費');
-      expect(foodDataset.data).toEqual([1000, 1500, 1200]);
+      expect(foodDataset!.data).toEqual([1000, 1500, 1200]);
     });
 
     test('カテゴリ数の制限が適用される', () => {

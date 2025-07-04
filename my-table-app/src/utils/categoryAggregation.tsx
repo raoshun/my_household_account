@@ -18,7 +18,10 @@ import { generateColorPalette } from './chartDataUtils';
  * @param {boolean} options.absolute - 金額の絶対値を使用するか (デフォルト: false)
  * @returns {Object} カテゴリごとの集計結果オブジェクト
  */
-export const aggregateByCategory = (data: Record<string, unknown>[], options: CategoryAggregationOptions = {}) => {
+export const aggregateByCategory = (
+  data?: Record<string, unknown>[] | null,
+  options: CategoryAggregationOptions = {}
+) => {
   options = options || {};
   const {
     categoryKey = '大項目',
