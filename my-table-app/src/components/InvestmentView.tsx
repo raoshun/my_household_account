@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Pie, Line } from 'react-chartjs-2';
 import './InvestmentView.css';
-import type { InvestmentViewProps, InvestmentRecord } from '../types';
+import type { InvestmentViewProps as _InvestmentViewProps, InvestmentRecord } from '../types';
 
 // 投資データをフィルタリングする
-const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
+const InvestmentView: React.FC<_InvestmentViewProps> = ({ data = [] }) => {
   // アクティブなタブを管理する状態
   const [activeTab, setActiveTab] = useState('overview');
   
@@ -350,7 +350,7 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan="3">合計</td>
+                    <td colSpan={3}>合計</td>
                     <td className="amount">{formatCurrency(totalStocks)}</td>
                   </tr>
                 </tfoot>
@@ -387,7 +387,7 @@ const InvestmentView: React.FC<InvestmentViewProps> = ({ data = [] }) => {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colSpan="3">合計</td>
+                    <td colSpan={3}>合計</td>
                     <td className="amount">{formatCurrency(totalReits)}</td>
                   </tr>
                 </tfoot>
