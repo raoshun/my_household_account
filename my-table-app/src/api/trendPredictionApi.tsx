@@ -1,4 +1,4 @@
-import { PredictionResult, TrendData } from '../types';
+import { PredictionResult as _PredictionResult, TrendData as _TrendData } from '../types';
 
 /**
  * トレンド予測APIクライアント
@@ -17,7 +17,10 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
  * @param {string} options.method - 予測手法 ('auto', 'arima', 'exponential', 'seasonal_ma')
  * @returns {Promise<Object>} - 予測結果を含むオブジェクト
  */
-export const getPredictedNextMonthValue = async (monthlyData, options = {}) => {
+export const getPredictedNextMonthValue = async (
+  monthlyData: [string, number][],
+  options: { forecastPeriods?: number; method?: string } = {}
+) => {
   try {
     // リクエストの検証
     if (!Array.isArray(monthlyData) || monthlyData.length < 3) {
@@ -64,7 +67,10 @@ export const getPredictedNextMonthValue = async (monthlyData, options = {}) => {
  * @param {string} options.method - 予測手法 ('auto', 'arima', 'exponential', 'seasonal_ma')
  * @returns {Promise<Object>} - カテゴリごとの予測結果 {nextMonths: ['2023年5月', '2023年6月', '2023年7月'], predictions: {'食費': [12345, 12500, 12600], '交通費': [5000, 5100, 5200], ...}}
  */
-export const getPredictedCategoryValues = async (trendData, options = {}) => {
+export const getPredictedCategoryValues = async (
+  trendData: _TrendData,
+  options: { forecastPeriods?: number; method?: string } = {}
+) => {
   try {
     // データ検証
     if (!trendData || !trendData.labels || !trendData.datasets ||
@@ -79,7 +85,6 @@ export const getPredictedCategoryValues = async (trendData, options = {}) => {
     } = options;
 
     // 各カテゴリごとに予測リクエストを作成
-    const categories = trendData.datasets.map(dataset => dataset.label);
     const monthLabels = trendData.labels;
     
     // カテゴリごとの月別データを抽出
@@ -127,9 +132,9 @@ export const getPredictedCategoryValues = async (trendData, options = {}) => {
  * @returns {Promise<Object>} - カテゴリごとの予測結果
  */
 export const getMockPrediction = async (
-  trendData: TrendData,
+  trendData: _TrendData,
   options: { forecastPeriods?: number; method?: string } = {}
-): Promise<PredictionResult> => {
+): Promise<_PredictionResult> => {
   return new Promise((resolve) => {
     // オプションのデフォルト値設定
     const { 
@@ -142,6 +147,9 @@ export const getMockPrediction = async (
       if (!trendData || !trendData.labels || !trendData.datasets ||
           trendData.labels.length === 0 || trendData.datasets.length === 0) {
         resolve({
+          success: false,
+          historical_data: [],
+          forecast_data: [],
           nextMonths: ['予測不可'],
           predictions: {},
           nextMonth: '予測不可', // テストで期待される値を追加
@@ -151,7 +159,6 @@ export const getMockPrediction = async (
       }
 
       // 最後の月から次の月を計算
-      const lastMonth = trendData.labels[trendData.labels.length - 1];
       const nextMonths = [];
       const nextMonth = '2025年4月'; // テスト用に固定値を設定
       
@@ -210,6 +217,9 @@ export const getMockPrediction = async (
       });
       
       resolve({
+        success: true,
+        historical_data: [],
+        forecast_data: [],
         nextMonths,
         nextMonth, // テスト用に追加
         predictions,

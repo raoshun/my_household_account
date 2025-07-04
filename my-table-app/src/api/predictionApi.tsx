@@ -1,3 +1,5 @@
+import type { PredictionResult } from '../types';
+
 /**
  * 家計簿予測APIクライアント
  * 
@@ -24,7 +26,7 @@ interface PredictOptions {
   [key: string]: unknown;
 }
 
-export const predictTrend = async (data: any[], options: PredictOptions = {}) => {
+export const predictTrend = async (data: Record<string, unknown>[], options: PredictOptions = {}) => {
   try {
     const {
       forecastPeriods = 3,
@@ -105,7 +107,7 @@ export const getPredictableCategories = async (data) => {
  * @param {string} options.targetColor - 予測線の色
  * @returns {Object} Chart.js用のデータ形式
  */
-export const convertPredictionToChartData = (predictionResult: any, options: { targetColor?: string } = {}) => {
+export const convertPredictionToChartData = (predictionResult: PredictionResult, options: { targetColor?: string } = {}) => {
   const { targetColor = '#FF6384' } = options;
 
   if (!predictionResult || !predictionResult.success) {
