@@ -136,11 +136,16 @@ export interface ChartPluginOptions {
   [key: string]: unknown;
 }
 
-// 予測APIの返り値型
+// 予測APIの返り値型（週次・月次両対応）
 export type PredictionResult = {
   success: boolean;
-  historical_data: { year_month: string; amount: number; lower_bound?: number; upper_bound?: number }[];
-  forecast_data: { year_month: string; amount: number; lower_bound?: number; upper_bound?: number }[];
+  historical_data: { year_month?: string; year_week?: string; amount: number; lower_bound?: number; upper_bound?: number }[];
+  forecast_data: { year_month?: string; year_week?: string; amount: number; lower_bound?: number; upper_bound?: number }[];
   target_category?: string;
+  nextMonths?: string[];
+  nextWeeks?: string[];
+  nextMonth?: string;
+  predictions: Record<string, number[]>;
+  method?: string;
   [key: string]: unknown;
 };

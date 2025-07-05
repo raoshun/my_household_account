@@ -294,7 +294,7 @@ jest.mock('./components/MonthlyTrendChart', () => {
   return function MockMonthlyTrendChart(props) {
     return (
       <div data-testid="mock-monthly-trend-chart">
-        <div>月次推移チャート (モック)</div>
+        <div>トレンド分析チャート (モック)</div>
       </div>
     );
   };

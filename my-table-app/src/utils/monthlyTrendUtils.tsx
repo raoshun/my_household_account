@@ -1,5 +1,5 @@
 /**
- * 月次推移データ処理のための専用ユーティリティ関数
+ * トレンド分析データ処理のための専用ユーティリティ関数
  */
 
 /**
@@ -137,7 +137,7 @@ export const generateColors = (count) => {
 };
 
 /**
- * データから月次推移チャート用のデータを生成する
+ * データからトレンド分析チャート用のデータを生成する
  * 
  * @param {Array} data - 家計簿データの配列
  * @param {Object} options - オプション設定
@@ -165,7 +165,7 @@ export const createMonthlyTrendData = (data: Record<string, unknown>[], options:
   } = options;
 
   if (debug) {
-    console.log('月次推移データ作成開始 - データ件数:', data?.length || 0);
+    console.log('トレンド分析データ作成開始 - データ件数:', data?.length || 0);
     if (data && data.length > 0) {
       console.log('サンプルデータ:', data[0]);
     }
@@ -173,7 +173,7 @@ export const createMonthlyTrendData = (data: Record<string, unknown>[], options:
 
   // データが無効な場合は空のデータを返す
   if (!data || !Array.isArray(data) || data.length === 0) {
-    console.warn('月次推移データを作成できません: データがありません');
+    console.warn('トレンド分析データを作成できません: データがありません');
     return { labels: [], datasets: [] };
   }
 
@@ -213,10 +213,10 @@ export const createMonthlyTrendData = (data: Record<string, unknown>[], options:
 
     // デバッグ情報
     if (debug) {
-      console.log('月次推移: 有効なデータ件数:', validDataCount);
-      console.log('月次推移: 無効な日付のデータ件数:', invalidDateCount);
-      console.log('月次推移: カテゴリの数:', categorySet.size);
-      console.log('月次推移: 月の数:', Object.keys(monthlyData).length);
+      console.log('トレンド分析: 有効なデータ件数:', validDataCount);
+      console.log('トレンド分析: 無効な日付のデータ件数:', invalidDateCount);
+      console.log('トレンド分析: カテゴリの数:', categorySet.size);
+      console.log('トレンド分析: 月の数:', Object.keys(monthlyData).length);
     }
 
     // 月が一つも取得できなかった場合
@@ -240,7 +240,7 @@ export const createMonthlyTrendData = (data: Record<string, unknown>[], options:
       .map(([category]) => category);
 
     if (debug) {
-      console.log('月次推移: 選択されたトップカテゴリ:', sortedCategories);
+      console.log('トレンド分析: 選択されたトップカテゴリ:', sortedCategories);
     }
 
     // 月を時系列順にソート
@@ -254,7 +254,7 @@ export const createMonthlyTrendData = (data: Record<string, unknown>[], options:
     }
 
     if (debug) {
-      console.log('月次推移: ソート済み月次データ:', sortedMonths);
+      console.log('トレンド分析: ソート済み月次データ:', sortedMonths);
     }
 
     // カラーを生成
@@ -288,9 +288,122 @@ export const createMonthlyTrendData = (data: Record<string, unknown>[], options:
     };
 
   } catch (error) {
-    console.error('月次推移データの生成中にエラーが発生しました:', error);
+    console.error('トレンド分析データの生成中にエラーが発生しました:', error);
     return { labels: [], datasets: [] };
   }
+};
+
+/**
+ * データからトレンド（集計単位: 月 or 週）チャート用のデータを生成する
+ * @param {Array} data - 家計簿データの配列
+ * @param {Object} options - オプション設定
+ * @param {'monthly'|'weekly'} options.unit - 集計単位
+ * @param {string} options.dateKey - 日付が格納されているキー
+ * @param {string} options.categoryKey - カテゴリが格納されているキー
+ * @param {string} options.amountKey - 金額が格納されているキー
+ * @param {number} options.maxCategories - 表示するカテゴリの最大数
+ * @param {boolean} options.debug - デバッグモード
+ * @returns {Object} Chart.js用データ
+ */
+export const createTrendData = (data: Record<string, unknown>[], options: Partial<{
+  unit: 'monthly' | 'weekly',
+  dateKey: string,
+  categoryKey: string,
+  amountKey: string,
+  maxCategories: number,
+  debug?: boolean
+}> = {}) => {
+  const {
+    unit = 'monthly',
+    dateKey = '日付',
+    categoryKey = '大項目',
+    amountKey = '金額（円）',
+    maxCategories = 5,
+    debug = false
+  } = options;
+
+  // 日付を集計単位ごとに変換
+  const formatDate = (dateValue: any) => {
+    if (unit === 'weekly') {
+      // 週番号取得: YYYY-WW形式
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '日付不明';
+      // ISO週番号
+      const tmp = new Date(date.getTime());
+      tmp.setHours(0, 0, 0, 0);
+      // 木曜を含む週をその年の週とする
+      tmp.setDate(tmp.getDate() + 3 - ((tmp.getDay() + 6) % 7));
+      const week1 = new Date(tmp.getFullYear(), 0, 4);
+      const weekNo = 1 + Math.round(((tmp.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+      return `${tmp.getFullYear()}年第${weekNo}週`;
+    } else {
+      return formatToYearMonth(dateValue);
+    }
+  };
+
+  // 集計本体は月次と同じ
+  const trendData = {};
+  const categorySet = new Set();
+  let validDataCount = 0;
+  let invalidDateCount = 0;
+
+  data.forEach(item => {
+    const period = formatDate(item[dateKey]);
+    const category = item[categoryKey] || '未分類';
+    categorySet.add(category);
+    const amount = parseNumberValue(item[amountKey]);
+    if (!trendData[period]) trendData[period] = {};
+    trendData[period][category] = (trendData[period][category] || 0) + amount;
+    if (period === '日付不明') invalidDateCount++; else validDataCount++;
+  });
+
+  // カテゴリ合計
+  const categoryTotals = {};
+  Object.values(trendData).forEach(periodData => {
+    Object.entries(periodData).forEach(([category, amount]) => {
+      categoryTotals[category] = (categoryTotals[category] || 0) + Math.abs(amount);
+    });
+  });
+  const sortedCategories = Object.entries(categoryTotals)
+    .map(([k, v]) => [k, Number(v)] as [string, number])
+    .sort((a, b) => (b[1] as number) - (a[1] as number))
+    .slice(0, maxCategories)
+    .map(([category]) => category);
+
+  // ラベル（期間）を時系列順に
+  let sortedPeriods = Object.keys(trendData).filter(p => p !== '日付不明');
+  if (unit === 'weekly') {
+    // YYYY年第WW週 → YYYY, WWでソート
+    sortedPeriods.sort((a, b) => {
+      const mA = a.match(/(\d{4})年第(\d+)週/);
+      const mB = b.match(/(\d{4})年第(\d+)週/);
+      if (!mA || !mB) return 0;
+      const yA = parseInt(mA[1], 10), wA = parseInt(mA[2], 10);
+      const yB = parseInt(mB[1], 10);
+      return yA !== yB ? yA - yB : wA - wA;
+    });
+  } else {
+    sortedPeriods.sort(sortMonthsChronologically);
+  }
+  if (trendData['日付不明']) sortedPeriods.push('日付不明');
+
+  // カラー
+  const colors = generateColors(sortedCategories.length);
+  const datasets = sortedCategories.map((category, index) => {
+    const values = sortedPeriods.map(period => trendData[period][category] || 0);
+    return {
+      label: category,
+      data: values,
+      borderColor: colors[index],
+      backgroundColor: colors[index] + '20',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.1,
+      pointRadius: 4,
+      pointHoverRadius: 6
+    };
+  });
+  return { labels: sortedPeriods, datasets };
 };
 
 /**
@@ -337,7 +450,7 @@ export const getDefaultTrendChartOptions = () => {
       },
       title: {
         display: true,
-        text: '月次推移チャート',
+        text: 'トレンド分析チャート',
         font: { size: 16, weight: 'bold' }
       }
     },

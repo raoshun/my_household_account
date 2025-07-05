@@ -12,7 +12,7 @@ import CategoryQuadrantView from './components/CategoryQuadrantView'; // カテ�
 import CategoryPieChart from './components/CategoryPieChart'; // 大項目・中項目表示用ドーナツグラフ
 import { handleFiles } from './components/fileHandlers';
 import { chartOptions } from './config/chartOptions';
-import { createMonthlyTrendData } from './utils/monthlyTrendUtils';
+import { createMonthlyTrendData, createTrendData } from './utils/monthlyTrendUtils';
 import { filterData } from './utils/sortData';
 import { splitDataBySign } from './utils';
 import CategoryDetailsTable from './components/CategoryDetailsTable';
@@ -259,6 +259,29 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
     }
   }, [data, filters, dataProcessing]);
 
+  // トレンドデータ（週次）も更新
+  useEffect(() => {
+    if (dataProcessing || !data || data.length === 0) return;
+    try {
+      const filteredData = filterData(data, filters);
+      if (filteredData && filteredData.length > 0) {
+        const trendData = createTrendData(filteredData, {
+          unit: 'weekly',
+          dateKey: '日付',
+          categoryKey: '大項目',
+          amountKey: '金額（円）',
+          maxCategories: 5,
+          debug: false
+        });
+        setWeeklyTrendData(trendData);
+      } else {
+        setWeeklyTrendData(EMPTY_MONTHLY_DATA);
+      }
+    } catch {
+      setWeeklyTrendData(EMPTY_MONTHLY_DATA);
+    }
+  }, [data, filters, dataProcessing]);
+
   // コンポーネントがマウントされた時に初期データが存在する場合は使用
   useEffect(() => {
     if (initialData && initialData.length > 0) {
@@ -423,7 +446,7 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
                   onChange={e => setTrendUnit(e.target.value as 'monthly' | 'weekly')}
                   data-testid="trend-unit-select"
                 >
-                  <option value="monthly">月次推移</option>
+                  <option value="monthly">月次トレンド</option>
                   <option value="weekly">週次推移</option>
                 </select>
               </label>

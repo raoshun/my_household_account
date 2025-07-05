@@ -134,14 +134,14 @@ describe('InvestmentView', () => {
     expect(chartData.labels).toContain('不動産');
   });
   
-  test('推移タブで月次推移グラフが正しく表示される', () => {
+  test('推移タブで月次トレンドグラフが正しく表示される', () => {
     render(<InvestmentView data={mockData} />);
     
     // 「推移」タブをクリック
     fireEvent.click(screen.getByText('推移'));
     
     // 推移セクションが表示される
-    expect(screen.getByText('投資額の月次推移')).toBeInTheDocument();
+    expect(screen.getByText('投資額の月次トレンド')).toBeInTheDocument();
     
     // 折れ線グラフが表示される
     expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
@@ -185,13 +185,13 @@ describe('InvestmentView', () => {
     
     // 「推移」タブの内容が表示される
     expect(screen.queryByText('不動産投資詳細')).not.toBeInTheDocument();
-    expect(screen.getByText('投資額の月次推移')).toBeInTheDocument();
+    expect(screen.getByText('投資額の月次トレンド')).toBeInTheDocument();
     
     // 「概要」タブをクリックして戻る
     fireEvent.click(screen.getByText('概要'));
     
     // 「概要」タブの内容が再び表示される
-    expect(screen.queryByText('投資額の月次推移')).not.toBeInTheDocument();
+    expect(screen.queryByText('投資額の月次トレンド')).not.toBeInTheDocument();
     expect(screen.getByText('投資ポートフォリオ概要')).toBeInTheDocument();
   });
 

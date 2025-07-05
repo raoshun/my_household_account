@@ -61,7 +61,7 @@ export const getPredictedNextMonthValue = async (
 /**
  * カテゴリごとの月次データから将来の予測値を取得する
  * 
- * @param {Object} trendData - Chart.js形式の月次推移データ
+ * @param {Object} trendData - Chart.js形式のトレンド分析データ
  * @param {Object} options - 予測オプション
  * @param {number} options.forecastPeriods - 予測する期間（月数）
  * @param {string} options.method - 予測手法 ('auto', 'arima', 'exponential', 'seasonal_ma')
@@ -69,7 +69,7 @@ export const getPredictedNextMonthValue = async (
  */
 export const getPredictedCategoryValues = async (
   trendData: _TrendData,
-  options: { forecastPeriods?: number; method?: string } = {}
+  options: { forecastPeriods?: number; method?: string; unit?: 'monthly' | 'weekly' } = {}
 ) => {
   try {
     // データ検証
@@ -105,7 +105,8 @@ export const getPredictedCategoryValues = async (
       body: JSON.stringify({ 
         categoryData,
         forecastPeriods,
-        method
+        method,
+        unit: options.unit || 'monthly' // 追加: 集計単位
       }),
     });
 
@@ -125,7 +126,7 @@ export const getPredictedCategoryValues = async (
 /**
  * モックデータで予測値を取得する（APIが利用できない場合のテスト用）
  * 
- * @param {Object} trendData - Chart.js形式の月次推移データ
+ * @param {Object} trendData - Chart.js形式のトレンド分析データ
  * @param {Object} options - 予測オプション
  * @param {number} options.forecastPeriods - 予測する期間（月数）
  * @param {string} options.method - 予測手法

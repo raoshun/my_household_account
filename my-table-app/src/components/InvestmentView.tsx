@@ -398,7 +398,7 @@ const InvestmentView: React.FC<_InvestmentViewProps> = ({ data = [] }) => {
         
         {activeTab === 'trend' && (
           <div className="trend-tab">
-            <h2>投資額の月次推移</h2>
+            <h2>投資額の月次トレンド</h2>
             
             {monthlyData.labels.length === 0 ? (
               <p className="no-data">推移データがありません。</p>
