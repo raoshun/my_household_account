@@ -323,10 +323,10 @@ export const createTrendData = (data: Record<string, unknown>[], options: Partia
   } = options;
 
   // 日付を集計単位ごとに変換
-  const formatDate = (dateValue: any) => {
+  const formatDate = (dateValue: unknown) => {
     if (unit === 'weekly') {
       // 週番号取得: YYYY-WW形式
-      const date = new Date(dateValue);
+      const date = new Date(dateValue as string);
       if (isNaN(date.getTime())) return '日付不明';
       // ISO週番号
       const tmp = new Date(date.getTime());
@@ -357,6 +357,12 @@ export const createTrendData = (data: Record<string, unknown>[], options: Partia
     if (period === '日付不明') invalidDateCount++; else validDataCount++;
   });
 
+  if (debug) {
+    // デバッグ用に件数を出力
+    console.log('トレンド分析: 有効なデータ件数:', validDataCount);
+    console.log('トレンド分析: 無効な日付のデータ件数:', invalidDateCount);
+  }
+
   // カテゴリ合計
   const categoryTotals = {};
   Object.values(trendData).forEach(periodData => {
@@ -371,7 +377,7 @@ export const createTrendData = (data: Record<string, unknown>[], options: Partia
     .map(([category]) => category);
 
   // ラベル（期間）を時系列順に
-  let sortedPeriods = Object.keys(trendData).filter(p => p !== '日付不明');
+  const sortedPeriods = Object.keys(trendData).filter(p => p !== '日付不明');
   if (unit === 'weekly') {
     // YYYY年第WW週 → YYYY, WWでソート
     sortedPeriods.sort((a, b) => {

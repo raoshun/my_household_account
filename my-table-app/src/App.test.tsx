@@ -8,55 +8,52 @@ import userEvent from '@testing-library/user-event';
 import { TestEnvWindow } from './types';
 
 // DataTransferのグローバルモック（Node.jsテスト環境用）
-if (typeof global.DataTransfer === 'undefined' || typeof globalThis.DataTransfer === 'undefined') {
-  class DataTransferMock {
-    constructor() {
-      const filesArr = [];
-      this.files = {
-        get length() { return filesArr.length; },
-        item: (i) => filesArr[i],
-        [Symbol.iterator]: function* () { yield* filesArr; }
-      };
-      this.types = [];
-      this.dropEffect = 'none';
-      this.effectAllowed = 'all';
-      this.items = {
-        add(file) {
-          filesArr.push(file);
-        },
-        remove(index) {
-          filesArr.splice(index, 1);
-        },
-        clear() {
-          filesArr.length = 0;
-        },
-        get length() {
-          return filesArr.length;
-        },
-        item(i) {
-          return filesArr[i];
-        },
-        [Symbol.iterator]: function* () { yield* filesArr; }
-      };
-    }
-    clearData() {}
-    getData() { return ''; }
-    setData() {}
-    setDragImage() {}
+class DataTransferMock {
+  files: any;
+  types: any;
+  dropEffect: 'none' | 'copy' | 'link' | 'move' = 'none';
+  effectAllowed: 'none' | 'copy' | 'link' | 'move' | 'copyLink' | 'copyMove' | 'linkMove' | 'all' | 'uninitialized' = 'all';
+  items: any;
+  constructor() {
+    const filesArr: any[] = [];
+    this.files = filesArr;
+    this.types = [];
+    this.items = {
+      add(file: any) {
+        filesArr.push(file);
+      },
+      remove(index: number) {
+        filesArr.splice(index, 1);
+      },
+      clear() {
+        filesArr.length = 0;
+      },
+      get length() {
+        return filesArr.length;
+      },
+      item(i: number) {
+        return filesArr[i];
+      },
+      [Symbol.iterator]: function* () { yield* filesArr; }
+    };
   }
-  if (typeof global.DataTransfer === 'undefined') {
-    global.DataTransfer = DataTransferMock;
-  }
-  if (typeof globalThis.DataTransfer === 'undefined') {
-    globalThis.DataTransfer = DataTransferMock;
-  }
+  clearData() {}
+  getData() { return ''; }
+  setData() {}
+  setDragImage() {}
+}
+if (typeof global.DataTransfer === 'undefined') {
+  (global as any).DataTransfer = DataTransferMock;
+}
+if (typeof globalThis.DataTransfer === 'undefined') {
+  (globalThis as any).DataTransfer = DataTransferMock;
 }
 
 // オリジナルのuseStateを保持
 const originalUseState = React.useState;
 
 // テスト環境フラグを明示的に設定
-window.__JEST_TEST_ENV__ = true;
+(window as TestEnvWindow).__JEST_TEST_ENV__ = true;
 
 // PropTypesをモック化する前に、既存のPropTypesモックを削除
 jest.unmock('prop-types');
