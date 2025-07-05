@@ -58,10 +58,22 @@
     },
     {
       "label": "fullstack-dev",
-      "dependsOn": ["react-app-start", "python-api-server"],
+      "dependsOn": [
+        "react-app-start",
+        "python-api-server"
+      ],
       "dependsOrder": "parallel",
       "problemMatcher": [],
       "detail": "React アプリと Python API サーバーを同時に起動します"
+    },
+    {
+      "type": "npm",
+      "script": "build",
+      "path": "my-table-app",
+      "group": "build",
+      "problemMatcher": [],
+      "label": "npm: build - my-table-app",
+      "detail": "react-scripts build"
     }
   ],
   "inputs": [

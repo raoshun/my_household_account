@@ -138,6 +138,17 @@
             "skipFiles": [
                 "<node_internals>/**"
             ]
+        },
+        {
+            "type": "msedge",
+            "request": "launch",
+            "name": "React: Start & Debug (npm start)",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}/my-table-app/src",
+            "preLaunchTask": "react-app-start",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
         }
     ],
     "inputs": [

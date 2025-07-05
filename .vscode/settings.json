@@ -49,6 +49,7 @@
     "papaparse",
     "rawdata",
     "registerables",
-    "reits"
+    "reits",
+    "whatwg"
   ]
 }
