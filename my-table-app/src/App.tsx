@@ -48,6 +48,7 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
     }]
   });
   const [monthlyTrendData, setMonthlyTrendData] = useState<TrendData>(EMPTY_MONTHLY_DATA);
+  const [weeklyTrendData, setWeeklyTrendData] = useState<TrendData>(EMPTY_MONTHLY_DATA); // 週次推移データ用の状態
   const [positiveTotal, setPositiveTotal] = useState<number>(0);
   const [negativeTotal, setNegativeTotal] = useState<number>(0);
   const [view, setView] = useState<string>('dashboard');
@@ -65,6 +66,7 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
   const [showPrediction, setShowPrediction] = useState<boolean>(false);
   const [forecastPeriods, setForecastPeriods] = useState<number>(3);
   const [predictionMethod, setPredictionMethod] = useState<string>('seasonal_ma');
+  const [trendUnit, setTrendUnit] = useState<'monthly' | 'weekly'>('monthly'); // 分析単位の状態
 
   // ファイルハンドラをラップする関数 - useCallbackで最適化
   const handleFileUpload = useCallback((files: FileList | File[]) => {
@@ -411,8 +413,21 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
           </div>
         )}
         
-        {view === 'monthly' && (
-          <div data-testid="monthlytrend-view" className="monthly-view-container">
+        {view === 'trend' && (
+          <div data-testid="trend-view" className="trend-view-container">
+            <div className="trend-unit-selector">
+              <label>
+                分析単位:
+                <select
+                  value={trendUnit}
+                  onChange={e => setTrendUnit(e.target.value as 'monthly' | 'weekly')}
+                  data-testid="trend-unit-select"
+                >
+                  <option value="monthly">月次推移</option>
+                  <option value="weekly">週次推移</option>
+                </select>
+              </label>
+            </div>
             <div className="view-mode-selector">
               <button 
                 className={`view-mode-button ${monthlyViewMode === 'chart' ? 'active' : ''}`} 
@@ -427,7 +442,7 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
                 テーブル表示
               </button>
             </div>
-            
+            {/* 予測・オプションUIは既存monthlyViewModeのものを流用 */}
             <div className="prediction-controls">
               <label className="prediction-toggle">
                 <input 
@@ -437,7 +452,6 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
                 />
                 予測表示
               </label>
-              
               {showPrediction && (
                 <div className="prediction-options">
                   <label>
@@ -452,7 +466,6 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
                       <option value="12">12ヶ月</option>
                     </select>
                   </label>
-                  
                   <label>
                     予測手法:
                     <select 
@@ -468,17 +481,16 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
                 </div>
               )}
             </div>
-            
             {monthlyViewMode === 'chart' ? (
               <MonthlyTrendChart 
-                trendData={monthlyTrendData} 
+                trendData={trendUnit === 'monthly' ? monthlyTrendData : weeklyTrendData} 
                 showPrediction={showPrediction}
                 forecastPeriods={forecastPeriods}
                 predictionMethod={predictionMethod}
               />
             ) : (
               <MonthlyTrendTable 
-                trendData={monthlyTrendData} 
+                trendData={trendUnit === 'monthly' ? monthlyTrendData : weeklyTrendData} 
                 showPrediction={showPrediction}
               />
             )}
