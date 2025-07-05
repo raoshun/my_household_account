@@ -213,7 +213,7 @@ describe('CategoryPieChart', () => {
     
     // 色のローテーションをチェック（大分類のセルのみ）
     const pies = screen.getAllByTestId('pie');
-    const mainPieData = JSON.parse(pies[0].dataset.data);
+    const mainPieData = JSON.parse(pies[0].dataset.data!);
     
     expect(mainPieData[0].color).toBe('#0088FE');
     expect(mainPieData[1].color).toBe('#00C49F');
@@ -241,7 +241,7 @@ describe('CategoryPieChart', () => {
     expect(pies.length).toBe(2);
     
     // 内側Pie（大分類）の設定を確認
-    const mainPieData = JSON.parse(pies[0].dataset.data);
+    const mainPieData = JSON.parse(pies[0].dataset.data!);
     expect(mainPieData.length).toBe(3); // 大分類は3つ（食費、交通費、光熱費）
     expect(mainPieData[0].name).toBe('食費');
     expect(mainPieData[0].value).toBe(10000); // 3000 + 4000 + 3000
@@ -251,14 +251,14 @@ describe('CategoryPieChart', () => {
     expect(mainPieData[2].value).toBe(8000); // 5000 + 3000
     
     // 外側Pie（中分類）の設定を確認
-    const subPieData = JSON.parse(pies[1].dataset.data);
+    const subPieData = JSON.parse(pies[1].dataset.data!);
     expect(subPieData.length).toBe(8); // 中分類は8つ
     
     // ドーナツグラフの半径設定を確認
-    expect(pies[0].dataset.innerradius).toBe('60');
-    expect(pies[0].dataset.outerradius).toBe('100');
-    expect(pies[1].dataset.innerradius).toBe('105');
-    expect(pies[1].dataset.outerradius).toBe('150');
+    expect(pies[0].dataset.innerradius!).toBe('60');
+    expect(pies[0].dataset.outerradius!).toBe('100');
+    expect(pies[1].dataset.innerradius!).toBe('105');
+    expect(pies[1].dataset.outerradius!).toBe('150');
   });
   
   test('formatCategoryDataで生成したデータが正しく処理されること', () => {
@@ -307,8 +307,8 @@ describe('CategoryPieChart', () => {
     
     // Pieコンポーネントのデータを取得
     const pies = screen.getAllByTestId('pie');
-    const mainPieData = JSON.parse(pies[0].dataset.data);
-    const subPieData = JSON.parse(pies[1].dataset.data);
+    const mainPieData = JSON.parse(pies[0].dataset.data!);
+    const subPieData = JSON.parse(pies[1].dataset.data!);
     
     // 大項目が正しく集計されているか確認
     expect(mainPieData.length).toBe(3); // 大項目は3つ（食費、交通費、光熱費）
@@ -341,8 +341,8 @@ describe('CategoryPieChart', () => {
     
     // Pieコンポーネントのデータを取得
     const pies = screen.getAllByTestId('pie');
-    const mainPieData = JSON.parse(pies[0].dataset.data);
-    const subPieData = JSON.parse(pies[1].dataset.data);
+    const mainPieData = JSON.parse(pies[0].dataset.data!);
+    const subPieData = JSON.parse(pies[1].dataset.data!);
     
     // 実際にコンポーネントが生成するデータを確認
     console.log('収入データの大分類:', JSON.stringify(mainPieData));
@@ -378,8 +378,8 @@ describe('CategoryPieChart', () => {
     
     // Pieコンポーネントのデータを取得
     const pies = screen.getAllByTestId('pie');
-    const mainPieData = JSON.parse(pies[0].dataset.data);
-    const subPieData = JSON.parse(pies[1].dataset.data);
+    const mainPieData = JSON.parse(pies[0].dataset.data!);
+    const subPieData = JSON.parse(pies[1].dataset.data!);
     
     // 大分類の角度レイアウトを確認
     expect(mainPieData.length).toBe(2); // 大分類は2つ（食費、交通費）
