@@ -190,19 +190,19 @@ describe('Dashboard フィルター変更時にチャートが再レンダリン
     // 初期値を取得
     const initialChartElement = screen.getByTestId('mock-charts');
     const initialChartKeyElement = initialChartElement.querySelector('[data-charts-key]');
-    
-    // 初期値が存在することを強く検証
+    // nullチェックを追加
     expect(initialChartKeyElement).not.toBeNull();
-    
-    const initialChartKey = initialChartKeyElement.getAttribute('data-charts-key');
-    const initialRenderCount = initialChartKeyElement.getAttribute('data-render-count');
-    
+    if (!initialChartKeyElement) throw new Error('initialChartKeyElement is null');
+    const initialChartKey = initialChartKeyElement.getAttribute('data-charts-key') ?? '';
+    const initialRenderCount = initialChartKeyElement.getAttribute('data-render-count') ?? '';
     expect(initialChartKey).toBeTruthy();
     expect(initialRenderCount).toBeTruthy();
     
     // 両方のカテゴリが表示されていることを確認
-    expect(screen.getByText('食費: 1000')).toBeInTheDocument();
-    expect(screen.getByText('交通費: 500')).toBeInTheDocument();
+    const shokuhiElem = screen.getByText('食費: 1000');
+    expect(shokuhiElem).not.toBeNull();
+    const kotsuhiElem = screen.getByText('交通費: 500');
+    expect(kotsuhiElem).not.toBeNull();
     
     // フィルター変更をシミュレート - 新しいpropsでコンポーネントを再レンダリング
     await act(async () => {
@@ -222,22 +222,19 @@ describe('Dashboard フィルター変更時にチャートが再レンダリン
     await waitFor(() => {
       const updatedChartElement = screen.getByTestId('mock-charts');
       const updatedKeyElement = updatedChartElement.querySelector('[data-charts-key]');
-      
-      // 更新された要素が存在することを確認
       expect(updatedKeyElement).not.toBeNull();
-      
-      const updatedKey = updatedKeyElement.getAttribute('data-charts-key');
-      const updatedRenderCount = updatedKeyElement.getAttribute('data-render-count');
-      
+      if (!updatedKeyElement) throw new Error('updatedKeyElement is null');
+      const updatedKey = updatedKeyElement.getAttribute('data-charts-key') ?? '';
+      const updatedRenderCount = updatedKeyElement.getAttribute('data-render-count') ?? '';
       // キーが更新されていることを確認
       expect(parseInt(updatedKey, 10)).toBeGreaterThan(parseInt(initialChartKey, 10));
-      
       // レンダリング回数が増えていることを確認
       expect(parseInt(updatedRenderCount, 10)).toBeGreaterThan(parseInt(initialRenderCount, 10));
-      
       // フィルター後のデータに関する検証
-      expect(screen.getByText('食費: 1000')).toBeInTheDocument();
-      expect(screen.queryByText('交通費: 500')).not.toBeInTheDocument();
+      const filteredElem = screen.getByText('食費: 1000');
+      expect(filteredElem).not.toBeNull();
+      const filteredKotsuhi = screen.queryByText('交通費: 500');
+      expect(filteredKotsuhi).toBeNull();
     }, { timeout: 5000 });
   });
 });
