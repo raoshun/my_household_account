@@ -5,31 +5,38 @@ import React from 'react';
 import { jest, test, describe, beforeEach } from '@jest/globals';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { TestEnvWindow } from './types';
+import { TestEnvWindow } from './types';
 
 // DataTransferのグローバルモック（Node.jsテスト環境用）
 if (typeof global.DataTransfer === 'undefined' || typeof globalThis.DataTransfer === 'undefined') {
   class DataTransferMock {
-    files: any[] = [];
-    types: any[] = [];
-    dropEffect: string = 'none';
-    effectAllowed: string = 'all';
-    items: any;
     constructor() {
-      const self = this;
+      const filesArr = [];
+      this.files = {
+        get length() { return filesArr.length; },
+        item: (i) => filesArr[i],
+        [Symbol.iterator]: function* () { yield* filesArr; }
+      };
+      this.types = [];
+      this.dropEffect = 'none';
+      this.effectAllowed = 'all';
       this.items = {
-        add(file: any) {
-          self.files.push(file);
+        add(file) {
+          filesArr.push(file);
         },
-        remove(index: number) {
-          self.files.splice(index, 1);
+        remove(index) {
+          filesArr.splice(index, 1);
         },
         clear() {
-          self.files.length = 0;
+          filesArr.length = 0;
         },
         get length() {
-          return self.files.length;
-        }
+          return filesArr.length;
+        },
+        item(i) {
+          return filesArr[i];
+        },
+        [Symbol.iterator]: function* () { yield* filesArr; }
       };
     }
     clearData() {}
@@ -38,10 +45,10 @@ if (typeof global.DataTransfer === 'undefined' || typeof globalThis.DataTransfer
     setDragImage() {}
   }
   if (typeof global.DataTransfer === 'undefined') {
-    global.DataTransfer = DataTransferMock as unknown as typeof DataTransfer;
+    global.DataTransfer = DataTransferMock;
   }
   if (typeof globalThis.DataTransfer === 'undefined') {
-    globalThis.DataTransfer = DataTransferMock as unknown as typeof DataTransfer;
+    globalThis.DataTransfer = DataTransferMock;
   }
 }
 
@@ -49,7 +56,7 @@ if (typeof global.DataTransfer === 'undefined' || typeof globalThis.DataTransfer
 const originalUseState = React.useState;
 
 // テスト環境フラグを明示的に設定
-(window as TestEnvWindow).__JEST_TEST_ENV__ = true;
+window.__JEST_TEST_ENV__ = true;
 
 // PropTypesをモック化する前に、既存のPropTypesモックを削除
 jest.unmock('prop-types');
@@ -591,4 +598,43 @@ test('App should have excludeTransfers enabled by default', () => {
 beforeEach(() => {
   // テストで使用する前にモックをクリアして再セットアップ
   jest.clearAllMocks();
+});
+
+// トレンド分析ビューのUI切り替え
+describe('トレンド分析ビューのUI切り替え', () => {
+  test('トレンド分析ビューで分析単位セレクトボックスが表示され、切り替えできる', async () => {
+    await act(async () => {
+      render(<App />);
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    // サイドバーからトレンド分析（トレンド）ビューに切り替え
+    const trendButton = screen.getByTestId('trend-button');
+    expect(trendButton).toBeInTheDocument();
+    await act(async () => {
+      userEvent.click(trendButton);
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    // トレンド分析ビューが表示されるまで待つ
+    await waitFor(() => {
+      expect(screen.getByTestId('trend-view')).toBeInTheDocument();
+    });
+    const trendView = screen.getByTestId('trend-view');
+    expect(trendView).toBeInTheDocument();
+    // 分析単位セレクトボックスが表示される
+    const unitSelect = screen.getByTestId('trend-unit-select');
+    expect(unitSelect).toBeInTheDocument();
+    // デフォルトは「月次トレンド」
+    expect(unitSelect).toHaveValue('monthly');
+    // 切り替え: 週次推移
+    await act(async () => {
+      userEvent.selectOptions(unitSelect, 'weekly');
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    // 週次推移に切り替わるまで待つ
+    await waitFor(() => {
+      expect(unitSelect).toHaveValue('weekly');
+    });
+    // グラフ（モック）が表示されていること
+    expect(screen.getByTestId('mock-monthly-trend-chart')).toBeInTheDocument();
+  });
 });
