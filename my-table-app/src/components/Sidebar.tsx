@@ -87,12 +87,12 @@ const Sidebar: React.FC<_SidebarProps> = ({
                     生データ
                 </button>
                 <button 
-                    className={`sidebar-button ${activeView === 'monthly' ? 'active' : ''}`}
-                    onClick={() => handleViewChange('monthly')}
-                    data-testid="monthlytrend-button"
+                    className={`sidebar-button ${activeView === 'trend' ? 'active' : ''}`}
+                    onClick={() => handleViewChange('trend')}
+                    data-testid="trend-button"
                 >
                     <span className="sidebar-button-icon">📈</span>
-                    月次推移
+                    トレンド分析
                 </button>
                 <button 
                     className={`sidebar-button ${activeView === 'balance' ? 'active' : ''}`}
