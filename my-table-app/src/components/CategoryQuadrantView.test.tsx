@@ -1,11 +1,24 @@
+// ※ jest-domの型拡張が効かない場合は @types/testing-library__jest-dom のインストールと tsconfig.json の types 設定（"@testing-library/jest-dom"）を確認してください。
+import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import CategoryQuadrantView from './CategoryQuadrantView';
 import { jest, describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 
+// @testing-library/jest-dom の型定義を明示的に宣言
+// eslint-disable-next-line @typescript-eslint/no-namespace
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace jest {
+    interface Matchers<R> {
+      toBeInTheDocument(): R;
+      toHaveTextContent(text: string | RegExp): R;
+    }
+  }
+}
+
 // モックデータ（中項目を追加）
-const mockData = [
+const mockData: Array<{ [key: string]: string | number }> = [
   { '日付': '2023-01-01', '大項目': '食費', '中項目': '食料品', '金額（円）': -5000 },
   { '日付': '2023-01-01', '大項目': '食費', '中項目': '外食', '金額（円）': -12000 }, // 外食を食費に含める
   { '日付': '2023-01-02', '大項目': '住居費', '中項目': '家賃', '金額（円）': -80000 }, // 光熱費を住居費に変更
@@ -18,32 +31,32 @@ const mockData = [
 
 // 支出合計額の計算（収入を除く）
 const negativeTotal = mockData
-  .filter(item => item['金額（円）'] < 0)
-  .reduce((sum, item) => sum + item['金額（円）'], 0);
+  .filter(item => typeof item['金額（円）'] === 'number' && (item['金額（円）'] as number) < 0)
+  .reduce((sum, item) => sum + (item['金額（円）'] as number), 0);
 
 // LocalStorageのモック
 const localStorageMock = (() => {
-  let store = {};
+  let store: Record<string, string> = {};
   return {
-    getItem: jest.fn(key => store[key] || null),
-    setItem: jest.fn((key, value) => {
+    getItem: jest.fn((key: string) => store[key] || null),
+    setItem: jest.fn((key: string, value: string) => {
       store[key] = value.toString();
     }),
     clear: jest.fn(() => {
       store = {};
     }),
-    removeItem: jest.fn(key => {
+    removeItem: jest.fn((key: string) => {
       delete store[key];
     }),
   };
 })();
 
-const simulateDragDrop = (sourceElement, targetElement) => {
+const simulateDragDrop = (sourceElement: Element, targetElement: Element) => {
   const dragStartEvent = createDragEvent('dragstart');
   let draggedData = '';
   Object.defineProperty(dragStartEvent, 'dataTransfer', {
     value: {
-      setData: jest.fn((format, data) => { draggedData = data; }),
+      setData: jest.fn((format: string, data: string) => { draggedData = data as string; }),
       effectAllowed: null,
     },
   });
@@ -53,7 +66,7 @@ const simulateDragDrop = (sourceElement, targetElement) => {
   const dragOverEvent = createDragEvent('dragover');
   Object.defineProperty(dragOverEvent, 'dataTransfer', {
     value: {
-      getData: jest.fn((format) => draggedData),
+      getData: jest.fn((format: string) => draggedData),
       setData: jest.fn(),
       dropEffect: null,
     },
@@ -63,7 +76,7 @@ const simulateDragDrop = (sourceElement, targetElement) => {
   const dropEvent = createDragEvent('drop');
   Object.defineProperty(dropEvent, 'dataTransfer', {
     value: {
-      getData: jest.fn((format) => draggedData),
+      getData: jest.fn((format: string) => draggedData),
     },
   });
   fireEvent(targetElement, dropEvent);
@@ -72,7 +85,7 @@ const simulateDragDrop = (sourceElement, targetElement) => {
   fireEvent(sourceElement, dragEndEvent);
 };
 
-const createDragEvent = (type) => {
+const createDragEvent = (type: string) => {
   const event = document.createEvent('Event');
   event.initEvent(type, true, true);
   return event;
@@ -95,44 +108,44 @@ describe('CategoryQuadrantView Component', () => {
 
   test('初期状態で四分法の説明が表示される', () => {
     render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
-    expect(screen.getByText('四分法とは？')).toBeInTheDocument();
+    expect(screen.getByText('四分法とは？')).toBeTruthy();
     const explanationSection = screen.getByText('四分法とは？').closest('.quadrant-explanation');
     expect(explanationSection).not.toBeNull();
     if (!explanationSection) throw new Error('explanationSection is null');
-    expect(explanationSection.textContent).toContain('必需費（固定）');
-    expect(explanationSection.textContent).toContain('必需費（変動）');
-    expect(explanationSection.textContent).toContain('娯楽費（固定）');
-    expect(explanationSection.textContent).toContain('娯楽費（変動）');
+    expect(explanationSection!.textContent).toContain('必需費（固定）');
+    expect(explanationSection!.textContent).toContain('必需費（変動）');
+    expect(explanationSection!.textContent).toContain('娯楽費（固定）');
+    expect(explanationSection!.textContent).toContain('娯楽費（変動）');
   });
 
   test('未分類カテゴリが大項目ごとにグループ化されて表示される', () => {
     render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
-    expect(screen.getByText('未分類の中項目カテゴリ（ドラッグして象限に割り当ててください）')).toBeInTheDocument();
+    expect(screen.getByText('未分類の中項目カテゴリ（ドラッグして象限に割り当ててください）')).toBeTruthy();
 
     // 大項目ヘッダーが表示されるか
-    expect(screen.getByRole('heading', { name: '食費' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '住居費' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '交通費' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '娯楽費' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '食費' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '住居費' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '交通費' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '娯楽費' })).toBeTruthy();
 
     // 各大項目の下に中項目が表示されるか（中項目名のみ）
-    const foodGroup = screen.getByRole('heading', { name: '食費' }).closest('.unassigned-category-group');
-    expect(foodGroup).toHaveTextContent('食料品');
-    expect(foodGroup).toHaveTextContent('外食');
+    const foodGroup = screen.getByRole('heading', { name: '食費' }).closest('.unassigned-category-group')!;
+    expect(foodGroup.textContent).toContain('食料品');
+    expect(foodGroup.textContent).toContain('外食');
 
-    const housingGroup = screen.getByRole('heading', { name: '住居費' }).closest('.unassigned-category-group');
-    expect(housingGroup).toHaveTextContent('家賃');
-    expect(housingGroup).toHaveTextContent('水道光熱費');
+    const housingGroup = screen.getByRole('heading', { name: '住居費' }).closest('.unassigned-category-group')!;
+    expect(housingGroup.textContent).toContain('家賃');
+    expect(housingGroup.textContent).toContain('水道光熱費');
 
-    const transportGroup = screen.getByRole('heading', { name: '交通費' }).closest('.unassigned-category-group');
-    expect(transportGroup).toHaveTextContent('電車代');
+    const transportGroup = screen.getByRole('heading', { name: '交通費' }).closest('.unassigned-category-group')!;
+    expect(transportGroup.textContent).toContain('電車代');
 
-    const leisureGroup = screen.getByRole('heading', { name: '娯楽費' }).closest('.unassigned-category-group');
-    expect(leisureGroup).toHaveTextContent('ゲーム');
-    expect(leisureGroup).toHaveTextContent('書籍');
+    const leisureGroup = screen.getByRole('heading', { name: '娯楽費' }).closest('.unassigned-category-group')!;
+    expect(leisureGroup.textContent).toContain('ゲーム');
+    expect(leisureGroup.textContent).toContain('書籍');
 
     // 収入カテゴリは表示されない
-    expect(screen.queryByRole('heading', { name: '収入' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '収入' })).toBeNull();
   });
 
   test('分類済みカテゴリタグを削除ボタンで未分類に戻せる', async () => {
@@ -145,11 +158,11 @@ describe('CategoryQuadrantView Component', () => {
     const { container } = render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
 
     // 必需費（変動）にある「食費 - 食料品」タグの削除ボタンを取得
-    const necessaryVariableQuadrant = container.querySelector('.quadrant-3');
+    const necessaryVariableQuadrant = container.querySelector('.quadrant-3')!;
     const foodTag = Array.from(necessaryVariableQuadrant.querySelectorAll('.category-tag'))
-                      .find(el => el.textContent.includes('食料品'));
-    const deleteButton = foodTag.querySelector('.remove-category-tag');
-    expect(deleteButton).toBeInTheDocument();
+                      .find(el => el.textContent && el.textContent.includes('食料品'))!;
+    const deleteButton = foodTag.querySelector('.remove-category-tag')!;
+    expect(deleteButton).toBeTruthy();
 
     // 削除ボタンをクリック
     fireEvent.click(deleteButton);
@@ -166,27 +179,36 @@ describe('CategoryQuadrantView Component', () => {
 
     // 未分類リストに「食費 - 食料品」が戻っていることを確認（表示更新を待つ）
     await waitFor(() => {
-        const unassignedFoodGroup = screen.getByRole('heading', { name: '食費' }).closest('.unassigned-category-group');
-        expect(unassignedFoodGroup).toHaveTextContent('食料品');
+        const unassignedFoodGroup = screen.getByRole('heading', { name: '食費' }).closest('.unassigned-category-group')!;
+        expect(unassignedFoodGroup.textContent).toContain('食料品');
     });
   });
 });
 
 describe('詳細な機能テスト（カバレッジ向上）', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let spyWarn: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let spyError: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let spyLog: any;
   beforeEach(() => {
     localStorageMock.clear();
     jest.clearAllMocks();
     // コンソール警告とエラーを明示的にモック
-    jest.spyOn(console, 'warn').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    jest.spyOn(console, 'log').mockImplementation(() => {});
+    spyWarn = jest.spyOn(console, 'warn');
+    spyWarn.mockImplementation(() => {});
+    spyError = jest.spyOn(console, 'error');
+    spyError.mockImplementation(() => {});
+    spyLog = jest.spyOn(console, 'log');
+    spyLog.mockImplementation(() => {});
   });
 
   afterEach(() => {
     // モックを元に戻す
-    console.warn.mockRestore();
-    console.error.mockRestore();
-    console.log.mockRestore();
+    spyWarn.mockRestore();
+    spyError.mockRestore();
+    spyLog.mockRestore();
   });
 
   test('保存された分類設定が不正な場合、エラー処理が行われる', () => {
@@ -197,7 +219,7 @@ describe('詳細な機能テスト（カバレッジ向上）', () => {
     
     // コンソールエラーが呼び出されたことを確認（元のテストでは失敗していた）
     expect(console.error).toHaveBeenCalled();
-    expect(console.error.mock.calls[0][0]).toBe('保存された分類情報の読み込みに失敗しました:');
+    expect((console.error as jest.Mock).mock.calls[0][0]).toBe('保存された分類情報の読み込みに失敗しました:');
     
     // localStorage.removeItemが呼び出されたことを確認
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('categoryQuadrantAssignments');
@@ -211,7 +233,7 @@ describe('詳細な機能テスト（カバレッジ向上）', () => {
     
     // コンソール警告が呼び出されたことを確認（元のテストでは失敗していた）
     expect(console.warn).toHaveBeenCalled();
-    expect(console.warn.mock.calls[0][0]).toBe('ローカルストレージの分類データ形式が不正です。');
+    expect((console.warn as jest.Mock).mock.calls[0][0]).toBe('ローカルストレージの分類データ形式が不正です。');
     
     // localStorage.removeItemが呼び出されたことを確認
     expect(localStorageMock.removeItem).toHaveBeenCalledWith('categoryQuadrantAssignments');
@@ -228,7 +250,7 @@ describe('詳細な機能テスト（カバレッジ向上）', () => {
       '食費 - 食料品': 'necessary-variable'
     };
     
-    console.error.mockClear();
+    spyError.mockClear();
     // エラーをスローするモック関数を作成
     // コンポーネント内でエラーが適切にキャッチされ、
     // コンポーネントがクラッシュしないことを確認するテスト
@@ -240,7 +262,7 @@ describe('詳細な機能テスト（カバレッジ向上）', () => {
     }).not.toThrow();
     
     // エラーハンドリングが適切に行われ、コンポーネントが正常に表示されることを確認
-    expect(screen.getByText('四分法とは？')).toBeInTheDocument();
+    expect(screen.getByText('四分法とは？')).toBeTruthy();
   });
 
   test('インポート機能で不正なファイル内容を処理できる', async () => {
@@ -249,7 +271,7 @@ describe('詳細な機能テスト（カバレッジ向上）', () => {
     
     render(<CategoryQuadrantView data={mockData} negativeTotal={negativeTotal} />);
     const importBtn = screen.getByText('設定をインポート');
-    const fileInput = importBtn.closest('label').querySelector('input[type="file"]');
+    const fileInput = importBtn.closest('label')!.querySelector('input[type="file"]')!;
     
     // 不正なJSON形式のファイル
     const invalidFile = new File(['not a json'], 'invalid.json', { type: 'application/json' });
@@ -260,7 +282,7 @@ describe('詳細な機能テスト（カバレッジ向上）', () => {
     });
     
     // 有効なJSONだが中身が不正なファイル
-    window.alert.mockClear();
+    (window.alert as jest.Mock).mockClear();
     const invalidContentFile = new File(['123'], 'invalid-content.json', { type: 'application/json' });
     fireEvent.change(fileInput, { target: { files: [invalidContentFile] } });
     

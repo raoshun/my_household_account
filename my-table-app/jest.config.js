@@ -3,6 +3,13 @@ module.exports = {
   // テスト環境
   testEnvironment: 'jsdom',
   
+  // グローバル設定
+  globals: {
+    'process.env': {
+      'NODE_ENV': 'test'
+    }
+  },
+  
   // テスト対象のファイルパターン
   testMatch: [
     '<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}',
@@ -17,17 +24,21 @@ module.exports = {
   
   // カバレッジの設定
   collectCoverageFrom: [
-    'src/**/*.{js,jsx}',
+    'src/**/*.{js,jsx,ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/__mocks__/**',
     '!src/mocks/**',
-    '!src/**/*.test.{js,jsx}'
+    '!src/**/*.test.{js,jsx,ts,tsx}'
   ],
   
   // テストのセットアップファイル
   setupFilesAfterEnv: [
-    '<rootDir>/src/setupTests.tsx',
-    '<rootDir>/src/jest.setup.msw.tsx'
+    '<rootDir>/src/setupTests.tsx'
+  ],
+  
+  // setupFiles を追加
+  setupFiles: [
+    '<rootDir>/jest.setup.js'
   ],
   
   // モックの設定
@@ -54,6 +65,8 @@ module.exports = {
   moduleFileExtensions: [
     'js',
     'jsx',
+    'ts',
+    'tsx',
     'json',
     'node'
   ],

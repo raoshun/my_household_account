@@ -1,5 +1,44 @@
 /* eslint-disable */
-import '@testing-library/jest-dom';
+// DataTransferのグローバルモック（Node.jsテスト環境用）
+if (typeof global.DataTransfer === 'undefined' || typeof globalThis.DataTransfer === 'undefined') {
+  class DataTransferMock {
+    constructor() {
+      this.files = [];
+      this.types = [];
+      this.dropEffect = 'none';
+      this.effectAllowed = 'all';
+      const self = this;
+      this.items = {
+        add(file) {
+          self.files.push(file);
+        },
+        remove(index) {
+          self.files.splice(index, 1);
+        },
+        clear() {
+          self.files.length = 0;
+        },
+        get length() {
+          return self.files.length;
+        }
+      };
+    }
+    clearData() {}
+    getData() { return ''; }
+    setData() {}
+    setDragImage() {}
+  }
+  if (typeof global.DataTransfer === 'undefined') {
+    // @ts-ignore
+    global.DataTransfer = DataTransferMock;
+  }
+  if (typeof globalThis.DataTransfer === 'undefined') {
+    // @ts-ignore
+    globalThis.DataTransfer = DataTransferMock;
+  }
+}
+
+// import '@testing-library/jest-dom';
 import { jest, beforeEach, beforeAll, afterEach, expect } from '@jest/globals';
 
 /**
@@ -9,38 +48,13 @@ import { jest, beforeEach, beforeAll, afterEach, expect } from '@jest/globals';
 // グローバルテストフラグを追加（デバッグ用）
 globalThis.__TEST_DEBUG__ = process.env.TEST_DEBUG === 'true';
 
-// Chart.js のモック
-jest.mock('chart.js', () => {
-  return {
-    Chart: jest.fn().mockImplementation(() => {
-      return {
-        destroy: jest.fn(),
-        update: jest.fn(),
-        data: {},
-        options: {}
-      };
-    }),
-    registerables: []
-  };
-});
-
-jest.mock('chart.js/auto', () => {
-  return jest.fn().mockImplementation(() => {
-    return {
-      destroy: jest.fn(),
-      update: jest.fn(),
-      data: {},
-      options: {}
-    };
-  });
-});
-
 // テストのタイムアウト時間を延長（ミリ秒）
 jest.setTimeout(10000);
 
 // Node.js環境でfetch/Response/Request/Headersをグローバル定義
 if (typeof global !== 'undefined') {
   try {
+    // @ts-ignore
     const fetch = require('node-fetch');
     global.fetch = fetch;
     global.Headers = fetch.Headers;
@@ -96,6 +110,9 @@ globalThis.isTestEnvironment = () => {
 // TextEncoderのモックを追加
 if (typeof globalThis.TextEncoder === 'undefined') {
   globalThis.TextEncoder = class {
+    constructor() {
+      this.encoding = 'utf-8';
+    }
     encode(str) {
       return new Uint8Array([...str].map(c => c.charCodeAt(0)));
     }
