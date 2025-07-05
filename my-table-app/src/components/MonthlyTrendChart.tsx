@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Chart } from 'chart.js';
+import { Chart, CategoryScale, LinearScale, PointElement, LineElement, BarController, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import type { InteractionModeMap } from 'chart.js/dist/types';
 import { getDefaultTrendChartOptions } from '../utils/monthlyTrendUtils';
 import { getMockPrediction } from '../api/trendPredictionApi';
 import './MonthlyTrendChart.css';
 import type { MonthlyTrendChartProps as _MonthlyTrendChartProps } from '../types';
+
+Chart.register(CategoryScale, LinearScale, PointElement, LineElement, BarController, BarElement, Title, Tooltip, Legend);
 
 /**
  * 月次推移チャートコンポーネント

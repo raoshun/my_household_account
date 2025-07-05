@@ -67,11 +67,11 @@ const BalanceView: React.FC<_BalanceViewProps> = ({
             {positiveData.labels && positiveData.labels.map((label, index) => (
               <div key={label} className="category-item">
                 <span className="category-name">{label}</span>
-                <span className="category-amount">¥{positiveData.datasets[0].data[index].toLocaleString()}</span>
+                <span className="category-amount">¥{typeof positiveData.datasets?.[0]?.data?.[index] === 'number' && !isNaN(positiveData.datasets[0].data[index]) ? positiveData.datasets[0].data[index].toLocaleString() : '0'}</span>
                 <div className="category-bar">
                   <div className="category-fill" style={{ 
-                    width: `${(positiveData.datasets[0].data[index] / positiveTotal * 100).toFixed(1)}%`,
-                    backgroundColor: positiveData.datasets[0].backgroundColor[index] || '#36A2EB'
+                    width: `${(typeof positiveData.datasets?.[0]?.data?.[index] === 'number' && positiveTotal !== 0 ? (positiveData.datasets[0].data[index] / positiveTotal * 100).toFixed(1) : '0')}%`,
+                    backgroundColor: positiveData.datasets?.[0]?.backgroundColor?.[index] || '#36A2EB'
                   }}></div>
                 </div>
               </div>
@@ -88,11 +88,11 @@ const BalanceView: React.FC<_BalanceViewProps> = ({
             {negativeData.labels && negativeData.labels.map((label, index) => (
               <div key={label} className="category-item">
                 <span className="category-name">{label}</span>
-                <span className="category-amount">¥{negativeData.datasets[0].data[index].toLocaleString()}</span>
+                <span className="category-amount">¥{typeof negativeData.datasets?.[0]?.data?.[index] === 'number' && !isNaN(negativeData.datasets[0].data[index]) ? negativeData.datasets[0].data[index].toLocaleString() : '0'}</span>
                 <div className="category-bar">
                   <div className="category-fill" style={{ 
-                    width: `${(negativeData.datasets[0].data[index] / Math.abs(negativeTotal) * 100).toFixed(1)}%`,
-                    backgroundColor: negativeData.datasets[0].backgroundColor[index] || '#FF6384'
+                    width: `${(typeof negativeData.datasets?.[0]?.data?.[index] === 'number' && negativeTotal !== 0 ? (negativeData.datasets[0].data[index] / Math.abs(negativeTotal) * 100).toFixed(1) : '0')}%`,
+                    backgroundColor: negativeData.datasets?.[0]?.backgroundColor?.[index] || '#FF6384'
                   }}></div>
                 </div>
               </div>

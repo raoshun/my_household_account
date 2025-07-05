@@ -67,10 +67,25 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
   const [predictionMethod, setPredictionMethod] = useState<string>('seasonal_ma');
 
   // ファイルハンドラをラップする関数 - useCallbackで最適化
-  const handleFileUpload = useCallback((files: FileList) => {
+  const handleFileUpload = useCallback((files: FileList | File[]) => {
+    // 呼び出し確認
+    console.log('[DEBUG] handleFileUpload called. files:', files);
     setDataProcessing(true); // データ処理開始
-    handleFiles(files, {
-      setData: (data: Record<string, unknown>[]) => setData(data as HouseholdRecord[]),
+    // File[]の場合はFileListに変換
+    let fileList: FileList;
+    if (Array.isArray(files)) {
+      // File[] → FileList化
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      fileList = dt.files;
+    } else {
+      fileList = files;
+    }
+    handleFiles(fileList, {
+      setData: (data: Record<string, unknown>[]) => {
+        setData(data as HouseholdRecord[]);
+        setFilteredData(data as HouseholdRecord[]); // 追加: データ件数やビューの即時反映のため
+      },
       setPositiveChartData: (data: ChartData) => setPositiveChartData(data),
       setNegativeChartData: (data: ChartData) => setNegativeChartData(data),
       setPositiveTotal,
@@ -290,6 +305,11 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
     }
   }, [initialData]);
 
+  // filteredDataが更新されるたびに内容をconsole.logで出力
+  useEffect(() => {
+    console.log('[DEBUG] filteredData:', filteredData.slice(0, 10)); // 先頭10件のみ表示
+  }, [filteredData]);
+
   // チャートオプションをmemoで最適化
   const memoizedChartOptions = useMemo(() => chartOptions, []);
 
@@ -467,7 +487,7 @@ const App: React.FC<_AppProps> = ({ initialData = [] }) => {
         
         {view === 'data' && (
           <div data-testid="rawdata-view">
-            <DataTable data={filteredData} />
+            <DataTable data={data} />
           </div>
         )}
         

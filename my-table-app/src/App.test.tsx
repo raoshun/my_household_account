@@ -1,3 +1,4 @@
+// require('../jest.setup.js'); // ← ESLintエラー回避のためコメントアウト
 /* eslint-disable */
 // jestとReactのインポートを先に行う
 import React from 'react';
@@ -5,6 +6,44 @@ import { jest, test, describe, beforeEach } from '@jest/globals';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { TestEnvWindow } from './types';
+
+// DataTransferのグローバルモック（Node.jsテスト環境用）
+if (typeof global.DataTransfer === 'undefined' || typeof globalThis.DataTransfer === 'undefined') {
+  class DataTransferMock {
+    files: any[] = [];
+    types: any[] = [];
+    dropEffect: string = 'none';
+    effectAllowed: string = 'all';
+    items: any;
+    constructor() {
+      const self = this;
+      this.items = {
+        add(file: any) {
+          self.files.push(file);
+        },
+        remove(index: number) {
+          self.files.splice(index, 1);
+        },
+        clear() {
+          self.files.length = 0;
+        },
+        get length() {
+          return self.files.length;
+        }
+      };
+    }
+    clearData() {}
+    getData() { return ''; }
+    setData() {}
+    setDragImage() {}
+  }
+  if (typeof global.DataTransfer === 'undefined') {
+    global.DataTransfer = DataTransferMock as unknown as typeof DataTransfer;
+  }
+  if (typeof globalThis.DataTransfer === 'undefined') {
+    globalThis.DataTransfer = DataTransferMock as unknown as typeof DataTransfer;
+  }
+}
 
 // オリジナルのuseStateを保持
 const originalUseState = React.useState;
@@ -53,7 +92,7 @@ jest.mock('prop-types', () => {
 function MockReactFileReader(props) {
   return (
     <button 
-      onClick={() => props.handleFiles && props.handleFiles([])} 
+      onClick={() => props.handleFiles && props.handleFiles([new File([''], 'dummy.csv', { type: 'text/csv' })])} 
       data-testid="upload-csv-button"
     >
       Upload CSV

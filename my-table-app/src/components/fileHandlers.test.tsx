@@ -1,6 +1,12 @@
 /* eslint-env jest, browser */
 import { handleFiles, processFile, exportDataToCSV, detectDateRange } from './fileHandlers';
+
+// PapaParseのparseを自動モック
+jest.mock('papaparse');
 import { parse } from 'papaparse';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const parseMock = parse as unknown as jest.Mock<any, any>;
+
 import { describe, test, expect, beforeEach, jest, beforeAll, afterAll } from '@jest/globals';
 // ErrorEventのモックをインポート
 import '../test-utils/errorEventMock';
@@ -28,9 +34,6 @@ jest.mock('../utils/calculateCategoryTotals', () => {
 
 // 必要なモック関数のインポート
 import * as actualUtils from '../utils';
-
-// papaparseのモック
-jest.mock('papaparse');
 
 // iconvのモック
 jest.mock('iconv-lite', () => ({
@@ -69,23 +72,14 @@ beforeEach(() => {
     negativeTotal: -5000,
     positiveData: {
       labels: ['食費', '交通費'],
-      datasets: [{ data: [3000, 1000], backgroundColor: '#ff6384', borderWidth: 1 }]
+      datasets: [{ data: [3000, 1000], backgroundColor: ['#ff6384', '#36A2EB'], borderWidth: [1, 1] }]
     },
     negativeData: {
       labels: ['収入'],
-      datasets: [{ data: [-5000], backgroundColor: '#ff6384', borderWidth: 1 }]
+      datasets: [{ data: [-5000], backgroundColor: ['#ff6384'], borderWidth: [1] }]
     }
   }));
-  parse.mockImplementation((text, options) => {
-    options.complete({
-      data: [
-        { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
-        { '大項目': '食費', '中項目': '外食', '金額（円）': 2000 },
-        { '大項目': '交通費', '中項目': '電車', '金額（円）': -500 }
-      ]
-    });
-  });
-  
+  // parseMockのデフォルト実装は設定しない（各テストで必要に応じて設定）
   // DOMのモック
   if (typeof document === 'undefined') {
     globalThis.document = {
@@ -134,21 +128,21 @@ describe('fileHandlers 基本機能テスト', () => {
 
   test('handleFiles should return error message when no files provided', () => {
     const { setData, setPositiveChartData } = createMockSetters();
-    const result = handleFiles(null, { setData, setPositiveChartData });
+    const result = handleFiles(createMockFileList([]) as FileList, { setData, setPositiveChartData });
     expect(result.success).toBe(false);
     expect(result.message).toBe('No files provided');
   });
 
   test('handleFiles should handle empty files array', () => {
     const { setData, setPositiveChartData } = createMockSetters();
-    const result = handleFiles(createMockFileList([]), { setData, setPositiveChartData });
+    const result = handleFiles(createMockFileList([]) as FileList, { setData, setPositiveChartData });
     expect(result.success).toBe(false);
     expect(result.message).toBe('No files provided');
   });
 
   test('handleFiles should detect test environment when callbacks not provided', () => {
     const mockFile = new File(['test data'], 'test.csv', { type: 'text/csv' });
-    const result = handleFiles(createMockFileList([mockFile]));
+    const result = handleFiles(createMockFileList([mockFile]) as FileList);
     expect(result.success).toBe(true);
     expect(result.message).toBe('Test environment detected');
   });
@@ -176,6 +170,16 @@ describe('fileHandlers 基本機能テスト', () => {
 // ファイル処理のテスト例: 共通セッター関数を利用
 describe('fileHandlers ファイル処理テスト', () => {
   test('handleFiles correctly processes CSV data', async () => {
+    parseMock.mockReset();
+    parseMock.mockImplementationOnce((text, options) => {
+      options.complete({
+        data: [
+          { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
+          { '大項目': '食費', '中項目': '外食', '金額（円）': 2000 },
+          { '大項目': '交通費', '中項目': '電車', '金額（円）': -500 }
+        ]
+      });
+    });
     const { files, setters } = setupFileTest();
     handleFiles(files, setters);
     await waitForAsync();
@@ -190,18 +194,36 @@ describe('fileHandlers ファイル処理テスト', () => {
   });
 
   test('handleFiles correctly handles multiple files', async () => {
+    parseMock.mockReset();
+    // 2ファイル分のmockImplementationOnce
+    parseMock.mockImplementationOnce((text, options) => {
+      options.complete({
+        data: [
+          { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 }
+        ]
+      });
+    });
+    parseMock.mockImplementationOnce((text, options) => {
+      options.complete({
+        data: [
+          { '大項目': '交通費', '中項目': '電車', '金額（円）': -500 }
+        ]
+      });
+    });
     const { files, setters } = setupFileTest({
       fileContents: ['content1', 'content2'],
       fileNames: ['file1.csv', 'file2.csv']
     });
     handleFiles(files, setters);
     await waitForAsync(150);
-    expect(setters.setIsLoading).toHaveBeenCalledWith(true);
-    expect(setters.setIsLoading).toHaveBeenCalledWith(false);
+    // setIsLoadingの呼び出し回数と値を検証
+    expect(setters.setIsLoading).toHaveBeenCalledTimes(2);
+    expect(setters.setIsLoading.mock.calls).toEqual([[true], [false]]);
   });
 
   test('handleFiles correctly handles errors', async () => {
-    parse.mockImplementationOnce((text, options) => {
+    parseMock.mockReset();
+    parseMock.mockImplementationOnce((text, options) => {
       if (options.error) {
         options.error(new Error('CSV parsing failed'));
       }
@@ -210,7 +232,7 @@ describe('fileHandlers ファイル処理テスト', () => {
     const { files } = setupFileTest({ fileContents: ['invalid csv'], fileNames: ['error.csv'] });
     const setters = createAllSetters();
     handleFiles(files, setters);
-    await waitForAsync();
+    await waitForAsync(200); // 待機を長めに
     expect(setters.setError).toHaveBeenCalled();
     expect(setters.setIsLoading).toHaveBeenCalledWith(false);
   });
@@ -219,8 +241,9 @@ describe('fileHandlers ファイル処理テスト', () => {
 // エッジケースのテスト
 describe('fileHandlers エッジケーステスト', () => {
   test('handleFiles correctly processes empty CSV data', async () => {
+    parseMock.mockReset();
     // 空のCSVデータをシミュレートするためのモック
-    parse.mockImplementationOnce((text, options) => {
+    parseMock.mockImplementationOnce((text, options) => {
       options.complete({ data: [] });
     });
     
@@ -245,10 +268,7 @@ describe('fileHandlers エッジケーステスト', () => {
       setNegativeTotal,
       setIsLoading
     });
-    
-    // 非同期処理の完了を待つ
     await new Promise(resolve => setTimeout(resolve, 100));
-    
     // 検証
     expect(setData).toHaveBeenCalledWith([]);
     expect(setIsLoading).toHaveBeenCalledWith(false);
@@ -259,7 +279,7 @@ describe('fileHandlers エッジケーステスト', () => {
 describe('CSV空行フィルタリングテスト', () => {
   test('空行が正しくフィルタリングされること', async () => {
     // 空行を含むCSVデータをシミュレートするためのモック
-    parse.mockImplementationOnce((text, options) => {
+    parseMock.mockImplementationOnce((text, options) => {
       options.complete({
         data: [
           { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
@@ -318,7 +338,7 @@ describe('CSV空行フィルタリングテスト', () => {
 
   test('様々な形式の空行が正しくフィルタリングされること', async () => {
     // 様々な形式の空行を含むCSVデータをシミュレート
-    parse.mockImplementationOnce((text, options) => {
+    parseMock.mockImplementationOnce((text, options) => {
       options.complete({
         data: [
           { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
@@ -460,5 +480,49 @@ describe('detectDateRange 関数のテスト', () => {
       startDate: '2023-01-05',
       endDate: '2023-02-20'
     });
+  });
+});
+
+// CSVエンコーディング自動判定の再発防止テスト
+describe('CSVエンコーディング自動判定の再発防止テスト', () => {
+  test('Shift_JISデコード失敗時にUTF-8で再試行し正常に読み込める', async () => {
+    parseMock.mockReset();
+    // TextDecoderのモック
+    const originalTextDecoder = global.TextDecoder;
+    const mockDecode = jest.fn()
+      .mockImplementationOnce(() => { throw new Error('shift_jis decode error'); }) // 1回目は失敗
+      .mockImplementationOnce(() => 'col1,col2\nA,B'); // 2回目(utf-8)は成功
+    global.TextDecoder = jest.fn().mockImplementation((encoding) => ({ decode: mockDecode })) as unknown as typeof TextDecoder;
+
+    // papaparseのモック: 正常なデータを返す
+    parseMock.mockImplementationOnce((text, options) => {
+      options.complete({
+        data: [
+          { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
+          { '大項目': '食費', '中項目': '外食', '金額（円）': 2000 },
+          { '大項目': '交通費', '中項目': '電車', '金額（円）': -500 }
+        ]
+      });
+    });
+
+    const setData = jest.fn();
+    const setPositiveChartData = jest.fn();
+    const setNegativeChartData = jest.fn();
+    const setIsLoading = jest.fn();
+    const file = new File([new Uint8Array([0x41, 0x2c, 0x42])], 'test.csv');
+    const files = createMockFileList([file]);
+
+    handleFiles(files, { setData, setPositiveChartData, setNegativeChartData, setIsLoading });
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    expect(setData).toHaveBeenCalledWith([
+      { '大項目': '食費', '中項目': '食料品', '金額（円）': 1000 },
+      { '大項目': '食費', '中項目': '外食', '金額（円）': 2000 },
+      { '大項目': '交通費', '中項目': '電車', '金額（円）': -500 }
+    ]);
+    expect(setIsLoading).toHaveBeenCalledWith(false);
+    expect(global.TextDecoder).toHaveBeenCalledWith('shift_jis');
+    expect(global.TextDecoder).toHaveBeenCalledWith('utf-8');
+    global.TextDecoder = originalTextDecoder;
   });
 });

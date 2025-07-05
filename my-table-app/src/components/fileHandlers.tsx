@@ -1,7 +1,6 @@
 import { parse } from 'papaparse';
 import { sortAndAggregateData } from '../utils/sortData';
 import calculateCategoryTotals from '../utils/calculateCategoryTotals';
-import iconv from 'iconv-lite';
 import { splitDataBySign, filterEmptyRows } from '../utils';
 import { prepareMonthlyTrendData } from '../utils/chartDataUtils';
 import { DATE_KEY, MAIN_CATEGORY_KEY, AMOUNT_KEY } from '../config/constants';
@@ -124,9 +123,21 @@ const parseCSVFile = (file, onComplete, onError) => {
       if (
         (typeof result === 'object' && result !== null && (result instanceof ArrayBuffer || ArrayBuffer.isView(result)))
       ) {
-        // 実際の環境: ArrayBufferからテキストをデコード
-        const uint8 = result instanceof Uint8Array ? result : new Uint8Array(result as ArrayBuffer);
-        text = iconv.decode(Buffer.from(uint8), 'Shift_JIS');
+        // ブラウザではTextDecoderを使う
+        if (typeof TextDecoder !== 'undefined') {
+          // Shift_JIS対応: ブラウザによっては 'shift_jis' もサポート
+          try {
+            const decoder = new TextDecoder('shift_jis');
+            text = decoder.decode(result instanceof Uint8Array ? result : new Uint8Array(result as ArrayBuffer));
+          } catch {
+            // shift_jis未対応ならutf-8で再試行
+            const decoder = new TextDecoder('utf-8');
+            text = decoder.decode(result instanceof Uint8Array ? result : new Uint8Array(result as ArrayBuffer));
+          }
+        } else {
+          // TextDecoderがなければ空文字
+          text = '';
+        }
       } else {
         // テスト環境: 既に文字列として提供されている
         text = result as string;
@@ -228,6 +239,7 @@ export const handleFiles = (files: FileList, setters: Setters = {}) => {
         // すべてのファイル処理が完了したら結果を設定
         if (filesProcessed === files.length) {
           // 基本データをセット - 空配列でも常にセットする
+          console.log('[DEBUG] setDataに渡すデータ:', allData);
           setData(allData);
 
           // ファイル読み込み後、CSV内容をデバッグ出力
