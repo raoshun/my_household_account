@@ -128,7 +128,10 @@ describe('InvestmentView', () => {
     expect(screen.getByTestId('mock-pie-chart')).toBeInTheDocument();
     
     // 円グラフが正しいデータで表示されていることを確認
-    const chartData = JSON.parse(screen.getByTestId('mock-pie-chart').getAttribute('data-chart-data'));
+    const chartElement = screen.getByTestId('mock-pie-chart');
+    const chartDataAttribute = chartElement.getAttribute('data-chart-data');
+    expect(chartDataAttribute).toBeTruthy();
+    const chartData = JSON.parse(chartDataAttribute!);
     expect(chartData.labels).toContain('株式');
     expect(chartData.labels).toContain('投資信託');
     expect(chartData.labels).toContain('不動産');
@@ -147,7 +150,10 @@ describe('InvestmentView', () => {
     expect(screen.getByTestId('mock-line-chart')).toBeInTheDocument();
     
     // グラフが正しいデータで表示されていることを確認
-    const chartData = JSON.parse(screen.getByTestId('mock-line-chart').getAttribute('data-chart-data'));
+    const lineChartElement = screen.getByTestId('mock-line-chart');
+    const lineChartDataAttribute = lineChartElement.getAttribute('data-chart-data');
+    expect(lineChartDataAttribute).toBeTruthy();
+    const chartData = JSON.parse(lineChartDataAttribute!);
     expect(chartData.labels).toContain('2023/01');
     expect(chartData.labels).toContain('2023/02');
     
@@ -197,7 +203,7 @@ describe('InvestmentView', () => {
 
   test('dataがundefinedの場合に正しくレンダリングされる', () => {
     // dataを省略して呼び出し（デフォルト値の[]が使われる）
-    render(<InvestmentView />);
+    render(<InvestmentView data={[]} />);
     
     // タブが表示されていることを確認
     expect(screen.getByText('概要')).toBeInTheDocument();

@@ -82,26 +82,111 @@ const Charts: React.FC<_ChartsProps & { options?: ChartPluginOptions }> = ({
 }: _ChartsProps & { options?: ChartPluginOptions }) => {
   const positiveChartRef = useRef<HTMLCanvasElement | null>(null);
   const negativeChartRef = useRef<HTMLCanvasElement | null>(null);
-  const positiveChartInstance = useRef<Chart | null>(null);
-  const negativeChartInstance = useRef<Chart | null>(null);
+  const positiveChartInstance = useRef<Chart<"doughnut"> | null>(null);
+  const negativeChartInstance = useRef<Chart<"doughnut"> | null>(null);
   const prevChartsKeyRef = useRef(chartsKey);
+  const [canvasKey, setCanvasKey] = React.useState(0); // キャンバスの強制再作成用
 
   const isTestEnvironment = useMemo(() => isTestEnv(), []);
+
+  // コンポーネントがアンマウントされる際のクリーンアップ
+  useEffect(() => {
+    return () => {
+      // Chart.jsのgetChart()を使用してキャンバスに関連付けられたチャートを確認・破棄
+      if (positiveChartRef.current) {
+        const existingPositiveChart = Chart.getChart(positiveChartRef.current);
+        if (existingPositiveChart) {
+          try {
+            existingPositiveChart.destroy();
+          } catch (error) {
+            console.warn('Error destroying positive chart via getChart on unmount:', error);
+          }
+        }
+      }
+      
+      if (negativeChartRef.current) {
+        const existingNegativeChart = Chart.getChart(negativeChartRef.current);
+        if (existingNegativeChart) {
+          try {
+            existingNegativeChart.destroy();
+          } catch (error) {
+            console.warn('Error destroying negative chart via getChart on unmount:', error);
+          }
+        }
+      }
+      
+      // 既存のrefインスタンスも破棄
+      if (positiveChartInstance.current) {
+        try {
+          positiveChartInstance.current.destroy();
+        } catch (error) {
+          console.warn('Error destroying positive chart on unmount:', error);
+        }
+        positiveChartInstance.current = null;
+      }
+      if (negativeChartInstance.current) {
+        try {
+          negativeChartInstance.current.destroy();
+        } catch (error) {
+          console.warn('Error destroying negative chart on unmount:', error);
+        }
+        negativeChartInstance.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isTestEnvironment) {
       return;
     }
     
-    if (prevChartsKeyRef.current !== chartsKey) {
+    // 既存のチャートインスタンスを確実に破棄
+    const destroyExistingCharts = () => {
+      // Chart.jsのgetChart()を使用してキャンバスに関連付けられたチャートを確認・破棄
+      if (positiveChartRef.current) {
+        const existingPositiveChart = Chart.getChart(positiveChartRef.current);
+        if (existingPositiveChart) {
+          try {
+            existingPositiveChart.destroy();
+          } catch (error) {
+            console.warn('Error destroying existing positive chart via getChart:', error);
+          }
+        }
+      }
+      
+      if (negativeChartRef.current) {
+        const existingNegativeChart = Chart.getChart(negativeChartRef.current);
+        if (existingNegativeChart) {
+          try {
+            existingNegativeChart.destroy();
+          } catch (error) {
+            console.warn('Error destroying existing negative chart via getChart:', error);
+          }
+        }
+      }
+      
+      // 既存のrefインスタンスも破棄
       if (positiveChartInstance.current) {
-        positiveChartInstance.current.destroy();
+        try {
+          positiveChartInstance.current.destroy();
+        } catch (error) {
+          console.warn('Error destroying positive chart:', error);
+        }
         positiveChartInstance.current = null;
       }
       if (negativeChartInstance.current) {
-        negativeChartInstance.current.destroy();
+        try {
+          negativeChartInstance.current.destroy();
+        } catch (error) {
+          console.warn('Error destroying negative chart:', error);
+        }
         negativeChartInstance.current = null;
       }
+    };
+
+    // chartsKeyが変わった場合は既存のチャートを破棄
+    if (prevChartsKeyRef.current !== chartsKey) {
+      destroyExistingCharts();
       prevChartsKeyRef.current = chartsKey;
     }
     
@@ -123,15 +208,34 @@ const Charts: React.FC<_ChartsProps & { options?: ChartPluginOptions }> = ({
     }
     
     try {
-      if (positiveChartRef.current) {
-        if (positiveChartInstance.current) {
-          positiveChartInstance.current.destroy();
+      // 正のチャートを作成
+      if (positiveChartRef.current && hasPositiveData) {
+        // キャンバスに関連付けられた既存のチャートを確認・破棄
+        const existingChart = Chart.getChart(positiveChartRef.current);
+        if (existingChart) {
+          try {
+            existingChart.destroy();
+          } catch (error) {
+            console.warn('Error destroying existing positive chart:', error);
+          }
         }
+        
+        // 既存のインスタンスを破棄
+        if (positiveChartInstance.current) {
+          try {
+            positiveChartInstance.current.destroy();
+          } catch (error) {
+            console.warn('Error destroying existing positive chart instance:', error);
+          }
+          positiveChartInstance.current = null;
+        }
+        
         const ctx = positiveChartRef.current.getContext && positiveChartRef.current.getContext('2d');
         if (ctx) {
           const plugins = (options && typeof options === 'object' && 'plugins' in options && typeof (options as ChartPluginOptions).plugins === 'object' && (options as ChartPluginOptions).plugins !== null)
             ? (options as ChartPluginOptions).plugins
             : {};
+          
           positiveChartInstance.current = new Chart(ctx, {
             type: 'doughnut',
             data: safePositiveData,
@@ -162,15 +266,35 @@ const Charts: React.FC<_ChartsProps & { options?: ChartPluginOptions }> = ({
           });
         }
       }
-      if (negativeChartRef.current) {
-        if (negativeChartInstance.current) {
-          negativeChartInstance.current.destroy();
+      
+      // 負のチャートを作成
+      if (negativeChartRef.current && hasNegativeData) {
+        // キャンバスに関連付けられた既存のチャートを確認・破棄
+        const existingChart = Chart.getChart(negativeChartRef.current);
+        if (existingChart) {
+          try {
+            existingChart.destroy();
+          } catch (error) {
+            console.warn('Error destroying existing negative chart:', error);
+          }
         }
+        
+        // 既存のインスタンスを破棄
+        if (negativeChartInstance.current) {
+          try {
+            negativeChartInstance.current.destroy();
+          } catch (error) {
+            console.warn('Error destroying existing negative chart instance:', error);
+          }
+          negativeChartInstance.current = null;
+        }
+        
         const ctx = negativeChartRef.current.getContext && negativeChartRef.current.getContext('2d');
         if (ctx) {
           const plugins = (options && typeof options === 'object' && 'plugins' in options && typeof (options as ChartPluginOptions).plugins === 'object' && (options as ChartPluginOptions).plugins !== null)
             ? (options as ChartPluginOptions).plugins
             : {};
+          
           negativeChartInstance.current = new Chart(ctx, {
             type: 'doughnut',
             data: safeNegativeData,
@@ -202,20 +326,19 @@ const Charts: React.FC<_ChartsProps & { options?: ChartPluginOptions }> = ({
         }
       }
     } catch (error) {
-      console.error('Failed to create chart:', error);
+      console.error('チャートの作成中にエラーが発生しました:', error);
+      // キャンバスの再利用エラーの場合、キャンバスを強制的に再作成
+      if (error instanceof Error && error.message.includes('Canvas is already in use')) {
+        console.warn('キャンバス再利用エラーが発生しました。キャンバスを再作成します。');
+        setCanvasKey(prev => prev + 1);
+      }
     }
 
+    // クリーンアップ関数
     return () => {
-      if (positiveChartInstance.current) {
-        positiveChartInstance.current.destroy();
-        positiveChartInstance.current = null;
-      }
-      if (negativeChartInstance.current) {
-        negativeChartInstance.current.destroy();
-        negativeChartInstance.current = null;
-      }
+      destroyExistingCharts();
     };
-  }, [positiveChartData, negativeChartData, chartsKey, isTestEnvironment, options]);
+  }, [positiveChartData, negativeChartData, chartsKey, canvasKey, isTestEnvironment, options]);
 
   useEffect(() => {
     if (isTestEnvironment || !positiveChartInstance.current || !negativeChartInstance.current) {
@@ -328,7 +451,12 @@ const Charts: React.FC<_ChartsProps & { options?: ChartPluginOptions }> = ({
             収入: <span style={{ fontWeight: 'bold', color: '#4CAF50' }}>¥{safeNumberFormat(positiveTotal)}</span>
           </h2>
           <div style={{ width: '100%', height: '300px', position: 'relative' }}>
-            <canvas ref={positiveChartRef} data-testid="positive-chart" />
+            <canvas 
+              ref={positiveChartRef} 
+              data-testid="positive-chart" 
+              id={`positive-chart-${chartsKey}-${canvasKey}`}
+              key={`positive-${chartsKey}-${canvasKey}`}
+            />
           </div>
         </div>
 
@@ -355,7 +483,12 @@ const Charts: React.FC<_ChartsProps & { options?: ChartPluginOptions }> = ({
             支出: <span style={{ fontWeight: 'bold', color: '#F44336' }}>¥{safeNumberFormat(negativeTotal)}</span>
           </h2>
           <div style={{ width: '100%', height: '300px', position: 'relative' }}>
-            <canvas ref={negativeChartRef} data-testid="negative-chart" />
+            <canvas 
+              ref={negativeChartRef} 
+              data-testid="negative-chart" 
+              id={`negative-chart-${chartsKey}-${canvasKey}`}
+              key={`negative-${chartsKey}-${canvasKey}`}
+            />
           </div>
         </div>
       </div>

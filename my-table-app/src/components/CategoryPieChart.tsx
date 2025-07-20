@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  Tooltip, 
+  Legend
+} from 'recharts';
 import PropTypes from 'prop-types';
 import type { CategoryPieChartProps as _CategoryPieChartProps } from '../types';
 
@@ -32,11 +38,17 @@ const calculateAngleLayout = (data) => {
 };
 
 // カスタム凡例コンポーネント（大項目のみ表示）
-export const CustomLegend = (props) => {
+export const CustomLegend: React.FC<{
+  payload?: Array<{
+    value?: string;
+    color?: string;
+    type?: string;
+  }>;
+}> = (props) => {
   const { payload } = props;
 
   // 大項目のみをフィルタリング
-  const mainCategoryItems = payload ? payload.filter(entry => !entry.value.includes(' - ')) : [];
+  const mainCategoryItems = payload ? payload.filter(entry => !entry.value?.includes(' - ')) : [];
 
   if (!mainCategoryItems || mainCategoryItems.length === 0) {
     return null;
@@ -81,7 +93,19 @@ CustomLegend.defaultProps = {
 };
 
 // カスタムツールチップコンポーネント
-export const CustomTooltip = ({ active, payload }) => {
+export const CustomTooltip: React.FC<{
+  active?: boolean;
+  payload?: Array<{
+    name?: string;
+    value?: number;
+    color?: string;
+    payload?: {
+      mainTotal?: number;
+      total?: number;
+      [key: string]: unknown;
+    };
+  }>;
+}> = ({ active, payload }) => {
   if (!active || !payload || payload.length === 0) {
     return null;
   }
