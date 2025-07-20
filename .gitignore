@@ -3,3 +3,6 @@ my_household_analysis/
 node_modules/
 *.venv/
 *.husky/
+
+package-lock.json
+.package-lock.json
